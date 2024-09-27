@@ -1,0 +1,49 @@
+{
+  "name": "turtledb-com",
+  "version": "0.0.1",
+  "type": "module",
+  "repository": "git@github.com:dtudury/turtledb.git",
+  "author": "David Tudury <david.tudury@gmail.com>",
+  "license": "AGPL-3.0",
+  "bin": {
+    "s3peer": "./bin/s3peer.js",
+    "repl": "./bin/repl.js",
+    "webserver": "./bin/webserver.js"
+  },
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.633.0",
+    "@noble/secp256k1": "^2.1.0",
+    "chokidar": "^3.5.3",
+    "commander": "^12.1.0",
+    "concurrently": "^9.0.1",
+    "express": "^4.18.2",
+    "mkcert": "^3.0.0",
+    "mocha": "^10.2.0",
+    "npm-run-all": "^4.1.5",
+    "ws": "^8.14.2"
+  },
+  "devDependencies": {
+    "c8": "^8.0.1",
+    "chai": "^4.3.10",
+    "readline-sync": "^1.4.10",
+    "standard": "^17.1.0"
+  },
+  "scripts": {
+    "start": "concurrently -c cyan,magenta -n webserver,s3peer \"$npm_execpath webserver.prod\" \"$npm_execpath s3peer.prod\"",
+    "dev": "concurrently -c cyan,magenta -n webserver,s3peer \"$npm_execpath webserver.dev\" \"$npm_execpath s3peer.prod\"",
+    "webserver.dev": "node --inspect ./bin/webserver.js --path public:/ --path test --insecure --https --s3port 1024",
+    "webserver.prod": "./bin/webserver.js --path public:/ --s3port 1024",
+    "s3peer.prod": "./bin/s3peer.js --endpoint https://sfo3.digitaloceanspaces.com --bucket tarasque --region sfo3 --key DO007RR6B7KWU8YYLJK7 --port 1024",
+    "repl": "./bin/repl.js --port 1024",
+    "fs": "./bin/fspeer.js --port 1024 --path ./public/",
+    "canary": "open '/Applications/Google Chrome Canary.app' --args --auto-open-devtools-for-tabs --allow-insecure-localhost --ignore-certificate-errors --unsafely-treat-insecure-origin-as-secure=https://localhost:8080/ https://localhost:8080/",
+    "postinstall": "cp ./node_modules/@noble/secp256k1/index.js ./public/js/utils/noble-secp256k1.js",
+    "test": "mocha './public/js/**/*.test.js'",
+    "coverage": "c8 -r html -r text -r json-summary -x '**/*.test.js' $npm_execpath test"
+  },
+  "standard": {
+    "env": [
+      "mocha"
+    ]
+  }
+}

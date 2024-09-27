@@ -1,0 +1,15 @@
+{
+  "name": "turtledb.com",
+  "description": "Democratization of the internet",
+  "start_url": "/index.html",
+  "theme_color": "green",
+  "background_color": "black",
+  "display": "standalone",
+  "icons": [
+    {
+      "src": "/tinker.svg",
+      "type": "image/svg+xml",
+      "sizes": "48x48 72x72 96x96 128x128 256x256 512x512"
+    }
+  ]
+}

@@ -1,0 +1,185 @@
+import { NestedSet } from './NestedSet.js'
+import { nextTick, getTickCount } from './nextTick.js'
+
+let _debug = false
+export const setDebug = (debug = true) => {
+  _debug = debug
+}
+
+export const IGNORE_ACCESS = Symbol('IGNORE_ACCESS')
+export const IGNORE_MUTATE = Symbol('IGNORE_MUTATE')
+export const IGNORE = Symbol('IGNORE')
+
+export class Recaller {
+  name
+  #mms = new NestedSet()
+  #functionNames = new Map()
+  #stack = []
+  #triggered = new Set()
+  #handlingTriggered = false
+  #beforeTriggered = []
+  #afterTriggered = []
+  /** @type {boolean} */
+  #debug
+  #ignore = null
+  loopWarn = 2
+  loopEnd = 10
+
+  constructor (name) {
+    if (!name) throw new Error('Recaller must be named')
+    this.name = name
+  }
+
+  set debug (debug) {
+    this.#debug = debug
+  }
+
+  get debug () {
+    return this.#debug ?? _debug
+  }
+
+  call (f, ignore = null) {
+    if (typeof f !== 'function') throw new Error('can only hide functions')
+    const previousIgnore = this.#ignore
+    this.#ignore = ignore
+    f()
+    this.#ignore = previousIgnore
+  }
+
+  watch (name, f) {
+    if (typeof f !== 'function') { throw new Error(`can only watch functions (${name})`) }
+    this.#disassociateF(f)
+    if (!name) throw new Error('must name function watchers')
+    this.#nameFunction(f, name)
+    if (this.debug) console.group(`watching --- ${JSON.stringify(name)}`)
+    this.#stack.unshift(f)
+    f()
+    this.#stack.shift()
+    if (this.debug) console.groupEnd()
+  }
+
+  unwatch (f) {
+    this.#disassociateF(f)
+  }
+
+  beforeNextUpdate (f) {
+    if (!this.#beforeTriggered.includes(f)) this.#beforeTriggered.push(f)
+  }
+
+  afterNextUpdate (f) {
+    if (!this.#afterTriggered.includes(f)) this.#afterTriggered.push(f)
+  }
+
+  reportKeyAccess (target, key, method, name) {
+    if (this.#ignore === IGNORE || this.#ignore === IGNORE_ACCESS) return
+    const f = this.#stack[0]
+    if (typeof f !== 'function') return
+    name = `${name}['${key.toString()}']`
+    const triggering = this.#getFunctionName(f)
+    if (this.debug) {
+      console.debug(
+        `<--  access     --- ${JSON.stringify({
+          recaller: this.name,
+          method,
+          name,
+          triggering
+        })}`
+      )
+    }
+    this.#associate(f, target, key)
+  }
+
+  reportKeyMutation (target, key, method, name) {
+    if (this.#ignore === IGNORE || this.#ignore === IGNORE_MUTATE) return
+    const newTriggered = this.#getFunctions(target, key)
+    if (!newTriggered.length) return
+    const triggering = newTriggered.map(f => this.#getFunctionName(f))
+    name = `${name}['${key.toString()}']`
+    if (this.debug) {
+      console.debug(
+        `-->  mutation   --- ${JSON.stringify({
+          recaller: this.name,
+          method,
+          name,
+          triggering
+        })}`
+      )
+    }
+    if (name.match(/\['name'\]\['name'\]/)) throw new Error('double name')
+    this.#triggered = new Set([...this.#triggered, ...newTriggered])
+    if (this.#handlingTriggered) return
+    this.#handlingTriggered = true
+    nextTick(() => this.#handleTriggered())
+  }
+
+  #associate (f, target, key) {
+    this.#mms.add(key, target, f)
+    this.#mms.add(f, target, key)
+  }
+
+  #disassociateF (f) {
+    this.#mms.delete(f)
+    this.#functionNames.delete(f)
+  }
+
+  #getFunctions (target, key) {
+    return this.#mms.values(key, target)
+  }
+
+  // debugging functions
+  #nameFunction (f, name) {
+    this.#functionNames.set(f, name)
+  }
+
+  #getFunctionName (f) {
+    return (
+      this.#functionNames.get(f) ||
+      f.name ||
+      `<<UNNAMED FUNCTION[${f.toString()}]>>`
+    )
+  }
+
+  #handleTriggered () {
+    const beforeTriggered = [...this.#beforeTriggered]
+    this.#beforeTriggered = []
+    beforeTriggered.forEach(f => f())
+    let loopCounter = 0
+    while ((this.#triggered.size || this.#afterTriggered.length)) {
+      if (loopCounter >= this.loopEnd) {
+        console.error(`!! Recaller loop count: ${loopCounter} SEEMS BROKEN, STOPPING...`)
+        break
+      }
+      if (loopCounter >= this.loopWarn) {
+        console.warn(`!! Recaller loop count: ${loopCounter}`)
+      }
+      const triggered = this.#triggered
+      this.#triggered = new Set()
+      const triggering = [...triggered].map(f => this.#getFunctionName(f))
+      if (this.debug) {
+        console.time('handling triggered group')
+        console.groupCollapsed(
+          `triggering --- ${JSON.stringify({
+            recaller: this.name,
+            tickCount: getTickCount(),
+            loopCounter,
+            triggering
+          })}`
+        )
+      }
+      triggered.forEach(f => {
+        const name = this.#getFunctionName(f)
+        this.#disassociateF(f)
+        this.watch(name, f)
+      })
+      while (this.#afterTriggered.length) {
+        this.#afterTriggered.shift()()
+      }
+      ++loopCounter
+      if (this.debug) {
+        console.groupEnd()
+        console.timeEnd('handling triggered group')
+      }
+    }
+    this.#handlingTriggered = false
+  }
+}
