@@ -85,7 +85,7 @@ render(document, h`<html>
   </head>
   <body style="margin: 0;">
     ${renderCommit}
-    ${pathToName('components/dashboard.js', fallbackCPK)}
+    ${pathToName('components/start.js', fallbackCPK)}
   </body>
 </html>`, recaller, 'main')
 

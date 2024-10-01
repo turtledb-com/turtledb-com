@@ -61,23 +61,21 @@ const checkTurtle = () => {
   console.log('check turtle')
   const loadedLayers = committer.layerIndex
   const availableLength = global.peer?.remoteExports?.lookup?.()?.[compactPublicKey]?.want?.[0]?.[0]
-  console.log('check turtle', loadedLayers, availableLength - 1)
-  if (loadedLayers === availableLength - 1) {
+  console.log('our length:', loadedLayers + 1, 'their length:', availableLength)
+  if (availableLength !== undefined && loadedLayers === availableLength - 1) {
     startedLoading = true
     console.log('stop watching')
-    const valueRefs = committer.workspace.lookupRefs(getCommitAddress(committer), 'value')
-    if (!valueRefs || !valueRefs.fs) return
-    const fsRefs = committer.workspace.lookup(valueRefs.fs, getCodecs(KIND.REFS_OBJECT))
+    const valueRefs = committer.workspace.lookupRefs(getCommitAddress(committer), 'value') || {}
+    const fsRefs = valueRefs.fs && committer.workspace.lookup(valueRefs.fs, getCodecs(KIND.REFS_OBJECT))
     const filteredRefs = Object.fromEntries(
-      Object.entries(fsRefs ?? {})
+      Object.entries(fsRefs || {})
         .filter(([relativePath]) => !relativePath.match(ignored))
     )
     console.log(fsRefs, filteredRefs)
     valueRefs.fs = committer.workspace.upsert(filteredRefs)
-    committer.commitAddress(
-      'remove bad filenames',
-      committer.workspace.upsert(valueRefs, getCodecs(KIND.REFS_OBJECT))
-    ).then(resolveTurtleCheck)
+    const valueAddress = committer.workspace.upsert(valueRefs, getCodecs(KIND.REFS_OBJECT))
+    committer.commitAddress('remove bad filenames', valueAddress)
+      .then(resolveTurtleCheck)
   }
 }
 recaller.watch('turtle loading check', checkTurtle)
@@ -92,6 +90,7 @@ mkdirSync(dirname(root), { recursive: true })
 /** @type {Promise} */
 let commitInProgress
 watch(root, { ignored }).on('all', (event, path) => {
+  console.log(event, path)
   const relativePath = relative(root, path)
   console.log(event, relativePath)
   const prev = commitInProgress
