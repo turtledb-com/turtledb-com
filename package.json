@@ -35,7 +35,7 @@
     "dev": "concurrently -c cyan,magenta -n webserver,s3peer \"$npm_execpath webserver.dev\" \"$npm_execpath s3peer.prod\"",
     "webserver.dev": "node --inspect ./bin/webserver.js --path public:/ --path test --insecure --https --s3port 1024",
     "webserver.prod": "./bin/webserver.js --path public:/ --s3port 1024",
-    "s3peer.prod": "./bin/s3peer.js --endpoint https://sfo3.digitaloceanspaces.com --bucket tarasque --region sfo3 --key DO007RR6B7KWU8YYLJK7 --port 8080 -http",
+    "s3peer.prod": "./bin/s3peer.js --endpoint https://sfo3.digitaloceanspaces.com --bucket tarasque --region sfo3 --key DO007RR6B7KWU8YYLJK7 --port 8080 --http",
     "repl": "./bin/repl.js --port 1024",
     "fs": "./bin/fspeer.js --port 1024 --path ./public/ --name fs --pathname public",
     "canary": "open '/Applications/Google Chrome Canary.app' --args --auto-open-devtools-for-tabs --allow-insecure-localhost --ignore-certificate-errors --unsafely-treat-insecure-origin-as-secure=https://localhost:8080/ https://localhost:8080/",
