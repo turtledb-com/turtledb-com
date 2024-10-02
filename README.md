@@ -37,10 +37,9 @@ Realistically though... unless we're in data-entry, our data output is a few kB/
 ## Usage example
 
 ### Create and clone your *Turtle*
-1. Go to turtledb.com
-1. login and copy your CompactPublicKey
-1. open a new folder in a terminal with node installed
-1. `npx turtledb-com fs <your CompactPublicKey>`
+1. Go to turtledb.com and login
+1. open a new folder in a terminal that has node installed
+1. `npx --package=turtledb-com fspeer` (you'll be prompeted to login)
 1. open your new folder with the IDE of your choice
 
 ### Modify your *Turtle*
