@@ -37,7 +37,7 @@
     "webserver.prod": "./bin/webserver.js --path public:/ --s3port 1024",
     "s3peer.prod": "./bin/s3peer.js --endpoint https://sfo3.digitaloceanspaces.com --bucket tarasque --region sfo3 --key DO007RR6B7KWU8YYLJK7 --port 1024",
     "repl": "./bin/repl.js --port 1024",
-    "fs": "./bin/fspeer.js --port 1024 --path ./public/ --name fs --pathname public",
+    "fspeer": "./bin/fspeer.js --port 1024 --path ./public/ --name fs --turtlename public",
     "canary": "open '/Applications/Google Chrome Canary.app' --args --auto-open-devtools-for-tabs --allow-insecure-localhost --ignore-certificate-errors --unsafely-treat-insecure-origin-as-secure=https://localhost:8080/ https://localhost:8080/",
     "postinstall": "cp ./node_modules/@noble/secp256k1/index.js ./public/js/utils/noble-secp256k1.js",
     "test": "mocha './public/js/**/*.test.js'",

@@ -2,7 +2,12 @@
 Live data presented everywhere (with history)
 
 ## THIS PROJECT IS NOT PRODUCTION READY
-please interpret this README.md as speculative fiction. There are several critical tasks remaining before the example will work.
+
+Please interpret this README.md as speculative fiction. 
+There are several critical tasks remaining before the example will work.
+* I'm evaluating the cost effectiveness of hosting companies (opening a port to my s3-peer isn't included in digital ocean's "app" concept)
+* service worker crashes (easily remedied with chrome://serviceworker-internals but... yeah, that's not production)
+* memory leaks (were expected and not problematic for development but... need abatement before actual users)
 
 ## Overview
 The name "turtledb-com" is a reference to this "Turtles All the Way Down" idiom. 

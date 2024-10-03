@@ -22,19 +22,19 @@ program
   .option('--port <number>', 'port number for net connection', x => +x, 1024)
   .option('--name <string>', 'username')
   .option('--pass <string>', 'password')
-  .option('--pathname <string>', 'identifier')
+  .option('--turtlename <string>', 'identifier')
   .parse()
 
-let { path, port, name, pass, pathname } = program.opts()
+let { path, port, name, pass, turtlename } = program.opts()
 if (!name) name = question('username: ')
 if (!pass) pass = question('password: ', { hideEchoBack: true })
-if (!pathname) pathname = question('pathname [home]: ') || 'home'
+if (!turtlename) turtlename = question('turtlename [home]: ') || 'home'
 
 const recaller = new Recaller('fspeer')
 
 const hashword = await hashNameAndPassword(name, pass)
-const privateKey = await hashNameAndPassword(pathname, hashword)
-const committer = new Committer(pathname, privateKey, recaller)
+const privateKey = await hashNameAndPassword(turtlename, hashword)
+const committer = new Committer(turtlename, privateKey, recaller)
 const compactPublicKey = committer.compactPublicKey
 
 setPointerByPublicKey(compactPublicKey, recaller, committer)

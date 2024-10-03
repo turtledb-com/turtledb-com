@@ -17,12 +17,12 @@ const { port } = program.opts()
 const recaller = new Recaller('repl')
 
 if (port) {
-  global.login = async (username, password, pathname = 'home') => {
+  global.login = async (username, password, turtlename = 'home') => {
     const hashword = await hashNameAndPassword(username, password)
-    const privateKey = await hashNameAndPassword(pathname, hashword)
-    const committer = new Committer(pathname, privateKey, recaller)
+    const privateKey = await hashNameAndPassword(turtlename, hashword)
+    const committer = new Committer(turtlename, privateKey, recaller)
     const compactPublicKey = committer.compactPublicKey
-    global.peer.addSourceObject(compactPublicKey, `repl sourceObject ${username}/${pathname}/${compactPublicKey}`, committer)
+    global.peer.addSourceObject(compactPublicKey, `repl sourceObject ${username}/${turtlename}/${compactPublicKey}`, committer)
     return committer
   }
   console.log('login function added to global namespace')

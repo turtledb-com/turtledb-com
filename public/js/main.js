@@ -13,15 +13,15 @@ import { newPeerPerCycle } from './utils/peerFactory.js'
 
 const recaller = new Recaller('main.js')
 
-window.login = async (username, password, pathname = 'home') => {
+window.login = async (username, password, turtlename = 'home') => {
   const hashword = await hashNameAndPassword(username, password)
-  const privateKey = await hashNameAndPassword(pathname, hashword)
-  const committer = new Committer(pathname, privateKey, recaller)
+  const privateKey = await hashNameAndPassword(turtlename, hashword)
+  const committer = new Committer(turtlename, privateKey, recaller)
   const compactPublicKey = committer.compactPublicKey
   const originalCommitter = setPointerByPublicKey(compactPublicKey, recaller, committer)
   window.peer.addSourceObject(
     compactPublicKey,
-    `console login ${username}/${pathname}/${compactPublicKey}`
+    `console login ${username}/${turtlename}/${compactPublicKey}`
   )
   return originalCommitter
 }
