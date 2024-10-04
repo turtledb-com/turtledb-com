@@ -1,13 +1,13 @@
 {
   "name": "turtledb-com",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "type": "module",
   "repository": "git@github.com:turtledb-com/turtledb-com.git",
   "author": "David Tudury <david.tudury@gmail.com>",
   "license": "AGPL-3.0",
   "main": "./index.js",
   "bin": {
-    "fspeer": "./bin/s3peer.js",
+    "fspeer": "./bin/fspeer.js",
     "s3peer": "./bin/s3peer.js",
     "repl": "./bin/repl.js",
     "webserver": "./bin/webserver.js"
