@@ -31,17 +31,19 @@
     "standard": "^17.1.0"
   },
   "scripts": {
-    "start": "concurrently -c cyan,magenta -n webserver,s3peer \"$npm_execpath webserver.prod\" \"$npm_execpath s3peer.prod\"",
-    "dev": "concurrently -c cyan,magenta -n webserver,s3peer \"$npm_execpath webserver.dev\" \"$npm_execpath s3peer.prod\"",
+    "start": "concurrently -c cyan,magenta -n webserver,s3peer \"$npm_execpath run webserver.prod\" \"$npm_execpath run s3peer.prod\"",
+    "dev": "concurrently -c cyan,magenta -n webserver,s3peer \"$npm_execpath run webserver.dev\" \"$npm_execpath run s3peer.prod\"",
     "webserver.dev": "node --inspect ./bin/webserver.js --path public:/ --path test --insecure --https --s3port 1024",
     "webserver.prod": "./bin/webserver.js --path public:/ --s3port 1024",
-    "s3peer.prod": "./bin/s3peer.js --endpoint https://sfo3.digitaloceanspaces.com --bucket tarasque --region sfo3 --key DO007RR6B7KWU8YYLJK7 --port 1024",
+    "s3peer.prod": "./bin/s3peer.js --endpoint https://sfo3.digitaloceanspaces.com --bucket tarasque --region sfo3 --port 1024",
     "repl": "./bin/repl.js --port 1024",
     "fspeer": "./bin/fspeer.js --port 1024 --path ./public/ --name fs --turtlename public",
     "canary": "open '/Applications/Google Chrome Canary.app' --args --auto-open-devtools-for-tabs --allow-insecure-localhost --ignore-certificate-errors --unsafely-treat-insecure-origin-as-secure=https://localhost:8080/ https://localhost:8080/",
     "postinstall": "pwd; ls; cp ./node_modules/@noble/secp256k1/index.js ./public/js/utils/noble-secp256k1.js",
     "test": "mocha './public/js/**/*.test.js'",
-    "coverage": "c8 -r html -r text -r json-summary -x '**/*.test.js' $npm_execpath test"
+    "coverage": "c8 -r html -r text -r json-summary -x '**/*.test.js' $npm_execpath run test",
+    "docker.build": "docker build -t turtledb-com/turtledb-com .",
+    "docker.run": "docker run -e SPACES_ROOT_ACCESS -e SPACES_ROOT_SECRET -d -p 8080:8080 -p 1024:1024 turtledb-com/turtledb-com"
   },
   "standard": {
     "env": [

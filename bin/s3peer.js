@@ -16,24 +16,25 @@ program
   .option('--bucket <string>', 'S3 style bucket')
   .option('--forcePathStyle', 'Configures to use subdomain/virtual calling format.', false)
   .option('--region <string>', 'Usually the region in your endpoint.')
-  .option('--key <string>', 'access key (put private part in process.env[* this key value *])')
   .option('--port <number>', 'port number for net connection', x => +x, 1024)
   .option('--verbose', 'log every commit', false)
   .parse()
 
-const { endpoint, bucket, forcePathStyle, region, key, port, verbose } = program.opts()
+const { endpoint, bucket, forcePathStyle, region, port, verbose } = program.opts()
+
+const accessKeyId = process.env.SPACES_ROOT_ACCESS
+const secretAccessKey = process.env.SPACES_ROOT_SECRET
 
 const label = (title, f) => verbose && bigLabel(title, f)
 
-const secret = process.env[key]
 /** @type {import('@aws-sdk/client-s3').S3ClientConfig} */
 const s3ClientConfig = {
   endpoint,
   forcePathStyle,
   region,
   credentials: {
-    accessKeyId: key,
-    secretAccessKey: secret
+    accessKeyId,
+    secretAccessKey
   }
 }
 label('s3ClientConfig', () => console.dir(s3ClientConfig))
