@@ -128,3 +128,10 @@ dist
 .yarn/build-state.yml
 .yarn/install-state.gz
 .pnp.*
+
+# secp256k1 to be copied
+public/js/utils/noble-secp256k1.js
+
+# self signed certs for dev go here
+dev
+

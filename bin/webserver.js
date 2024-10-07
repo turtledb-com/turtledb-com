@@ -22,7 +22,7 @@ program
   .option('--path <string>', 'paths to serve files from', (v, prev) => [...prev, v], [])
   .option('--https', 'use https', false)
   .option('--insecure', '(local dev) allow unauthorized', false)
-  .option('--certpath <string>', '(local dev) path to self-cert', 'local/cert.json')
+  .option('--certpath <string>', '(local dev) path to self-cert', 'dev/cert.json')
   .parse()
 
 const { port, s3port, s3host, path: paths, https, insecure, certpath } = program.opts()
