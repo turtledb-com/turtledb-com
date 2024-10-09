@@ -6,7 +6,7 @@ import { Peer, setPointerByPublicKey } from './js/net/Peer.js'
 import { Recaller } from './js/utils/Recaller.js'
 import { attachPeerToCycle, newPeerPerCycle } from './js/utils/peerFactory.js'
 
-export const v = `0.0.2.${Math.floor(Math.random() * 0)}`
+export const v = `0.0.3.${Math.floor(Math.random() * 0)}`
 self.v = v
 
 const recaller = new Recaller('service-worker')

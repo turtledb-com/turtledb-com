@@ -19,7 +19,6 @@ jobs:
             cd /srv/turtledb-com/
             git pull
             yarn
-            yarn start
             pm2 restart turtledb-com
   # publish-turtledb-com-image:
   #   runs-on: ubuntu-latest
