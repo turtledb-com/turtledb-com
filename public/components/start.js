@@ -1,4 +1,3 @@
-import { b64ToUi8 } from '../js/dataModel/Committer.js'
 import { h } from '../js/display/h.js'
 import { render } from '../js/display/render.js'
 import { setPointerByPublicKey } from '../js/net/Peer.js'
@@ -39,7 +38,7 @@ window.customElements.define(elementName, class extends window.HTMLElement {
         }
       </style>
       <div>
-        <h1>Hello World Turtle!!</h1>
+        <h1>Hello World Turtle!</h1>
       </div>
     `, recaller, elementName)
   }

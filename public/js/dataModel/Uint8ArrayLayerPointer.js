@@ -91,7 +91,6 @@ export class Uint8ArrayLayerPointer {
     const refs = this.lookupRefs(this.getCommitAddress(), ...path)
     const valueAddress = refs?.[valueName]
     if (typeof valueAddress !== 'number') return
-    console.log({ path, valueName, valueAddress, codecs })
     return this.lookup(refs[valueName], codecs)
   }
 

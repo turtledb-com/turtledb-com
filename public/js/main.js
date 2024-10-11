@@ -1,27 +1,14 @@
-/* global location WebSocket */
-
 import { fallbackCPK } from './constants.js'
 import { getCommitAddress } from './dataModel/Uint8ArrayLayerPointer.js'
 import { h } from './display/h.js'
 import { render } from './display/render.js'
-import { setPointerByPublicKey } from './net/Peer.js'
-import { Recaller } from './utils/Recaller.js'
+import { peerRecaller, setPointerByPublicKey } from './net/Peer.js'
 import { buildElementName } from './utils/components.js'
-import { newPeerPerCycle } from './utils/peerFactory.js'
+import { connectServiceWorker } from './utils/connectServiceWorker.js'
 
-const recaller = new Recaller('main.js')
+const fallbackPointer = setPointerByPublicKey(fallbackCPK, peerRecaller)
 
-const fallbackPointer = setPointerByPublicKey(fallbackCPK, recaller)
-
-recaller.watch('watch fallbackPointer', () => {
-  const commitAddress = getCommitAddress(fallbackPointer)
-  const layerIndex = fallbackPointer.layerIndex
-  const totalLength = fallbackPointer.length
-  const length = fallbackPointer.uint8ArrayLayer?.uint8Array?.length
-  console.log({ commitAddress, layerIndex, totalLength, length })
-})
-
-const renderCommit = el => {
+const renderCommit = _element => {
   if (fallbackPointer.length) {
     const commitAddress = getCommitAddress(fallbackPointer)
     if (commitAddress) {
@@ -39,23 +26,28 @@ const renderCommit = el => {
       })
     }
   }
-  return 'loading'
+  return null
 }
 
-const renderComponentScriptLinks = el => {
+const renderComponentScriptLinks = _element => {
   const fsRefs = fallbackPointer.lookupRefs(fallbackPointer.getCommitAddress(), 'value', 'fs')
   console.log('fsRefs', fsRefs)
-  return Object.keys(fsRefs || {}).filter(relativePath => relativePath.match(/components/)).map(relativePath => {
+  return Object.keys(fsRefs || {}).filter(relativePath => relativePath.match(/^components\//)).map(relativePath => {
     console.log(relativePath)
     return h`<script type="module" src="${relativePath}?address=${fsRefs[relativePath]}&amp;cpk=${fallbackCPK}"></script>`
   })
 }
 
-const pathToName = (relativePath, cpk) => {
-  return el => {
+const serviceWorkerEnabled = connectServiceWorker(peerRecaller)
+
+const componentAtPath = (relativePath, cpk) => {
+  return _element => {
     const turtle = setPointerByPublicKey(cpk)
     const fsRefs = turtle.lookupRefs(turtle.getCommitAddress(), 'value', 'fs')
-    if (!fsRefs) return 'still-loading'
+    if (!fsRefs) {
+      if (serviceWorkerEnabled) return 'loading...'
+      return 'service worker not starting. try refreshing, switching browsers to chrome, or manually restarting the service worker.'
+    }
     const address = fsRefs[relativePath]
     const elementName = buildElementName(relativePath, address, cpk)
     return h`<${elementName} />`
@@ -70,63 +62,6 @@ render(document, h`<html>
   </head>
   <body style="margin: 0;">
     ${renderCommit}
-    ${pathToName('components/start.js', fallbackCPK)}
+    ${componentAtPath('components/start.js', fallbackCPK)}
   </body>
-</html>`, recaller, 'main')
-
-const allServiceWorkers = new Set()
-let alreadyWaiting = false
-async function connectServiceWorker () {
-  if (alreadyWaiting) return
-  alreadyWaiting = true
-  try {
-    const connectionCycle = (receive, setSend, peer) => new Promise((resolve, reject) => {
-      navigator.serviceWorker.register(
-        '/service-worker.js',
-        { type: 'module', scope: '/' }
-      ).then(serviceWorkerRegistration => {
-        serviceWorkerRegistration.update().then(() => {
-          const { serviceWorker } = navigator
-          if (!serviceWorker || allServiceWorkers.has(serviceWorker)) return
-          allServiceWorkers.add(serviceWorker)
-          window.peer = peer
-          serviceWorker.onmessage = event => receive(new Uint8Array(event.data))
-          serviceWorker.onmessageerror = event => console.log(peer.name, 'onmessageerror', event)
-          serviceWorker.startMessages()
-          serviceWorker.oncontrollerchange = resolve
-          serviceWorker.onerror = reject
-          serviceWorker.ready.then(({ active }) => {
-            setSend(uint8Array => active.postMessage(uint8Array.buffer))
-          })
-        })
-      })
-    })
-    newPeerPerCycle('[main.js to service-worker]', recaller, connectionCycle, true)
-  } catch (error) {
-    console.error(error)
-    console.error('###########################################################################################')
-    console.error('##    COULDN\'T START SERVICE WORKER, trying to connect directly (console should work)    ##')
-    console.error('###########################################################################################')
-    const url = `wss://${location.host}`
-    const connectionCycle = (receive, setSend, peer) => new Promise((resolve, reject) => {
-      window.peer = peer
-      const ws = new WebSocket(url)
-      ws.binaryType = 'arraybuffer'
-      ws.onopen = () => {
-        setSend(uint8Array => ws.send(uint8Array.buffer))
-      }
-      ws.onmessage = event => {
-        receive(new Uint8Array(event.data))
-      }
-      ws.onclose = resolve
-      ws.onerror = reject
-    })
-    newPeerPerCycle('[main.js to WebSocket]', recaller, connectionCycle)
-  }
-}
-connectServiceWorker()
-/*
-serviceWorkerRegistration.addEventListener('updatefound', () => {
-  connectServiceWorker(serviceWorkerRegistration)
-})
-*/
+</html>`, peerRecaller, 'main')

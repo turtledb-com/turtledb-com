@@ -5,7 +5,7 @@ import { getCommitAddress } from './js/dataModel/Uint8ArrayLayerPointer.js'
 import { Peer, peerRecaller, setPointerByPublicKey } from './js/net/Peer.js'
 import { attachPeerToCycle, newPeerPerCycle } from './js/utils/peerFactory.js'
 
-export const v = `0.0.1.rnd${Math.floor(Math.random() * 1000)}`
+export const v = `0.0.2.rnd${Math.floor(Math.random() * 1000)}`
 self.v = v
 
 const recaller = peerRecaller
@@ -70,7 +70,7 @@ self.caches.open(v).then(cache => {
         'Content-Type': contentTypeByExtension[extension]
       })
       cache.put(absolutePath, new Response(file, { headers }))
-      cache.put(`${absolutePath}?address=${address}`, new Response(file, { headers }))
+      cache.put(`${absolutePath}?address=${address}&cpk=${fallbackCPK}`, new Response(file, { headers }))
       if (indexed !== undefined) {
         cache.put(indexed, new Response(file, { headers }))
         cache.put(`${indexed}/`, new Response(file, { headers }))
