@@ -19,13 +19,14 @@ const ignored = /(?:\.ds_store|.*\.ico|~)$/i
 program
   .name('fspeer')
   .option('--path <string>')
-  .option('--port <number>', 'port number for net connection', x => +x, 1024)
+  .option('--s3port <number>', 'port for s3 proxy', x => +x, 1024)
+  .option('--s3host <string>', 'host for s3 proxy', 'turtledb.com')
   .option('--name <string>', 'username')
   .option('--pass <string>', 'password')
   .option('--turtlename <string>', 'identifier')
   .parse()
 
-let { path, port, name, pass, turtlename } = program.opts()
+let { path, s3port, s3host, name, pass, turtlename } = program.opts()
 if (!name) name = question('username: ')
 if (!pass) pass = question('password: ', { hideEchoBack: true })
 if (!turtlename) turtlename = question('turtlename [home]: ') || 'home'
@@ -41,7 +42,7 @@ setPointerByPublicKey(compactPublicKey, recaller, committer)
 
 const connectionCycle = (receive, setSend, peer) => new Promise((resolve, reject) => {
   global.peer = peer
-  const socket = connect(port, () => {
+  const socket = connect(s3port, s3host, () => {
     socket.on('data', data => {
       receive(new Uint8Array(data.buffer))
     })
@@ -72,7 +73,7 @@ const checkTurtle = () => {
         .filter(([relativePath]) => !relativePath.match(ignored))
     )
     console.log(fsRefs, filteredRefs)
-    valueRefs.fs = committer.workspace.upsert(filteredRefs)
+    valueRefs.fs = committer.workspace.upsert(filteredRefs, getCodecs(KIND.REFS_OBJECT))
     const valueAddress = committer.workspace.upsert(valueRefs, getCodecs(KIND.REFS_OBJECT))
     committer.commitAddress('remove bad filenames', valueAddress)
       .then(resolveTurtleCheck)
@@ -90,9 +91,8 @@ mkdirSync(dirname(root), { recursive: true })
 /** @type {Promise} */
 let commitInProgress
 watch(root, { ignored }).on('all', (event, path) => {
-  console.log(event, path)
   const relativePath = relative(root, path)
-  console.log(event, relativePath)
+  // console.log(event, relativePath)
   const prev = commitInProgress
   commitInProgress = (async () => {
     await prev
@@ -111,7 +111,8 @@ watch(root, { ignored }).on('all', (event, path) => {
       const valueRefs = committer.workspace.lookupRefs(getCommitAddress(committer), 'value')
       if (!valueRefs || !valueRefs.fs) return
       const fsRefs = committer.workspace.lookup(valueRefs.fs, getCodecs(KIND.REFS_OBJECT))
-      if (lastRefs[relativePath] === fileAddress) return
+      if (fsRefs[relativePath] === fileAddress) return
+      console.log(` -- ${event}, ${relativePath}, ${lastRefs[relativePath]} => ${fileAddress}`)
       lastRefs[relativePath] = fileAddress
       fsRefs[relativePath] = fileAddress
       valueRefs.fs = committer.workspace.upsert(fsRefs, getCodecs(KIND.REFS_OBJECT))
@@ -121,6 +122,7 @@ watch(root, { ignored }).on('all', (event, path) => {
       if (!valueRefs || !valueRefs.fs) return
       const fsRefs = committer.workspace.lookup(valueRefs.fs, getCodecs(KIND.REFS_OBJECT))
       if (!fsRefs[relativePath]) return
+      console.log(` -- ${event}, ${relativePath}, ${lastRefs[relativePath]} => X`)
       delete lastRefs[relativePath]
       delete fsRefs[relativePath]
       valueRefs.fs = committer.workspace.upsert(fsRefs, getCodecs(KIND.REFS_OBJECT))
@@ -138,6 +140,8 @@ do {
   await new Promise(resolve => setTimeout(resolve, 1000))
 } while (prev !== commitInProgress)
 
+console.log(' === and write to fs')
+
 recaller.watch('write to fs', () => {
   const commitAddress = getCommitAddress(committer)
   if (commitAddress > 0) {
@@ -148,8 +152,10 @@ recaller.watch('write to fs', () => {
       const fsAddress = valueRefs?.fs
       if (fsAddress) {
         const fsRefs = committer.lookup(fsAddress, getCodecs(KIND.REFS_OBJECT)) || {}
+        console.log(' +++ fsRefs', fsRefs)
         for (const relativePath in lastRefs) {
           if (fsRefs[relativePath] === undefined) {
+            console.log(' +++ delete', relativePath)
             rmSync(join(root, relativePath))
             delete lastRefs[relativePath]
           }
@@ -160,7 +166,7 @@ recaller.watch('write to fs', () => {
             const parsedPath = parse(relativePath)
             const fullpath = join(root, relativePath)
             mkdirSync(dirname(fullpath), { recursive: true })
-            console.log(`write to fs (address: ${fileAddress}) to [${relativePath}]`)
+            console.log(` +++ write to fs (address: ${fileAddress}) to [${relativePath}]`)
             lastRefs[relativePath] = fileAddress
             let file = committer.lookup(fileAddress)
             if (parsedPath.ext.toLowerCase() === '.json') {

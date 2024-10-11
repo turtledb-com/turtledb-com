@@ -2,14 +2,13 @@
 
 import { fallbackCPK } from './js/constants.js'
 import { getCommitAddress } from './js/dataModel/Uint8ArrayLayerPointer.js'
-import { Peer, setPointerByPublicKey } from './js/net/Peer.js'
-import { Recaller } from './js/utils/Recaller.js'
+import { Peer, peerRecaller, setPointerByPublicKey } from './js/net/Peer.js'
 import { attachPeerToCycle, newPeerPerCycle } from './js/utils/peerFactory.js'
 
-export const v = `0.0.3.${Math.floor(Math.random() * 0)}`
+export const v = `0.0.1.rnd${Math.floor(Math.random() * 1000)}`
 self.v = v
 
-const recaller = new Recaller('service-worker')
+const recaller = peerRecaller
 
 self.addEventListener('install', async () => {
   console.log('install')

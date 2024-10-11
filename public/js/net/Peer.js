@@ -49,7 +49,13 @@ export class Peer extends Upserter {
       while (remoteState?.sent?.[pointer.layerIndex + 1]) {
         const address = remoteState.sent[pointer.layerIndex + 1]
         if (address) {
-          pointer.append(this.remoteExports.lookup(address))
+          try {
+            pointer.append(this.remoteExports.lookup(address))
+          } catch (e) {
+            console.log(address)
+            console.log(this.remoteExports.length)
+            throw e
+          }
         }
       }
       sourceObject.want = [[pointer.layerIndex + 1, Number.POSITIVE_INFINITY]]
