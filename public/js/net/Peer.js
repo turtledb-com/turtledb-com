@@ -1,7 +1,9 @@
 import { KIND, getCodecs } from '../dataModel/CODECS.js'
+import { Committer } from '../dataModel/Committer.js'
 import { Uint8ArrayLayerPointer } from '../dataModel/Uint8ArrayLayerPointer.js'
 import { Upserter } from '../dataModel/Upserter.js'
 import { Recaller } from '../utils/Recaller.js'
+import { hashNameAndPassword } from '../utils/crypto.js'
 
 /** @typedef {{sent: Array.<number>, want: Array.<[number, number]>}} SourceObject */
 
@@ -94,6 +96,19 @@ export class Peer extends Upserter {
       this.updateSourceObjects(msg)
     }
     return pointer
+  }
+
+  async login (username, password, turtlename = 'home') {
+    const hashword = await hashNameAndPassword(username, password)
+    const privateKey = await hashNameAndPassword(turtlename, hashword)
+    const committer = new Committer(turtlename, privateKey, this.recaller)
+    const compactPublicKey = committer.compactPublicKey
+    const originalCommitter = setPointerByPublicKey(compactPublicKey, this.recaller, committer)
+    this.addSourceObject(
+      compactPublicKey,
+    `login created Committer ${username}/${turtlename}/${compactPublicKey}`
+    )
+    return originalCommitter
   }
 
   updateSourceObjects (name = 'updateSourceObjects called directly') {

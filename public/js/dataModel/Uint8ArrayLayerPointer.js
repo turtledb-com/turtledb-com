@@ -75,8 +75,24 @@ export class Uint8ArrayLayerPointer {
     return getCommitAddress(this, address)
   }
 
-  getCommitValue (address, codecs) {
+  getCommit (address, codecs) {
     return this.lookup(this.getCommitAddress(address), codecs)
+  }
+
+  getCommitValue (...path) {
+    let valueName = 'value'
+    if (path.length && typeof path[path.length - 1] === 'string') {
+      valueName = path.pop()
+    }
+    let codecs
+    if (path.length && Array.isArray(path[0])) {
+      codecs = path.shift()
+    }
+    const refs = this.lookupRefs(this.getCommitAddress(), ...path)
+    const valueAddress = refs?.[valueName]
+    if (typeof valueAddress !== 'number') return
+    console.log({ path, valueName, valueAddress, codecs })
+    return this.lookup(refs[valueName], codecs)
   }
 
   presenterProxy (address, name = `${this.name}.proxy`) {

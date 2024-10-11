@@ -1,30 +1,15 @@
 /* global location WebSocket */
 
 import { fallbackCPK } from './constants.js'
-import { Committer } from './dataModel/Committer.js'
 import { getCommitAddress } from './dataModel/Uint8ArrayLayerPointer.js'
 import { h } from './display/h.js'
 import { render } from './display/render.js'
 import { setPointerByPublicKey } from './net/Peer.js'
 import { Recaller } from './utils/Recaller.js'
 import { buildElementName } from './utils/components.js'
-import { hashNameAndPassword } from './utils/crypto.js'
 import { newPeerPerCycle } from './utils/peerFactory.js'
 
 const recaller = new Recaller('main.js')
-
-window.login = async (username, password, turtlename = 'home') => {
-  const hashword = await hashNameAndPassword(username, password)
-  const privateKey = await hashNameAndPassword(turtlename, hashword)
-  const committer = new Committer(turtlename, privateKey, recaller)
-  const compactPublicKey = committer.compactPublicKey
-  const originalCommitter = setPointerByPublicKey(compactPublicKey, recaller, committer)
-  window.peer.addSourceObject(
-    compactPublicKey,
-    `console login ${username}/${turtlename}/${compactPublicKey}`
-  )
-  return originalCommitter
-}
 
 const fallbackPointer = setPointerByPublicKey(fallbackCPK, recaller)
 

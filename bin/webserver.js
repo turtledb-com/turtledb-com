@@ -11,8 +11,6 @@ import { Peer } from '../public/js/net/Peer.js'
 import { Recaller } from '../public/js/utils/Recaller.js'
 import { manageCert } from '../src/manageCert.js'
 import { attachPeerToCycle, newPeerPerCycle } from '../public/js/utils/peerFactory.js'
-// import { Committer } from '../public/js/dataModel/Committer.js'
-// import { hashNameAndPassword } from '../public/js/utils/crypto.js'
 
 program
   .name('webserver')
@@ -93,16 +91,3 @@ if (s3port) {
   })
   newPeerPerCycle('[webserver.js to s3peer]', recaller, netConnectionCycle)
 }
-
-/*
-global.peer = new Peer('[webserver.js to repl]', recaller)
-global.login = async (username, password, pathname = 'home') => {
-  const hashword = await hashNameAndPassword(username, password)
-  const privateKey = await hashNameAndPassword(pathname, hashword)
-  const committer = new Committer(pathname, privateKey, recaller)
-  const compactPublicKey = committer.compactPublicKey
-  global.peer.addSourceObject(compactPublicKey, `repl sourceObject ${username}/${pathname}/${compactPublicKey}`, committer)
-  return committer
-}
-console.log('login function added to global namespace')
-*/
