@@ -1,4 +1,4 @@
-import { Codec, CODECS, getCodecs, KIND } from './CODECS.js'
+import { Codec, getCodecs, KIND } from './CODECS.js'
 import { signAsync, getPublicKey, verify } from '../utils/noble-secp256k1.js'
 import { collapseUint8Arrays, Uint8ArrayLayer } from './Uint8ArrayLayer.js'
 import { Upserter } from './Upserter.js'
@@ -26,6 +26,11 @@ export class Committer extends Uint8ArrayLayerPointer {
   }
 
   async commitAddress (message, valueAddress) {
+    const prev = this.lookup(this.getCommitAddress(), getCodecs(KIND.REFS_OBJECT))
+    if (prev && prev.value === valueAddress) {
+      console.warn('no changes, failing commit', { message, valueAddress })
+      return
+    }
     this.workspace.upsert({
       name: this.workspace.upsert(this.name),
       compactPublicKey: this.workspace.upsert(this.compactPublicKey),

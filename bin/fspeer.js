@@ -68,15 +68,24 @@ const checkTurtle = () => {
     console.log('stop watching')
     const valueRefs = committer.workspace.lookupRefs(getCommitAddress(committer), 'value') || {}
     const fsRefs = valueRefs.fs && committer.workspace.lookup(valueRefs.fs, getCodecs(KIND.REFS_OBJECT))
+    const removed = []
     const filteredRefs = Object.fromEntries(
       Object.entries(fsRefs || {})
-        .filter(([relativePath]) => !relativePath.match(ignored))
+        .filter(([relativePath]) => {
+          const ignore = relativePath.match(ignored)
+          if (ignore) removed.push(relativePath)
+          return !ignore
+        })
     )
-    console.log(fsRefs, filteredRefs)
-    valueRefs.fs = committer.workspace.upsert(filteredRefs, getCodecs(KIND.REFS_OBJECT))
-    const valueAddress = committer.workspace.upsert(valueRefs, getCodecs(KIND.REFS_OBJECT))
-    committer.commitAddress('remove bad filenames', valueAddress)
-      .then(resolveTurtleCheck)
+    if (removed.length) {
+      console.log('removed files', removed)
+      valueRefs.fs = committer.workspace.upsert(filteredRefs, getCodecs(KIND.REFS_OBJECT))
+      const valueAddress = committer.workspace.upsert(valueRefs, getCodecs(KIND.REFS_OBJECT))
+      committer.commitAddress('remove bad filenames', valueAddress)
+        .then(resolveTurtleCheck)
+    } else {
+      resolveTurtleCheck()
+    }
   }
 }
 recaller.watch('turtle loading check', checkTurtle)
@@ -152,7 +161,6 @@ recaller.watch('write to fs', () => {
       const fsAddress = valueRefs?.fs
       if (fsAddress) {
         const fsRefs = committer.lookup(fsAddress, getCodecs(KIND.REFS_OBJECT)) || {}
-        console.log(' +++ fsRefs', fsRefs)
         for (const relativePath in lastRefs) {
           if (fsRefs[relativePath] === undefined) {
             console.log(' +++ delete', relativePath)
