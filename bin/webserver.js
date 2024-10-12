@@ -84,7 +84,7 @@ if (s3port) {
       })
     }
     socket.on('data', data => {
-      receive(new Uint8Array(data.buffer, data.byteOffset, data.length / Uint8Array.BYTES_PER_ELEMENT))
+      receive(new Uint8Array(data.buffer))
     })
     socket.on('error', reject)
     socket.on('end', resolve)

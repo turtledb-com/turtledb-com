@@ -61,38 +61,13 @@ export class Uint8ArrayLayerPointer {
     return this.uint8ArrayLayer.length
   }
 
-  lookupRefs (address, ...path) {
-    let value = this.lookup(address, getCodecs(KIND.REFS_TOP))
-    while (value && path.length) {
-      const address = value[path.shift()]
-      if (!address) return undefined
-      value = this.lookup(address, getCodecs(KIND.REFS_TOP))
-    }
-    return value
-  }
+  lookupRefs (address, ...path) { return this.uint8ArrayLayer?.lookupRefs?.(address, ...path) }
 
-  getCommitAddress (address = this.length - 1) {
-    return getCommitAddress(this, address)
-  }
+  getCommitAddress (address) { return this.uint8ArrayLayer?.getCommitAddress?.(address) }
 
-  getCommit (address, codecs) {
-    return this.lookup(this.getCommitAddress(address), codecs)
-  }
+  getCommit (address, codecs) { return this.uint8ArrayLayer?.getCommit?.(address, codecs) }
 
-  getCommitValue (...path) {
-    let valueName = 'value'
-    if (path.length && typeof path[path.length - 1] === 'string') {
-      valueName = path.pop()
-    }
-    let codecs
-    if (path.length && Array.isArray(path[0])) {
-      codecs = path.shift()
-    }
-    const refs = this.lookupRefs(this.getCommitAddress(), ...path)
-    const valueAddress = refs?.[valueName]
-    if (typeof valueAddress !== 'number') return
-    return this.lookup(refs[valueName], codecs)
-  }
+  getCommitValue (...path) { return this.uint8ArrayLayer?.getCommitValue?.(...path) }
 
   presenterProxy (address, name = `${this.name}.proxy`) {
     if (!this.#uint8ArrayLayer) return this.uint8ArrayLayer // trigger reportKeyAccess

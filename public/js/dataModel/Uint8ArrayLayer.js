@@ -1,4 +1,5 @@
 import { Codec, KIND, getCodecs } from './CODECS.js'
+import { getCommitAddress } from './Uint8ArrayLayerPointer.js'
 
 export class Uint8ArrayLayer {
   /** @type {Array.<Uint8ArrayLayer>} */
@@ -108,10 +109,44 @@ export class Uint8ArrayLayer {
     if (!storage) return
     if (end === undefined) end = storage.length
     if (end > storage.length) {
+      console.log(this)
       console.log({ start, end, storageLength: storage.length })
       throw new Error('slice can not span layers (should it?)')
     }
     return storage.uint8Array.slice(start - storage.offset, end - storage.offset)
+  }
+
+  lookupRefs (address, ...path) {
+    let value = this.lookup(address, getCodecs(KIND.REFS_TOP))
+    while (value && path.length) {
+      const address = value[path.shift()]
+      if (!address) return undefined
+      value = this.lookup(address, getCodecs(KIND.REFS_TOP))
+    }
+    return value
+  }
+
+  getCommitAddress (address = this.length - 1) {
+    return getCommitAddress(this, address)
+  }
+
+  getCommit (address, codecs) {
+    return this.lookup(this.getCommitAddress(address), codecs)
+  }
+
+  getCommitValue (...path) {
+    let valueName = 'value'
+    if (path.length && typeof path[path.length - 1] === 'string') {
+      valueName = path.pop()
+    }
+    let codecs
+    if (path.length && Array.isArray(path[0])) {
+      codecs = path.shift()
+    }
+    const refs = this.lookupRefs(this.getCommitAddress(), ...path)
+    const valueAddress = refs?.[valueName]
+    if (typeof valueAddress !== 'number') return
+    return this.lookup(refs[valueName], codecs)
   }
 }
 

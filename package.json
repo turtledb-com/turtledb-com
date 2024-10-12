@@ -1,6 +1,6 @@
 {
   "name": "turtledb-com",
-  "version": "0.0.5",
+  "version": "0.0.6",
   "type": "module",
   "repository": "git@github.com:turtledb-com/turtledb-com.git",
   "author": "David Tudury <david.tudury@gmail.com>",

@@ -63,9 +63,10 @@ class Block {
     }
     if (this.literal === LITERAL.LENGTH_TERMINATED) {
       const code = uint8ArrayLayer.slice(address - tinyInt, address)
+      const length = decodeVariable(code)
       return {
         value: code,
-        end: address - code.length
+        end: address - code.length - length
       }
     }
   }
@@ -513,15 +514,6 @@ export const CODECS = [
     ))
   }),
   new Codec({
-    name: '*any',
-    footerPrefix: 0b0, // matches any-single-byte >>> 8
-    test: () => true,
-    blocks: [new Block(8, 0, LITERAL.BITS)],
-    kinds: [KIND.REFS_TOP, KIND.REF],
-    valueToBlocks: (_upserter, value) => [encodeVariable(value)],
-    blocksToValue: (_uint8ArrayLayer, _encodedBlocks, address) => address
-  }),
-  new Codec({
     name: '__opaque(uint8Array)__',
     footerPrefix: 0b000110, // only ever looked for explicitely
     test: () => true,
@@ -534,6 +526,15 @@ export const CODECS = [
       address = address - length - encodedLength.length
       return uint8ArrayLayer.slice(address, address + length)
     }
+  }),
+  new Codec({
+    name: '*any',
+    footerPrefix: 0b0, // matches any-single-byte >>> 8
+    test: () => true,
+    blocks: [new Block(8, 0, LITERAL.BITS)],
+    kinds: [KIND.REFS_TOP, KIND.REF],
+    valueToBlocks: (_upserter, value) => [encodeVariable(value)],
+    blocksToValue: (_uint8ArrayLayer, _encodedBlocks, address) => address
   })
 ]
 

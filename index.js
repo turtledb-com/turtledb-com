@@ -1,4 +1,4 @@
-export { Peer, peerRecaller, getPointerByPublicKey, unwatchPublicKeys, watchPublicKeys } from './public/js/net/Peer.js'
+export { Peer, peerRecaller, setPointerByPublicKey, unwatchPublicKeys, watchPublicKeys } from './public/js/net/Peer.js'
 
 export { Committer, b64ToUi8, ui8ToB64 } from './public/js/dataModel/Committer.js'
 export { ADD_STALE_WATCHER, DELETE_STALE_WATCHER, FRESH_ADDRESS_GETTER, Upserter } from './public/js/dataModel/Upserter.js'

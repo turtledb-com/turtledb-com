@@ -5,7 +5,7 @@ import { dirname, join, parse, relative } from 'path'
 import { watch } from 'chokidar'
 import { program } from 'commander'
 import { question } from 'readline-sync'
-import { getPointerByPublicKey } from '../public/js/net/Peer.js'
+import { setPointerByPublicKey } from '../public/js/net/Peer.js'
 import { Recaller } from '../public/js/utils/Recaller.js'
 import { Committer } from '../public/js/dataModel/Committer.js'
 import { newPeerPerCycle } from '../public/js/utils/peerFactory.js'
@@ -38,21 +38,22 @@ const privateKey = await hashNameAndPassword(turtlename, hashword)
 const committer = new Committer(turtlename, privateKey, recaller)
 const compactPublicKey = committer.compactPublicKey
 
-getPointerByPublicKey(compactPublicKey, recaller, committer)
+setPointerByPublicKey(compactPublicKey, recaller, committer)
 
 const connectionCycle = (receive, setSend, peer) => new Promise((resolve, reject) => {
   global.peer = peer
   const socket = connect(s3port, s3host, () => {
-    socket.on('data', data => {
-      receive(new Uint8Array(data.buffer))
-    })
-    socket.on('error', reject)
-    socket.on('end', resolve)
+    console.log('connected')
     setSend(uint8Array => socket.write(uint8Array))
-  }).on('error', reject)
+  })
+  console.log('connecting', s3port, s3host)
+  socket.on('data', data => {
+    receive(new Uint8Array(data.buffer))
+  })
+  socket.on('error', reject)
+  socket.on('end', resolve)
 })
-
-newPeerPerCycle('[fspeer to s3peer]', recaller, connectionCycle, true)
+newPeerPerCycle('[fspeer to s3peer]', recaller, connectionCycle)
 
 let resolveTurtleCheck
 const turtleLoaded = new Promise(resolve => { resolveTurtleCheck = resolve })
@@ -117,9 +118,8 @@ watch(root, { ignored }).on('all', (event, path) => {
         }
       }
       const fileAddress = committer.workspace.upsert(file)
-      const valueRefs = committer.workspace.lookupRefs(getCommitAddress(committer), 'value')
-      if (!valueRefs || !valueRefs.fs) return
-      const fsRefs = committer.workspace.lookup(valueRefs.fs, getCodecs(KIND.REFS_OBJECT))
+      const valueRefs = committer.workspace.lookupRefs(getCommitAddress(committer), 'value') ?? {}
+      const fsRefs = valueRefs.fs ? committer.workspace.lookup(valueRefs.fs, getCodecs(KIND.REFS_OBJECT)) : {}
       if (fsRefs[relativePath] === fileAddress) return
       console.log(` -- ${event}, ${relativePath}, ${lastRefs[relativePath]} => ${fileAddress}`)
       lastRefs[relativePath] = fileAddress
