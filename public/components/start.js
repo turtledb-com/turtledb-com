@@ -12,6 +12,28 @@ const recaller = pointer.recaller
 
 const elementName = buildElementName(scriptSrc.pathname, address, cpk)
 console.log(elementName)
+
+const renderCommit = _element => {
+  if (pointer.length) {
+    const commitAddress = pointer.getCommitAddress()
+    if (commitAddress) {
+      const commit = pointer.lookup(commitAddress)
+      console.log(commit)
+
+      return JSON.stringify({
+        cpk: commit?.compactPublicKey,
+        message: commit?.message,
+        name: commit?.name,
+        ts: commit?.ts?.toString?.(),
+        totalBytes: pointer.length,
+        layerBytes: pointer.length - pointer.uint8ArrayLayer?.parent?.length,
+        layerIndex: pointer.layerIndex
+      })
+    }
+  }
+  return null
+}
+
 window.customElements.define(elementName, class extends window.HTMLElement {
   constructor () {
     super()
@@ -38,6 +60,7 @@ window.customElements.define(elementName, class extends window.HTMLElement {
         }
       </style>
       <div>
+        ${renderCommit}
         <h1>Hello World Turtle!!!</h1>
       </div>
     `, recaller, elementName)

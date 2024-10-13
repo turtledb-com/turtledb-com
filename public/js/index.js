@@ -23,12 +23,12 @@ const serviceWorkerError = _element => {
   }
 }
 
-render(document, h`<html>
+render(document, h`<html style="height: 100%;">
   <head>
     <title>turtledb-com = db * (squirtle/squirrel - com/db)</title>
     <link rel="icon" href="tinker.svg" />
     ${renderComponentScriptLinks}
   </head>
   ${serviceWorkerError}
-  ${componentAtPath('components/main.js', fallbackCPK)}
+  ${componentAtPath('components/main.js', fallbackCPK, 'body')}
 </html>`, peerRecaller, 'main')

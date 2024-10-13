@@ -16,10 +16,18 @@ export const setPointerByPublicKey = (
   recaller = peerRecaller,
   uint8ArrayLayerPointer = new Uint8ArrayLayerPointer(undefined, recaller, compactPublicKey)
 ) => {
-  if (!pointersByPublicKey[compactPublicKey]) {
+  const existingPointer = pointersByPublicKey[compactPublicKey]
+  if (!existingPointer) {
     pointersByPublicKey[compactPublicKey] = uint8ArrayLayerPointer
     const compactPublicKeys = Object.keys(pointersByPublicKey)
     publicKeysWatchers.forEach(f => f(compactPublicKeys))
+  } else if (uint8ArrayLayerPointer.privateKey && !(existingPointer instanceof Committer)) {
+    pointersByPublicKey[compactPublicKey] = new Committer(
+      Uint8ArrayLayerPointer.name,
+      uint8ArrayLayerPointer.privateKey,
+      recaller,
+      existingPointer.uint8ArrayLayer
+    )
   }
   return pointersByPublicKey[compactPublicKey]
 }
@@ -98,7 +106,7 @@ export class Peer extends Upserter {
     const privateKey = await hashNameAndPassword(turtlename, hashword)
     const committer = new Committer(turtlename, privateKey, this.recaller)
     const compactPublicKey = committer.compactPublicKey
-    const originalCommitter = setPointerByPublicKey(compactPublicKey, this.recaller, committer)
+    const originalCommitter = setPointerByPublicKey(compactPublicKey, this.recaller, committer, true)
     this.addSourceObject(
       compactPublicKey,
     `login created Committer ${username}/${turtlename}/${compactPublicKey}`

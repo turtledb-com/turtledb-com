@@ -1,39 +1,10 @@
 import { h } from '../js/display/h.js'
 import { render } from '../js/display/render.js'
-import { setPointerByPublicKey } from '../js/net/Peer.js'
-import { buildElementName, componentAtPath } from '../js/utils/components.js'
+import { componentAtPath, deriveDefaults } from '../js/utils/components.js'
 
-const scriptSrc = new URL(import.meta.url)
-const address = scriptSrc.searchParams.get('address')
-const cpk = scriptSrc.searchParams.get('cpk')
-
-const pointer = setPointerByPublicKey(cpk)
-const recaller = pointer.recaller
-
-const renderCommit = _element => {
-  if (pointer.length) {
-    const commitAddress = pointer.getCommitAddress()
-    if (commitAddress) {
-      const commit = pointer.lookup(commitAddress)
-      console.log(commit)
-
-      return JSON.stringify({
-        cpk: commit?.compactPublicKey,
-        message: commit?.message,
-        name: commit?.name,
-        ts: commit?.ts?.toString?.(),
-        totalBytes: pointer.length,
-        layerBytes: pointer.length - pointer.uint8ArrayLayer?.parent?.length,
-        layerIndex: pointer.layerIndex
-      })
-    }
-  }
-  return null
-}
-
-const elementName = buildElementName(scriptSrc.pathname, address, cpk)
+const { cpk, recaller, elementName } = deriveDefaults(import.meta.url)
 console.log(elementName)
-window.customElements.define(elementName, class extends window.HTMLElement {
+window.customElements.define(elementName, class extends window.HTMLBodyElement {
   constructor () {
     super()
     this.attachShadow({ mode: 'open' })
@@ -42,17 +13,13 @@ window.customElements.define(elementName, class extends window.HTMLElement {
   connectedCallback () {
     render(this.shadowRoot, () => h`
       <style>
-        body {
-          margin: 16px 8px;
-          display: inline-block;
-          border: 1px solid black;
-          border-radius: 8px;
+        :host {
+          margin: 0;
+          height: 100%
         }
       </style>
-      <body>
-        ${renderCommit}
-        ${componentAtPath('components/start.js', cpk)}
-      </body>
+      ${componentAtPath('components/login.js', cpk)}
+      ${componentAtPath('components/start.js', cpk)}
     `, recaller, elementName)
   }
-})
+}, { extends: 'body' })

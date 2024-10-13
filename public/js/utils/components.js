@@ -11,13 +11,31 @@ export const buildElementName = (relativePath, address, cpk) => {
   return `${base}-${cpkSlice}-${address}`
 }
 
-export const componentAtPath = (relativePath, cpk) => {
+export const componentAtPath = (relativePath, cpk, baseElement) => {
   return _element => {
-    const turtle = setPointerByPublicKey(cpk)
-    const fsRefs = turtle.lookupRefs(turtle.getCommitAddress(), 'value', 'fs')
-    if (!fsRefs) return 'loading...'
-    const address = fsRefs[relativePath]
-    const elementName = buildElementName(relativePath, address, cpk)
+    const elementName = componentNameAtPath(relativePath, cpk)
+    if (!elementName) return 'loading...'
+    if (baseElement) return h`<${baseElement} is=${elementName} />`
     return h`<${elementName} />`
   }
+}
+
+export const componentNameAtPath = (relativePath, cpk) => {
+  const turtle = setPointerByPublicKey(cpk)
+  const fsRefs = turtle.lookupRefs(turtle.getCommitAddress(), 'value', 'fs')
+  if (!fsRefs) return
+  const address = fsRefs[relativePath]
+  const elementName = buildElementName(relativePath, address, cpk)
+  console.log(elementName)
+  return elementName
+}
+
+export const deriveDefaults = url => {
+  const parsedURL = new URL(url)
+  const address = parsedURL.searchParams.get('address')
+  const cpk = parsedURL.searchParams.get('cpk')
+  const pointer = setPointerByPublicKey(cpk)
+  const recaller = pointer.recaller
+  const elementName = buildElementName(parsedURL.pathname, address, cpk)
+  return { parsedURL, address, cpk, pointer, recaller, elementName }
 }
