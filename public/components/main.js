@@ -3,7 +3,6 @@ import { render } from '../js/display/render.js'
 import { componentAtPath, deriveDefaults } from '../js/utils/components.js'
 
 const { cpk, recaller, elementName } = deriveDefaults(import.meta.url)
-console.log(elementName)
 window.customElements.define(elementName, class extends window.HTMLBodyElement {
   constructor () {
     super()

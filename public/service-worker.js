@@ -5,7 +5,7 @@ import { getCommitAddress } from './js/dataModel/Uint8ArrayLayerPointer.js'
 import { Peer, peerRecaller, setPointerByPublicKey } from './js/net/Peer.js'
 import { attachPeerToCycle, newPeerPerCycle } from './js/utils/peerFactory.js'
 
-export const v = `0.0.2.rnd${Math.floor(Math.random() * 1000)}`
+export const v = `0.0.3.rnd${Math.floor(Math.random() * 1000)}`
 self.v = v
 
 const recaller = peerRecaller
@@ -43,9 +43,9 @@ const contentTypeByExtension = {
   json: 'application/json',
   svg: 'image/svg+xml'
 }
-const fallbackPointer = setPointerByPublicKey(fallbackCPK, recaller)
 const fallbackRefs = {}
 self.caches.open(v).then(cache => {
+  const fallbackPointer = setPointerByPublicKey(fallbackCPK, recaller)
   recaller.watch('populate cache', () => {
     const fsRefs = fallbackPointer.lookupRefs(getCommitAddress(fallbackPointer), 'value', 'fs')
     if (!fsRefs) return
