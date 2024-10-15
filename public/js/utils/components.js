@@ -53,6 +53,7 @@ export const useHash = recaller => {
     }
     const getCpk = () => {
       recaller.reportKeyAccess(recaller, 'hash', 'getCpk', 'window.location')
+      return parseLocation().hash
     }
     const updateHashState = () => {
       setCpk(parseLocation().hash)
