@@ -26,7 +26,6 @@ export const componentNameAtPath = (relativePath, cpk) => {
   if (!fsRefs) return
   const address = fsRefs[relativePath]
   const elementName = buildElementName(relativePath, address, cpk)
-  console.log(elementName)
   return elementName
 }
 
@@ -42,21 +41,25 @@ export const deriveDefaults = url => {
 
 export const parseLocation = () => ({ hash: window.location?.hash?.slice?.(1) })
 
-const hashByRecaller = new Map()
+const hashStateByRecaller = new Map()
 export const useHash = recaller => {
-  if (!hashByRecaller.has(recaller)) {
+  if (!hashStateByRecaller.has(recaller)) {
     let hash
-    const setHash = newHash => {
+    const setCpk = newHash => {
       if (hash === newHash) return
       hash = newHash
-      recaller.reportKeyMutation(recaller, 'hash', 'setHash', 'window.location')
+      window.history.pushState({}, '', hash ? `#${hash}` : '')
+      recaller.reportKeyMutation(recaller, 'hash', 'setCpk', 'window.location')
     }
-    const getHash = () => {
-      recaller.reportKeyAccess(recaller, 'hash', 'getHash', 'window.location')
+    const getCpk = () => {
+      recaller.reportKeyAccess(recaller, 'hash', 'getCpk', 'window.location')
     }
-    const updateHash = () => setHash(parseLocation().hash)
-    updateHash()
-    hashByRecaller.set(recaller, { setHash, getHash, updateHash })
+    const updateHashState = () => {
+      setCpk(parseLocation().hash)
+    }
+    window.addEventListener('hashchange', () => updateHashState())
+    updateHashState()
+    hashStateByRecaller.set(recaller, { setCpk, getCpk, updateHashState })
   }
-  return hashByRecaller.get(recaller)
+  return hashStateByRecaller.get(recaller)
 }

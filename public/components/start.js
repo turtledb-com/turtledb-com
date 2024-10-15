@@ -11,14 +11,12 @@ const pointer = setPointerByPublicKey(cpk)
 const recaller = pointer.recaller
 
 const elementName = buildElementName(scriptSrc.pathname, address, cpk)
-console.log(elementName)
 
 const renderCommit = _element => {
   if (pointer.length) {
     const commitAddress = pointer.getCommitAddress()
     if (commitAddress) {
       const commit = pointer.lookup(commitAddress)
-      console.log(commit)
 
       return JSON.stringify({
         cpk: commit?.compactPublicKey,

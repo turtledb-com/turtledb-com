@@ -3,30 +3,18 @@ import { h } from '../js/display/h.js'
 import { handle, showIfElse } from '../js/display/helpers.js'
 import { render } from '../js/display/render.js'
 import { setPointerByPublicKey } from '../js/net/Peer.js'
-import { deriveDefaults } from '../js/utils/components.js'
+import { deriveDefaults, useHash } from '../js/utils/components.js'
 
-const { recaller, elementName } = deriveDefaults(import.meta.url)
+const { recaller, elementName, cpk } = deriveDefaults(import.meta.url)
 
-let _cpk
-let _isLoggedIn
-function updateLoginState () {
-  const newCpk = window.location?.hash?.slice?.(1)
-  if (_cpk === newCpk) return
-  const pointer = setPointerByPublicKey(newCpk, recaller)
-  const newIsLoggedIn = pointer instanceof Committer
-  if (_isLoggedIn === newIsLoggedIn) return
-  _isLoggedIn = newIsLoggedIn
-  console.log({ _cpk, _isLoggedIn })
-  recaller.reportKeyMutation(import.meta.url, 'cpk', 'updateLoginState', _cpk)
-}
-window.addEventListener('hashchange', () => updateLoginState())
-updateLoginState()
+const { getCpk, setCpk } = useHash(recaller)
+
 function getIsLoggedIn () {
-  recaller.reportKeyAccess(import.meta.url, 'cpk', 'getIsLoggedIn', _cpk)
-  return _isLoggedIn
+  const hash = getCpk() ?? cpk
+  const pointer = setPointerByPublicKey(hash)
+  return pointer instanceof Committer
 }
 
-console.log(elementName)
 window.customElements.define(elementName, class extends window.HTMLElement {
   constructor () {
     super()
@@ -43,9 +31,7 @@ window.customElements.define(elementName, class extends window.HTMLElement {
     const turtlename = formData.get('turtlename') || 'home'
     window.peer.login(username, password, turtlename).then(pointer => {
       const { compactPublicKey } = pointer
-      console.log(compactPublicKey)
-      window.history.pushState({}, '', `#${compactPublicKey}`)
-      updateLoginState()
+      setCpk(compactPublicKey)
     })
   }
 

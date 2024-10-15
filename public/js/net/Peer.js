@@ -29,6 +29,10 @@ export const setPointerByPublicKey = (
       existingPointer.uint8ArrayLayer
     )
   }
+  recaller.reportKeyAccess(pointersByPublicKey, compactPublicKey, 'setPointerByPublicKey', compactPublicKey)
+  if (existingPointer !== pointersByPublicKey[compactPublicKey]) {
+    recaller.reportKeyMutation(pointersByPublicKey, compactPublicKey, 'setPointerByPublicKey', compactPublicKey)
+  }
   return pointersByPublicKey[compactPublicKey]
 }
 const publicKeysWatchers = new Set()
