@@ -39,3 +39,24 @@ export const deriveDefaults = url => {
   const elementName = buildElementName(parsedURL.pathname, address, cpk)
   return { parsedURL, address, cpk, pointer, recaller, elementName }
 }
+
+export const parseLocation = () => ({ hash: window.location?.hash?.slice?.(1) })
+
+const hashByRecaller = new Map()
+export const useHash = recaller => {
+  if (!hashByRecaller.has(recaller)) {
+    let hash
+    const setHash = newHash => {
+      if (hash === newHash) return
+      hash = newHash
+      recaller.reportKeyMutation(recaller, 'hash', 'setHash', 'window.location')
+    }
+    const getHash = () => {
+      recaller.reportKeyAccess(recaller, 'hash', 'getHash', 'window.location')
+    }
+    const updateHash = () => setHash(parseLocation().hash)
+    updateHash()
+    hashByRecaller.set(recaller, { setHash, getHash, updateHash })
+  }
+  return hashByRecaller.get(recaller)
+}
