@@ -18,7 +18,8 @@ const ignored = /(?:\.ds_store|.*\.ico|~)$/i
 
 program
   .name('fspeer')
-  .option('--path <string>')
+  .option('--path <string>', 'directory to sync')
+  .option('--prefix <string>', 'prefix to add to filename keys', '')
   .option('--s3port <number>', 'port for s3 proxy', x => +x, 1024)
   .option('--s3host <string>', 'host for s3 proxy', 'turtledb.com')
   .option('--name <string>', 'username')
@@ -26,7 +27,7 @@ program
   .option('--turtlename <string>', 'identifier')
   .parse()
 
-let { path, s3port, s3host, name, pass, turtlename } = program.opts()
+let { path, prefix, s3port, s3host, name, pass, turtlename } = program.opts()
 if (!name) name = question('username: ')
 if (!pass) pass = question('password: ', { hideEchoBack: true })
 if (!turtlename) turtlename = question('turtlename [home]: ') || 'home'
@@ -98,10 +99,12 @@ const lastRefs = {}
 const root = join(process.cwd(), path)
 mkdirSync(dirname(root), { recursive: true })
 
+console.log(' === fspeer.js watching', root)
 /** @type {Promise} */
 let commitInProgress
 watch(root, { ignored }).on('all', (event, path) => {
   const relativePath = relative(root, path)
+  const prefixedPath = join(prefix, relativePath)
   // console.log(event, relativePath)
   const prev = commitInProgress
   commitInProgress = (async () => {
@@ -120,20 +123,20 @@ watch(root, { ignored }).on('all', (event, path) => {
       const fileAddress = committer.workspace.upsert(file)
       const valueRefs = committer.workspace.lookupRefs(getCommitAddress(committer), 'value') ?? {}
       const fsRefs = valueRefs.fs ? committer.workspace.lookup(valueRefs.fs, getCodecs(KIND.REFS_OBJECT)) : {}
-      if (fsRefs[relativePath] === fileAddress) return
-      console.log(` -- ${event}, ${relativePath}, ${lastRefs[relativePath]} => ${fileAddress}`)
-      lastRefs[relativePath] = fileAddress
-      fsRefs[relativePath] = fileAddress
+      if (fsRefs[prefixedPath] === fileAddress) return
+      console.log(` -- ${event}, ${relativePath}, ${lastRefs[prefixedPath]} => ${fileAddress}`)
+      lastRefs[prefixedPath] = fileAddress
+      fsRefs[prefixedPath] = fileAddress
       valueRefs.fs = committer.workspace.upsert(fsRefs, getCodecs(KIND.REFS_OBJECT))
       await committer.commitAddress('fspeer watch all', committer.workspace.upsert(valueRefs, getCodecs(KIND.REFS_OBJECT)))
     } else if (event === 'unlink') {
       const valueRefs = committer.workspace.lookupRefs(getCommitAddress(committer), 'value')
       if (!valueRefs || !valueRefs.fs) return
       const fsRefs = committer.workspace.lookup(valueRefs.fs, getCodecs(KIND.REFS_OBJECT))
-      if (!fsRefs[relativePath]) return
+      if (!fsRefs[prefixedPath]) return
       console.log(` -- ${event}, ${relativePath}, ${lastRefs[relativePath]} => X`)
-      delete lastRefs[relativePath]
-      delete fsRefs[relativePath]
+      delete lastRefs[prefixedPath]
+      delete fsRefs[prefixedPath]
       valueRefs.fs = committer.workspace.upsert(fsRefs, getCodecs(KIND.REFS_OBJECT))
       await committer.commitAddress('fspeer watch all', committer.workspace.upsert(valueRefs, getCodecs(KIND.REFS_OBJECT)))
     } else {
@@ -172,7 +175,8 @@ recaller.watch('write to fs', () => {
           const fileAddress = fsRefs[relativePath]
           if (fileAddress !== lastRefs[relativePath]) {
             const parsedPath = parse(relativePath)
-            const fullpath = join(root, relativePath)
+            const relativeRelativePath = relative(prefix, relativePath)
+            const fullpath = join(root, relativeRelativePath)
             mkdirSync(dirname(fullpath), { recursive: true })
             console.log(` +++ write to fs (address: ${fileAddress}) to [${relativePath}]`)
             lastRefs[relativePath] = fileAddress

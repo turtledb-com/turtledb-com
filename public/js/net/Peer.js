@@ -1,6 +1,6 @@
 import { KIND, getCodecs } from '../dataModel/CODECS.js'
 import { Committer } from '../dataModel/Committer.js'
-import { Uint8ArrayLayerPointer } from '../dataModel/Uint8ArrayLayerPointer.js'
+import { OWN_KEYS, Uint8ArrayLayerPointer } from '../dataModel/Uint8ArrayLayerPointer.js'
 import { Upserter } from '../dataModel/Upserter.js'
 import { Recaller } from '../utils/Recaller.js'
 import { hashNameAndPassword } from '../utils/crypto.js'
@@ -18,6 +18,7 @@ export const setPointerByPublicKey = (
 ) => {
   const existingPointer = pointersByPublicKey[compactPublicKey]
   if (!existingPointer) {
+    recaller.reportKeyMutation(pointersByPublicKey, OWN_KEYS, 'setPointerByPublicKey', 'Peer.js')
     pointersByPublicKey[compactPublicKey] = uint8ArrayLayerPointer
     const compactPublicKeys = Object.keys(pointersByPublicKey)
     publicKeysWatchers.forEach(f => f(compactPublicKeys))
@@ -29,12 +30,17 @@ export const setPointerByPublicKey = (
       existingPointer.uint8ArrayLayer
     )
   }
-  recaller.reportKeyAccess(pointersByPublicKey, compactPublicKey, 'setPointerByPublicKey', compactPublicKey)
+  recaller.reportKeyAccess(pointersByPublicKey, compactPublicKey, 'setPointerByPublicKey', 'Peer.js')
   if (existingPointer !== pointersByPublicKey[compactPublicKey]) {
-    recaller.reportKeyMutation(pointersByPublicKey, compactPublicKey, 'setPointerByPublicKey', compactPublicKey)
+    recaller.reportKeyMutation(pointersByPublicKey, compactPublicKey, 'setPointerByPublicKey', 'Peer.js')
   }
   return pointersByPublicKey[compactPublicKey]
 }
+export const getPublicKeys = (recaller = peerRecaller) => {
+  recaller.reportKeyAccess(pointersByPublicKey, OWN_KEYS, 'getPublicKeys', 'Peer.js')
+  return Object.keys(pointersByPublicKey)
+}
+
 const publicKeysWatchers = new Set()
 export const watchPublicKeys = f => {
   publicKeysWatchers.add(f)

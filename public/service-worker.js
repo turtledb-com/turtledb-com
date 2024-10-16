@@ -1,11 +1,10 @@
 /* global self, location, WebSocket, clients */
 
-import { fallbackCPK } from './js/constants.js'
 import { getCommitAddress } from './js/dataModel/Uint8ArrayLayerPointer.js'
-import { Peer, peerRecaller, setPointerByPublicKey } from './js/net/Peer.js'
+import { Peer, getPublicKeys, peerRecaller, setPointerByPublicKey } from './js/net/Peer.js'
 import { attachPeerToCycle, newPeerPerCycle } from './js/utils/peerFactory.js'
 
-export const v = `0.0.3.rnd${Math.floor(Math.random() * 1000)}`
+export const v = `0.0.4.rnd${Math.floor(Math.random() * 1000)}`
 self.v = v
 
 const recaller = peerRecaller
@@ -45,37 +44,43 @@ const contentTypeByExtension = {
 }
 const fallbackRefs = {}
 self.caches.open(v).then(cache => {
-  const fallbackPointer = setPointerByPublicKey(fallbackCPK, recaller)
   recaller.watch('populate cache', () => {
-    const fsRefs = fallbackPointer.lookupRefs(getCommitAddress(fallbackPointer), 'value', 'fs')
-    if (!fsRefs) return
+    const cpks = getPublicKeys()
+    console.log('caching', cpks)
+    for (const cpk of cpks) {
+      const pointer = setPointerByPublicKey(cpk, recaller)
 
-    Object.keys(fsRefs).forEach(relativePath => {
-      if (fsRefs[relativePath] === fallbackRefs[relativePath]) return
-      const address = fsRefs[relativePath]
-      let file = fallbackPointer.lookup(address)
-      const absolutePath = `/${relativePath}`
-      const indexed = absolutePath.match(/(?<indexed>.*)\/index.html?/)?.groups?.indexed
-      const extension = relativePath.split(/\./).pop()
-      try {
-        if (extension === 'json') {
-          file = JSON.stringify(file, null, 10)
+      const fsRefs = pointer.lookupRefs(getCommitAddress(pointer), 'value', 'fs')
+      if (!fsRefs) return
+
+      Object.keys(fsRefs).forEach(relativePath => {
+        if (fsRefs[relativePath] === fallbackRefs[relativePath]) return
+        const address = fsRefs[relativePath]
+        let file = pointer.lookup(address)
+        const absolutePath = `/${relativePath}`
+        const indexed = absolutePath.match(/(?<indexed>.*)\/index.html?/)?.groups?.indexed
+        const extension = relativePath.split(/\./).pop()
+        try {
+          if (extension === 'json') {
+            file = JSON.stringify(file, null, 10)
+          }
+        } catch (error) {
+          console.error(error)
+          return
         }
-      } catch (error) {
-        console.error(error)
-        return
-      }
-      fallbackRefs[relativePath] = address
-      const headers = new Headers({
-        'Content-Type': contentTypeByExtension[extension]
+        fallbackRefs[relativePath] = address
+        const headers = new Headers({
+          'Content-Type': contentTypeByExtension[extension]
+        })
+        cache.put(absolutePath, new Response(file, { headers }))
+        cache.put(`${absolutePath}?address=${address}&cpk=${cpk}`, new Response(file, { headers }))
+        console.log('caching', `${absolutePath}?address=${address}&cpk=${cpk}`)
+        if (indexed !== undefined) {
+          cache.put(indexed, new Response(file, { headers }))
+          cache.put(`${indexed}/`, new Response(file, { headers }))
+        }
       })
-      cache.put(absolutePath, new Response(file, { headers }))
-      cache.put(`${absolutePath}?address=${address}&cpk=${fallbackCPK}`, new Response(file, { headers }))
-      if (indexed !== undefined) {
-        cache.put(indexed, new Response(file, { headers }))
-        cache.put(`${indexed}/`, new Response(file, { headers }))
-      }
-    })
+    }
   })
 })
 

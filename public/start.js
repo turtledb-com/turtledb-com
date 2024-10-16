@@ -1,7 +1,7 @@
-import { h } from '../js/display/h.js'
-import { render } from '../js/display/render.js'
-import { setPointerByPublicKey } from '../js/net/Peer.js'
-import { buildElementName } from '../js/utils/components.js'
+import { h } from '../../js/display/h.js'
+import { render } from '../../js/display/render.js'
+import { setPointerByPublicKey } from '../../js/net/Peer.js'
+import { buildElementName } from '../../js/utils/components.js'
 
 const scriptSrc = new URL(import.meta.url)
 const address = scriptSrc.searchParams.get('address')
@@ -11,6 +11,7 @@ const pointer = setPointerByPublicKey(cpk)
 const recaller = pointer.recaller
 
 const elementName = buildElementName(scriptSrc.pathname, address, cpk)
+console.log(scriptSrc.pathname, address, cpk)
 
 const renderCommit = _element => {
   if (pointer.length) {
@@ -59,7 +60,7 @@ window.customElements.define(elementName, class extends window.HTMLElement {
       </style>
       <div>
         ${renderCommit}
-        <h1>Hello World Turtle!!!</h1>
+        <h1>Hello World Turtle!</h1>
       </div>
     `, recaller, elementName)
   }

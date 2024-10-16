@@ -1,19 +1,22 @@
 import { fallbackCPK } from './constants.js'
 import { h } from './display/h.js'
 import { render } from './display/render.js'
-import { peerRecaller, setPointerByPublicKey } from './net/Peer.js'
+import { getPublicKeys, peerRecaller, setPointerByPublicKey } from './net/Peer.js'
 import { componentAtPath } from './utils/components.js'
 import { connectPeer } from './utils/connectPeer.js'
 
-const fallbackPointer = setPointerByPublicKey(fallbackCPK, peerRecaller)
-
+const componentRegex = /^components\//
 const renderComponentScriptLinks = _element => {
-  const fsRefs = fallbackPointer.lookupRefs(fallbackPointer.getCommitAddress(), 'value', 'fs')
-  console.log('fsRefs', fsRefs)
-  return Object.keys(fsRefs || {}).filter(relativePath => relativePath.match(/^components\//)).map(relativePath => {
-    console.log(relativePath)
-    return h`<script type="module" src="${relativePath}?address=${fsRefs[relativePath]}&amp;cpk=${fallbackCPK}"></script>`
-  })
+  const cpks = getPublicKeys()
+  const scripts = []
+  for (const cpk of cpks) {
+    const pointer = setPointerByPublicKey(cpk)
+    const fsRefs = pointer.lookupRefs(pointer.getCommitAddress(), 'value', 'fs')
+    Object.keys(fsRefs || {}).filter(relativePath => relativePath.match(componentRegex)).forEach(relativePath => {
+      scripts.push(h`<script type="module" src="${relativePath}?address=${fsRefs[relativePath]}&amp;cpk=${cpk}"></script>`)
+    })
+  }
+  return scripts
 }
 
 const serviceWorkerEnabled = connectPeer(peerRecaller)
@@ -30,5 +33,5 @@ render(document, h`<html style="height: 100%;">
     ${renderComponentScriptLinks}
   </head>
   ${serviceWorkerError}
-  ${componentAtPath('components/main.js', fallbackCPK, 'body')}
-</html>`, peerRecaller, 'main')
+  ${componentAtPath('components/app.js', fallbackCPK, 'body')}
+</html>`, peerRecaller, 'index.js')

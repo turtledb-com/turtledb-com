@@ -11,12 +11,20 @@ export const buildElementName = (relativePath, address, cpk) => {
   return `${base}-${cpkSlice}-${address}`
 }
 
-export const componentAtPath = (relativePath, cpk, baseElement) => {
+export const componentAtPath = (relativePath, cpks, baseElement) => {
   return _element => {
-    const elementName = componentNameAtPath(relativePath, cpk)
-    if (!elementName) return 'loading...'
-    if (baseElement) return h`<${baseElement} is=${elementName} />`
-    return h`<${elementName} />`
+    if (typeof cpks === 'function') cpks = cpks()
+    if (!Array.isArray(cpks)) cpks = [cpks]
+    for (let cpk of cpks) {
+      if (typeof cpk === 'function') cpk = cpk()
+      const elementName = componentNameAtPath(relativePath, cpk)
+      console.log('componentAtPath', { relativePath, cpk, elementName })
+      if (elementName) {
+        if (baseElement) return h`<${baseElement} is=${elementName} />`
+        return h`<${elementName} />`
+      }
+    }
+    return 'loading...'
   }
 }
 
@@ -25,6 +33,7 @@ export const componentNameAtPath = (relativePath, cpk) => {
   const fsRefs = turtle.lookupRefs(turtle.getCommitAddress(), 'value', 'fs')
   if (!fsRefs) return
   const address = fsRefs[relativePath]
+  if (address === undefined) return
   const elementName = buildElementName(relativePath, address, cpk)
   return elementName
 }
