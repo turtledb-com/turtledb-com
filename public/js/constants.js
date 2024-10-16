@@ -1,1 +1,1 @@
-export const fallbackCPK = '-u81sp77hPCwHcG87Asv2QJ4McBlEmgDqNT3IMIT_4DI'
+export const fallbackCPK = '-W8tO-13HezC2mHxMySgnk7ZUUSqFD3JstPeF35AQXBK'

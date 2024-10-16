@@ -45,7 +45,7 @@
     "repl.dev": "./bin/repl.js --port 1024",
     "fspeer": "./bin/fspeer.js --s3host turtledb.com --s3port 1024 --path ./public/ --name fs --turtlename public",
     "fspeer.test": "./bin/fspeer.js --s3host turtledb.com --s3port 1024 --path ./public/components/main/ --name dtudury --pass secret --turtlename home --prefix components/main",
-    "fspeer.dev": "./bin/fspeer.js --s3host localhost --s3port 1024 --path ./public/ --name fs --pass \"focus like a storm777\" --turtlename public",
+    "fspeer.dev": "./bin/fspeer.js --s3host localhost --s3port 1024 --path ./public/",
     "fspeer.dev.test": "./bin/fspeer.js --s3host localhost --s3port 1024 --path ./public/components/main/ --name user --pass secret --turtlename home --prefix components/main",
     "canary": "open '/Applications/Google Chrome Canary.app' --args --auto-open-devtools-for-tabs --allow-insecure-localhost --ignore-certificate-errors --unsafely-treat-insecure-origin-as-secure=https://localhost:8080/ https://localhost:8080/",
     "postinstall": "pwd; ls; cp ./node_modules/@noble/secp256k1/index.js ./public/js/utils/noble-secp256k1.js",

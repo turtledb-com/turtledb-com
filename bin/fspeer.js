@@ -28,9 +28,9 @@ program
   .parse()
 
 let { path, prefix, s3port, s3host, name, pass, turtlename } = program.opts()
-if (!name) name = question('username: ')
-if (!pass) pass = question('password: ', { hideEchoBack: true })
-if (!turtlename) turtlename = question('turtlename [home]: ') || 'home'
+name ||= process.env.TURTLEDB_COM_FS_USER || question('username: ')
+pass ||= process.env.TURTLEDB_COM_FS_PASS || question('password: ', { hideEchoBack: true })
+turtlename ||= process.env.TURTLEDB_COM_FS_TURTLENAME || question('turtlename [home]: ') || 'home'
 
 const recaller = new Recaller('fspeer')
 
@@ -100,58 +100,74 @@ const lastRefs = {}
 const root = join(process.cwd(), path)
 mkdirSync(dirname(root), { recursive: true })
 
+let commitInProgress = new Promise(resolve => setTimeout(() => resolve(commitInProgress), 1000))
+let valueRefs
+const debounceEdits = (message) => {
+  if (!valueRefs) valueRefs = committer.workspace.lookupRefs(getCommitAddress(committer), 'value') ?? {}
+  const possibleNextCommit = new Promise(resolve => {
+    setTimeout(() => {
+      if (possibleNextCommit === commitInProgress) {
+        committer.commitAddress(
+          message,
+          committer.workspace.upsert(valueRefs, getCodecs(KIND.REFS_OBJECT))
+        ).then(commit => {
+          valueRefs = undefined
+          resolve(commit)
+        })
+      } else {
+        resolve(commitInProgress)
+      }
+    }, 1000)
+  })
+  commitInProgress = possibleNextCommit
+  return valueRefs
+}
+
 console.log(' === fspeer.js watching', root)
 /** @type {Promise} */
-let commitInProgress
 watch(root, { ignored }).on('all', (event, path) => {
   const relativePath = relative(root, path)
   const prefixedPath = join(prefix, relativePath)
-  // console.log(event, relativePath)
-  const prev = commitInProgress
-  commitInProgress = (async () => {
-    await prev
-    if (/^(add|change)$/.test(event)) {
-      const parsedPath = parse(relativePath)
-      let file = readFileSync(path, 'utf8')
-      if (parsedPath.ext.toLowerCase() === '.json') {
-        try {
-          file = JSON.parse(file)
-        } catch (error) {
-          console.error(error)
-          return
-        }
+  if (/^(add|change)$/.test(event)) {
+    const parsedPath = parse(relativePath)
+    let file = readFileSync(path, 'utf8')
+    if (parsedPath.ext.toLowerCase() === '.json') {
+      try {
+        file = JSON.parse(file)
+      } catch (error) {
+        console.error(error)
+        return
       }
-      const fileAddress = committer.workspace.upsert(file)
-      const valueRefs = committer.workspace.lookupRefs(getCommitAddress(committer), 'value') ?? {}
-      const fsRefs = valueRefs.fs ? committer.workspace.lookup(valueRefs.fs, getCodecs(KIND.REFS_OBJECT)) : {}
-      if (fsRefs[prefixedPath] === fileAddress) return
-      console.log(` -- ${event}, ${relativePath}, ${lastRefs[prefixedPath]} => ${fileAddress}`)
-      lastRefs[prefixedPath] = fileAddress
-      fsRefs[prefixedPath] = fileAddress
-      valueRefs.fs = committer.workspace.upsert(fsRefs, getCodecs(KIND.REFS_OBJECT))
-      await committer.commitAddress('fspeer watch all', committer.workspace.upsert(valueRefs, getCodecs(KIND.REFS_OBJECT)))
-    } else if (event === 'unlink') {
-      const valueRefs = committer.workspace.lookupRefs(getCommitAddress(committer), 'value')
-      if (!valueRefs || !valueRefs.fs) return
-      const fsRefs = committer.workspace.lookup(valueRefs.fs, getCodecs(KIND.REFS_OBJECT))
-      if (!fsRefs[prefixedPath]) return
-      console.log(` -- ${event}, ${relativePath}, ${lastRefs[relativePath]} => X`)
-      delete lastRefs[prefixedPath]
-      delete fsRefs[prefixedPath]
-      valueRefs.fs = committer.workspace.upsert(fsRefs, getCodecs(KIND.REFS_OBJECT))
-      await committer.commitAddress('fspeer watch all', committer.workspace.upsert(valueRefs, getCodecs(KIND.REFS_OBJECT)))
-    } else {
-      console.log('unhandled chokidar.watch event', event)
     }
-  })()
+    const fileAddress = committer.workspace.upsert(file)
+    const valueRefs = debounceEdits('fspeer watch all')
+    // const valueRefs = committer.workspace.lookupRefs(getCommitAddress(committer), 'value') ?? {}
+    const fsRefs = valueRefs.fs ? committer.workspace.lookup(valueRefs.fs, getCodecs(KIND.REFS_OBJECT)) : {}
+    if (fsRefs[prefixedPath] === fileAddress) return
+    console.log(` -- ${event}, ${relativePath}, ${lastRefs[prefixedPath]} => ${fileAddress}`)
+    lastRefs[prefixedPath] = fileAddress
+    fsRefs[prefixedPath] = fileAddress
+    valueRefs.fs = committer.workspace.upsert(fsRefs, getCodecs(KIND.REFS_OBJECT))
+    // debounceEdits(valueRefs, 'fspeer watch all')
+  } else if (event === 'unlink') {
+    const valueRefs = debounceEdits('fspeer watch all')
+    // const valueRefs = committer.workspace.lookupRefs(getCommitAddress(committer), 'value')
+    if (!valueRefs || !valueRefs.fs) return
+    const fsRefs = committer.workspace.lookup(valueRefs.fs, getCodecs(KIND.REFS_OBJECT))
+    if (!fsRefs[prefixedPath]) return
+    console.log(` -- ${event}, ${relativePath}, ${lastRefs[relativePath]} => X`)
+    delete lastRefs[prefixedPath]
+    delete fsRefs[prefixedPath]
+    valueRefs.fs = committer.workspace.upsert(fsRefs, getCodecs(KIND.REFS_OBJECT))
+    // debounceEdits(valueRefs, 'fspeer watch all')
+  } else {
+    console.log('unhandled chokidar.watch event', event)
+  }
 })
 
-let prev
-do {
-  prev = commitInProgress
-  await commitInProgress
-  await new Promise(resolve => setTimeout(resolve, 1000))
-} while (prev !== commitInProgress)
+await commitInProgress
+
+console.log(committer.lookupRefs(getCommitAddress(committer), 'value', 'fs'))
 
 console.log(' === and write to fs')
 
