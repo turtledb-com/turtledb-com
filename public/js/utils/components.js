@@ -17,8 +17,9 @@ export const componentAtPath = (relativePath, cpks, baseElement) => {
     if (!Array.isArray(cpks)) cpks = [cpks]
     for (let cpk of cpks) {
       if (typeof cpk === 'function') cpk = cpk()
+      if (!cpk) continue
       const elementName = componentNameAtPath(relativePath, cpk)
-      console.log('componentAtPath', { relativePath, cpk, elementName })
+      // console.log('componentAtPath', { relativePath, cpk, elementName })
       if (elementName) {
         if (baseElement) return h`<${baseElement} is=${elementName} />`
         return h`<${elementName} />`

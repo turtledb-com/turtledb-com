@@ -16,6 +16,7 @@ export const setPointerByPublicKey = (
   recaller = peerRecaller,
   uint8ArrayLayerPointer = new Uint8ArrayLayerPointer(undefined, recaller, compactPublicKey)
 ) => {
+  if (!compactPublicKey) throw new Error('compactPublicKey required')
   const existingPointer = pointersByPublicKey[compactPublicKey]
   if (!existingPointer) {
     recaller.reportKeyMutation(pointersByPublicKey, OWN_KEYS, 'setPointerByPublicKey', 'Peer.js')

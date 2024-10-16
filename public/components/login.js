@@ -10,7 +10,7 @@ const { recaller, elementName, cpk } = deriveDefaults(import.meta.url)
 const { getCpk, setCpk } = useHash(recaller)
 
 function getIsLoggedIn () {
-  const hash = getCpk() ?? cpk
+  const hash = getCpk() || cpk
   const pointer = setPointerByPublicKey(hash)
   return pointer instanceof Committer
 }

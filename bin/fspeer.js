@@ -38,6 +38,7 @@ const hashword = await hashNameAndPassword(name, pass)
 const privateKey = await hashNameAndPassword(turtlename, hashword)
 const committer = new Committer(turtlename, privateKey, recaller)
 const compactPublicKey = committer.compactPublicKey
+console.log('cpk', compactPublicKey)
 
 setPointerByPublicKey(compactPublicKey, recaller, committer)
 
