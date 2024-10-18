@@ -15,7 +15,8 @@ window.customElements.define(elementName, class extends window.HTMLBodyElement {
       <style>
         :host {
           margin: 0;
-          height: 100%
+          height: 100%;
+          font-family: -apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans",Helvetica,Arial,sans-serif,"Apple Color Emoji","Segoe UI Emoji";
         }
       </style>
       ${componentAtPath('components/login.js', cpk)}

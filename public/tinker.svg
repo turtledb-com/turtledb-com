@@ -1,5 +1,5 @@
 <svg width="200" height="200" xmlns="http://www.w3.org/2000/svg">
-  <path  fill="MediumSeaGreen" stroke="DarkGreen" stroke-width="5" d="
+  <path  fill="MediumSeaGreen" stroke="Black" stroke-width="3" d="
   M 25 100
   L 25 80
   A 50 50 0 0 1 125 80
@@ -9,7 +9,7 @@
   A 10 10 0 0 1 25 100
   "/>
 
-  <path  fill="MediumSpringGreen" stroke="DarkGreen" stroke-width="5" d="
+  <path  fill="MediumSpringGreen" stroke="Black" stroke-width="3" d="
   M 15 130 
   A 10 10 0 0 1 25 120
   L 115 120

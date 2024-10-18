@@ -5,7 +5,11 @@ import { Peer, getPublicKeys, peerRecaller, setPointerByPublicKey } from './js/n
 import { attachPeerToCycle, newPeerPerCycle } from './js/utils/peerFactory.js'
 import { fallbackCPK } from './js/constants.js'
 
-export const v = '0.0.6'
+console.log(fallbackCPK)
+setPointerByPublicKey(fallbackCPK)
+console.log(setPointerByPublicKey(fallbackCPK))
+
+export const v = '0.0.7'
 self.v = v
 
 const recaller = peerRecaller
