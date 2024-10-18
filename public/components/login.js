@@ -39,29 +39,40 @@ window.customElements.define(elementName, class extends window.HTMLElement {
     render(this.shadowRoot, () => h`
       <style>
         :host {
-          --bg: Honeydew;
-          --primary: DarkSeaGreen;
-          --focus: Black;
-          --placeholder: MediumSeaGreen;
-          --border-width: 0.25em;
-          --input-border: var(--border-width) solid var(--primary);
-          --input-height: 1em;
-          --input-margin-borderless: 0.25em 0.25em;
-          --input-margin: 0.125em 0.25em;
-          --pad: .75em;
-          color: var(--primary);
+          --1-unit: 0.125rem;
+          --2-units: calc(2 * var(--1-unit));
+          --3-units: calc(3 * var(--1-unit));
+          --5-units: calc(5 * var(--1-unit));
+          --6-units: calc(6 * var(--1-unit));
+          --8-units: calc(8 * var(--1-unit));
+          --12-units: calc(12 * var(--1-unit));
+          --16-units: calc(16 * var(--1-unit));
+          --17-units: calc(17 * var(--1-unit));
+          --color-1: DarkSeaGreen;
+          --color-2: Honeydew;
+          --color-3: Black;
+          --color-4: MediumSeaGreen;
+          --input-border: var(--1-unit) solid var(--color-1);
+          --input-margin-borderless: var(--2-units) var(--2-units);
+          --input-margin: var(--1-unit) var(--2-units);
+          color: var(--color-1);
           display: flex;
           flex-wrap: wrap;
           justify-content: space-between;
           margin: 0;
-          padding: 0.375em 1em 0.25em;
-          border-bottom: var(--border-width) solid var(--primary);
-          background: var(--bg);
+          padding: var(--3-units) var(--8-units) var(--1-unit);
+          border-bottom: var(--1-unit) solid var(--color-1);
+          background: var(--color-2);
           align-items: center;
+          font-size: var(--8-units);
+        }
+
+        :host:hover {
+          background: red;
         }
 
         form {
-          color: var(--primary);
+          color: var(--color-1);
           margin: 0;
           display: inline-flex;
           flex-wrap: wrap;
@@ -69,8 +80,9 @@ window.customElements.define(elementName, class extends window.HTMLElement {
         }
 
         img {
-          height: 2em;
-          width: 2em;
+          transition: all 200ms;
+          height: var(--16-units);
+          width: var(--16-units);
         }
 
         div {
@@ -79,52 +91,54 @@ window.customElements.define(elementName, class extends window.HTMLElement {
         }
         button,
         input {
-          border-radius: 0.6em;
-          height: var(--pad);
-          padding: var(--pad);
-          background-color: var(--bg);
+          border-radius: var(--6-units);
+          height: var(--6-units);
+          padding: var(--6-units);
+          background-color: var(--color-2);
           border: var(--input-border);
           outline: none;
           box-sizing: content-box;
-          font-size: var(--input-height);
+          font-size: var(--8-units);
         }
         button,
         input[type=submit] {
-          margin: var(--input-margin-borderless);
-          height: 2em;
-          padding: 0 1.5em;
+          height: var(--17-units);
+          padding: 0 var(--12-units);
         }
         input[type=submit] {
-          background: var(--primary);
+          background: var(--color-1);
         }
         button:hover,
         input:hover + label,
         input:hover {
-          border-color: var(--focus);
-          color: var(--focus);
+          border-color: var(--color-3);
+          color: var(--color-3);
         }
         button:hover,
         input[type=submit]:hover {
-          background: var(--focus);
-          color: var(--bg);
+          background: var(--color-3);
+          color: var(--color-2);
+        }
+        button:hover img {
+          filter: grayscale(100%) contrast(300%);
         }
         label {
-          font-size: var(--input-height);
+          font-size: var(--8-units);
           position: absolute;
-          left: var(--pad);
-          top: var(--pad);
-          background: var(--bg);
+          left: var(--5-units);
+          top: var(--5-units);
+          background: var(--color-2);
           transition: transform 200ms;
           pointer-events: none;
           transform-origin: left;
-          padding: 0 var(--border-width);
+          padding: 0 var(--1-unit);
         }
         input::placeholder {
-          color: var(--placeholder);
+          color: var(--color-4);
         }
         input:focus + label,
         input:not(:placeholder-shown) + label {
-          transform: translateY(calc(-50% - var(--pad))) scale(.8);
+          transform: translateY(calc(-50% - var(--6-units))) scale(.8);
         }
       </style>
 
