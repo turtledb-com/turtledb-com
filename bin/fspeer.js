@@ -69,6 +69,7 @@ const checkTurtle = () => {
   if (availableLength !== undefined && loadedLayers === availableLength - 1) {
     startedLoading = true
     console.log('stop watching')
+    console.log(committer.getCommitValue())
     const valueRefs = committer.workspace.lookupRefs(getCommitAddress(committer), 'value') || {}
     const fsRefs = valueRefs.fs && committer.workspace.lookup(valueRefs.fs, getCodecs(KIND.REFS_OBJECT))
     const removed = []
@@ -100,9 +101,15 @@ const lastRefs = {}
 const root = join(process.cwd(), path)
 mkdirSync(dirname(root), { recursive: true })
 
-let commitInProgress = new Promise(resolve => setTimeout(() => resolve(commitInProgress), 1000))
+const emptyPromise = new Promise(resolve => setTimeout(() => {
+  if (commitInProgress === emptyPromise) resolve()
+  else resolve(commitInProgress)
+}), 1000)
+let commitInProgress = emptyPromise
+
 let valueRefs
 const debounceEdits = (message) => {
+  console.log('--- debounceEdits')
   if (!valueRefs) valueRefs = committer.workspace.lookupRefs(getCommitAddress(committer), 'value') ?? {}
   const possibleNextCommit = new Promise(resolve => {
     setTimeout(() => {

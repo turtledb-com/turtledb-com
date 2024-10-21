@@ -2,6 +2,21 @@ import { newPeerPerCycle } from './peerFactory.js'
 
 const allServiceWorkers = new Set()
 let alreadyWaiting = false
+const peerByRecaller = new Map()
+/**
+ * @param {import('../utils/Recaller.js').Recaller} recaller
+ * @returns {import('../net/Peer.js').Peer}
+ */
+export function getPeer (recaller) {
+  recaller.reportKeyAccess(peerByRecaller, 'peer', 'getPeer', 'connectPeer.js')
+  return peerByRecaller.get(recaller)
+}
+function setPeer (recaller, peer) {
+  window.peer = peer
+  console.log('#####   @type {Peer} window.peer')
+  peerByRecaller.set(recaller, peer)
+  recaller.reportKeyMutation(peerByRecaller, 'peer', 'setPeer', 'connectPeer.js')
+}
 export function connectPeer (recaller) {
   if (alreadyWaiting) return
   alreadyWaiting = true
@@ -18,8 +33,7 @@ export function connectPeer (recaller) {
           const { serviceWorker } = navigator
           if (!serviceWorker || allServiceWorkers.has(serviceWorker)) return
           allServiceWorkers.add(serviceWorker)
-          window.peer = peer
-          console.log('#####   @type {Peer} window.peer')
+          setPeer(recaller, peer)
           serviceWorker.onmessage = event => receive(new Uint8Array(event.data))
           serviceWorker.onmessageerror = event => console.log(peer.name, 'onmessageerror', event)
           serviceWorker.startMessages()
@@ -40,8 +54,7 @@ export function connectPeer (recaller) {
     console.error('###########################################################################################')
     const url = `wss://${window.location.host}`
     const connectionCycle = (receive, setSend, peer) => new Promise((resolve, reject) => {
-      window.peer = peer
-      console.log('#####   @type {Peer} window.peer')
+      setPeer(recaller, peer)
       const ws = new window.WebSocket(url)
       ws.binaryType = 'arraybuffer'
       ws.onopen = () => {

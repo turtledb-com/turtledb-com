@@ -48,6 +48,7 @@ window.customElements.define(elementName, class extends window.HTMLElement {
           --12-units: calc(12 * var(--1-unit));
           --16-units: calc(16 * var(--1-unit));
           --17-units: calc(17 * var(--1-unit));
+          --100-units: calc(100 * var(--1-unit));
           --color-1: DarkSeaGreen;
           --color-2: Honeydew;
           --color-3: Black;
@@ -65,10 +66,7 @@ window.customElements.define(elementName, class extends window.HTMLElement {
           background: var(--color-2);
           align-items: center;
           font-size: var(--8-units);
-        }
-
-        :host:hover {
-          background: red;
+          box-sizing: border-box;
         }
 
         form {
@@ -77,6 +75,8 @@ window.customElements.define(elementName, class extends window.HTMLElement {
           display: inline-flex;
           flex-wrap: wrap;
           align-items: center;
+          justify-content: end;
+          flex-grow: 1;
         }
 
         img {
@@ -85,6 +85,10 @@ window.customElements.define(elementName, class extends window.HTMLElement {
           width: var(--16-units);
         }
 
+        span {
+          flex-grow: 1000;
+          text-align: center;
+        }
         div {
           position: relative;
           margin: var(--input-margin);
@@ -100,12 +104,19 @@ window.customElements.define(elementName, class extends window.HTMLElement {
           box-sizing: content-box;
           font-size: var(--8-units);
         }
+        input {
+          width: var(--100-units);
+        }
         button,
         input[type=submit] {
           height: var(--17-units);
-          padding: 0 var(--12-units);
+          padding: 0 var(--6-units);
+        }
+        button {
+          margin: var(--input-margin-borderless);
         }
         input[type=submit] {
+          margin: var(--input-margin);
           background: var(--color-1);
         }
         button:hover,
@@ -148,10 +159,10 @@ window.customElements.define(elementName, class extends window.HTMLElement {
         <button>
           <img src="../tinker.svg" alt="Tinker: your adorable mascot turtle (and a button)... what a scamp!" />
         </button>
+        <span>
+          TURTLEDB.COM - believes in you!
+        </span>
         <form onsubmit=${handle(this.signIn)}>
-          <span>
-            Load/Create Turtle:
-          </span>
           <div>
             <input type="text" id="username" name="username" placeholder="" autocomplete="off" required />
             <label for="username">username</label>
@@ -167,7 +178,7 @@ window.customElements.define(elementName, class extends window.HTMLElement {
             <label for="turtlename">turtlename</label>
           </div>
 
-          <input type="submit" />
+          <input type="submit" value="Load/Create Turtle" />
         </form>
       `)}
 
