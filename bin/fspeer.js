@@ -16,6 +16,8 @@ import { getCommitAddress } from '../public/js/dataModel/Uint8ArrayLayerPointer.
 
 const ignored = /(?:\.ds_store|.*\.ico|~)$/i
 
+console.log('argv', process.argv)
+
 program
   .name('fspeer')
   .option('--path <string>', 'directory to sync')
