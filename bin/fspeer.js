@@ -69,7 +69,6 @@ const checkTurtle = () => {
   if (availableLength !== undefined && loadedLayers === availableLength - 1) {
     startedLoading = true
     console.log('stop watching')
-    console.log(committer.getCommitValue())
     const valueRefs = committer.workspace.lookupRefs(getCommitAddress(committer), 'value') || {}
     const fsRefs = valueRefs.fs && committer.workspace.lookup(valueRefs.fs, getCodecs(KIND.REFS_OBJECT))
     const removed = []

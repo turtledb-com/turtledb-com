@@ -22,7 +22,7 @@ window.customElements.define(elementName, class extends window.HTMLElement {
     if (!value || typeof value !== 'object') value = {}
     if (!value.fs || typeof value.fs !== 'object') value.fs = {}
     const defaultPointer = setPointerByPublicKey(defaultCpk)
-    value.fs['components/templates/start.js'] = defaultPointer.getCommitValue('value', 'fs', 'components/main/start.js')
+    value.fs['components/main/start.js'] = defaultPointer.getCommitValue('value', 'fs', 'components/templates/start.js')
     console.log(value)
     committer.commit('added basic template', value)
   }

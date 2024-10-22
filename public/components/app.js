@@ -21,6 +21,7 @@ window.customElements.define(elementName, class extends window.HTMLBodyElement {
     const pointer = setPointerByPublicKey(cpk)
     const localLength = pointer.layerIndex + 1
     const remoteLength = getPeer(recaller)?.remoteExports?.lookup?.()?.[cpk]?.want?.[0]?.[0]
+    console.log({ localLength, remoteLength })
     if (remoteLength === undefined) {
       return h`
         <h1>Checking remote for existing turtle<h1>
@@ -28,7 +29,7 @@ window.customElements.define(elementName, class extends window.HTMLBodyElement {
     }
     if (localLength < remoteLength) {
       return h`
-        <h1>Loading existing turtle... (${localLength} / ${remoteLength})</h1>
+        <h1>Downloading existing turtle... (${localLength} / ${remoteLength})</h1>
       `
     }
     if (!pointer.getCommitValue('value', 'fs', 'components/main/start.js')) {
@@ -43,6 +44,12 @@ window.customElements.define(elementName, class extends window.HTMLBodyElement {
         `
       }
     }
+    if (localLength !== remoteLength) {
+      return h`
+        <h1>Upoading existing turtle... (${localLength} / ${remoteLength})</h1>
+      `
+    }
+    console.log('using cpk', cpk)
     return componentAtPath('components/main/start.js', cpk)(el)
   }
 

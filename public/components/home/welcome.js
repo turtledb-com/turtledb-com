@@ -16,13 +16,14 @@ window.customElements.define(elementName, class extends window.HTMLElement {
       </style>
       <h1>Welcome to your internet.</h1>
       <p>
-        Lorem ipsum
+        Lorem ipsum 
       </p>
       <h2>
       <ul>
-        <li><s>starting templates</s> (enough to demo)</li>
+        <li><s>starting templates</s> (enough to <i>technically</i> demo)</li>
         <li>better starting templates (in progress)</li>
         <li>clean up memory leaks</li>
+        <li>switch to proxies to enable partial rerenders</li>
         <li>spend a few days trying to make it pretty</li>
       </ul>
     `, recaller, elementName)

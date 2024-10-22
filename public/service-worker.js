@@ -93,6 +93,27 @@ self.addEventListener('fetch', event => {
     const cache = await self.caches.open(v)
     const response = await cache.match(event.request)
     if (response) return response
+    const url = new URL(event.request.url)
+    const address = +url.searchParams.get('address')
+    const cpk = url.searchParams.get('cpk')
+    if (address && cpk) {
+      const pointer = setPointerByPublicKey(cpk)
+      const extension = url.pathname.split(/\./).pop()
+      let file = pointer.lookup(address)
+      if (file !== undefined) {
+        try {
+          if (extension === 'json') {
+            file = JSON.stringify(file, null, 10)
+          }
+          const headers = new Headers({
+            'Content-Type': contentTypeByExtension[extension]
+          })
+          return new Response(file, { headers })
+        } catch (error) {
+          console.error(error)
+        }
+      }
+    }
     console.log('unmatched fetch request', event.request.url, response)
     return fetch(event.request)
   })())
