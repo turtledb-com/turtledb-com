@@ -100,6 +100,7 @@ self.addEventListener('fetch', event => {
       const pointer = setPointerByPublicKey(cpk)
       const extension = url.pathname.split(/\./).pop()
       let file = pointer.lookup(address)
+      console.log({ address, cpk, extension, fileLength: file?.length })
       if (file !== undefined) {
         try {
           if (extension === 'json') {

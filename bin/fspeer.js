@@ -108,7 +108,6 @@ let commitInProgress = emptyPromise
 
 let valueRefs
 const debounceEdits = (message) => {
-  console.log('--- debounceEdits')
   if (!valueRefs) valueRefs = committer.workspace.lookupRefs(getCommitAddress(committer), 'value') ?? {}
   const possibleNextCommit = new Promise(resolve => {
     setTimeout(() => {
