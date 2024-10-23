@@ -42,6 +42,7 @@ window.customElements.define(elementName, class extends window.HTMLElement {
           --1-unit: 0.125rem;
           --2-units: calc(2 * var(--1-unit));
           --3-units: calc(3 * var(--1-unit));
+          --4-units: calc(4 * var(--1-unit));
           --5-units: calc(5 * var(--1-unit));
           --6-units: calc(6 * var(--1-unit));
           --8-units: calc(8 * var(--1-unit));
@@ -49,28 +50,29 @@ window.customElements.define(elementName, class extends window.HTMLElement {
           --16-units: calc(16 * var(--1-unit));
           --17-units: calc(17 * var(--1-unit));
           --100-units: calc(100 * var(--1-unit));
-          --color-1: DarkSeaGreen;
-          --color-2: Honeydew;
-          --color-3: Black;
-          --color-4: MediumSeaGreen;
-          --input-border: var(--1-unit) solid var(--color-1);
+          --color-bg: MediumSeaGreen;
+          --color-text: SeaGreen;
+          --color-active-bg: Black;
+          --color-active-text: HoneyDew;
+          --color-highlight: MediumSpringGreen;
+          --input-border: var(--1-unit) solid var(--color-text);
           --input-margin-borderless: var(--2-units) var(--2-units);
           --input-margin: var(--1-unit) var(--2-units);
-          color: var(--color-1);
+          color: var(--color-text);
           display: flex;
           flex-wrap: wrap;
           justify-content: space-between;
           margin: 0;
           padding: var(--3-units) var(--8-units) var(--1-unit);
-          border-bottom: var(--1-unit) solid var(--color-1);
-          background: var(--color-2);
+          border-bottom: var(--1-unit) solid var(--color-text);
+          background: var(--color-bg);
           align-items: center;
           font-size: var(--8-units);
           box-sizing: border-box;
         }
 
         form {
-          color: var(--color-1);
+          color: var(--color-text);
           margin: 0;
           display: inline-flex;
           flex-wrap: wrap;
@@ -84,72 +86,105 @@ window.customElements.define(elementName, class extends window.HTMLElement {
           height: var(--16-units);
           width: var(--16-units);
         }
+        button:hover img {
+          filter: grayscale(100%) contrast(300%);
+        }
+
+        button {
+          background-color: var(--color-bg);
+          border: var(--input-border);
+          border-radius: var(--6-units);
+          box-sizing: content-box;
+          font-size: var(--8-units);
+          height: var(--17-units);
+          margin: var(--input-margin-borderless);
+          outline: none;
+          padding: 0 var(--6-units);
+        }
+        button:hover {
+          background: var(--color-active-bg);
+          border-color: var(--color-active-bg);
+          color: var(--color-bg);
+        }
 
         span {
           flex-grow: 1000;
           text-align: center;
         }
+
         div {
           position: relative;
           margin: var(--input-margin);
         }
-        button,
+        label {
+          font-size: var(--8-units);
+          position: absolute;
+          left: var(--4-units);
+          top: var(--4-units);
+          background: var(--color-bg);
+          transition: transform 200ms;
+          pointer-events: none;
+          transform-origin: left;
+          padding: 0 var(--3-units);
+          border-radius: var(--6-units);
+          border: var(--1-unit) solid var(--color-bg);
+        }
+        input:hover + label {
+          background: var(--color-active-text);
+          border-color: var(--color-active-text);
+          color: var(--color-active-bg);
+        }
+        input:focus + label {
+          border-color: var(--color-text);
+          color: var(--color-text);
+          background: var(--color-active-text);
+          transform: translateY(calc(-50% - var(--6-units))) scale(.8);
+        }
+        input:focus:hover + label {
+          background: var(--color-active-text);
+          border-color: var(--color-active-bg);
+          color: var(--color-active-bg);
+        }
+        input:not(:placeholder-shown) + label {
+          border-color: var(--color-text);
+          color: var(--color-text);
+          transform: translateY(calc(-50% - var(--6-units))) scale(.8);
+        }
+        input:not(:placeholder-shown):hover + label {
+          border-color: var(--color-active-bg);
+          color: var(--color-active-bg);
+        }
         input {
           border-radius: var(--6-units);
           height: var(--6-units);
           padding: var(--6-units);
-          background-color: var(--color-2);
+          background-color: var(--color-bg);
           border: var(--input-border);
           outline: none;
           box-sizing: content-box;
           font-size: var(--8-units);
-        }
-        input {
           width: var(--100-units);
         }
-        button,
+        input:hover {
+          border-color: var(--color-active-bg);
+          color: var(--color-active-bg);
+          background: var(--color-active-text);
+        }
+        input::placeholder {
+          color: var(--color-highlight);
+        }
+        input:focus {
+          background: var(--color-active-text);
+        }
         input[type=submit] {
           height: var(--17-units);
           padding: 0 var(--6-units);
-        }
-        button {
-          margin: var(--input-margin-borderless);
-        }
-        input[type=submit] {
           margin: var(--input-margin);
-          background: var(--color-1);
+          background: var(--color-highlight);
         }
-        button:hover,
-        input:hover + label,
-        input:hover {
-          border-color: var(--color-3);
-          color: var(--color-3);
-        }
-        button:hover,
         input[type=submit]:hover {
-          background: var(--color-3);
-          color: var(--color-2);
-        }
-        button:hover img {
-          filter: grayscale(100%) contrast(300%);
-        }
-        label {
-          font-size: var(--8-units);
-          position: absolute;
-          left: var(--5-units);
-          top: var(--5-units);
-          background: var(--color-2);
-          transition: transform 200ms;
-          pointer-events: none;
-          transform-origin: left;
-          padding: 0 var(--1-unit);
-        }
-        input::placeholder {
-          color: var(--color-4);
-        }
-        input:focus + label,
-        input:not(:placeholder-shown) + label {
-          transform: translateY(calc(-50% - var(--6-units))) scale(.8);
+          background: var(--color-active-bg);
+          color: var(--color-active-text);
         }
       </style>
 

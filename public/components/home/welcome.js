@@ -13,10 +13,16 @@ window.customElements.define(elementName, class extends window.HTMLElement {
   connectedCallback () {
     render(this.shadowRoot, () => h`
       <style>
+        :host {
+          padding: 1em;
+        }
       </style>
-      <h1>Welcome to your internet.</h1>
+      <h1>Your anything.</h1>
       <p>
-        Lorem ipsum 
+        The internet is CSS, HTML, JavaScript, and data. 
+      </p>
+      <p>
+        CSS, HTML, and JavaScript are data. 
       </p>
       <h2>
       <ul>

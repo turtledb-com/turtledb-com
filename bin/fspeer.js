@@ -30,7 +30,7 @@ program
   .parse()
 
 let { path, prefix, s3port, s3host, name, pass, turtlename } = program.opts()
-console.log({ path, prefix, s3port, s3host, name, pass: '*'.repeat(pass.length), turtlename })
+console.log({ path, prefix, s3port, s3host, name, pass: '*'.repeat(pass?.length ?? 0), turtlename })
 name ||= process.env.TURTLEDB_COM_FS_USER || question('username: ')
 pass ||= process.env.TURTLEDB_COM_FS_PASS || question('password: ', { hideEchoBack: true })
 turtlename ||= process.env.TURTLEDB_COM_FS_TURTLENAME || question('turtlename [home]: ') || 'home'
