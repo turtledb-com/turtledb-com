@@ -20,6 +20,7 @@ window.customElements.define(elementName, class extends window.HTMLElement {
           flex-grow: 1;
           background: HoneyDew;
           color: SeaGreen;
+          padding: 0 min(100vw, calc(50vw - 45rem));
         }
         article {
           display: flex;
@@ -49,7 +50,7 @@ window.customElements.define(elementName, class extends window.HTMLElement {
         }
         svg {
           position: absolute;
-          right: 6.5rem;
+          right: max(5rem, calc(50vw - 40rem));
         }
       </style>
 
@@ -85,16 +86,7 @@ window.customElements.define(elementName, class extends window.HTMLElement {
           Try it, you'll like it!
         </p>
         <svg width="100" height="100" xmlns="http://www.w3.org/2000/svg">
-          <path stroke="SeaGreen" fill="MediumSpringGreen" stroke-width="3" d="
-            M 10 90
-            A 70 70 0 0 0 80 20
-            L 90 20
-            L 70 5 
-            L 50 20
-            L 60 20
-            A 50 50 0 0 1 10 70
-            L 10 90
-          "/>
+          <path stroke="SeaGreen" fill="MediumSpringGreen" stroke-width="3" d="M 10 90 A 70 70 0 0 0 80 20 L 90 20 L 70 5 L 50 20 L 60 20 A 50 50 0 0 1 10 70 Z"/>
         </svg>
       </article>
 
@@ -117,17 +109,17 @@ window.customElements.define(elementName, class extends window.HTMLElement {
           It's going to be great!
         </h2>
         <p>
-          CSS, HTML, and JavaScript are the most popular and well supported programming languages.
-          There is no field of knowledge with more support and resources dedicated to your success.
           The tutorial starts with small changes and simple steps.
-          We look forward to seeing what you'll make!
+          CSS, HTML, and JavaScript are the most popular programming languages.
+          Nothing comes with more support and resources dedicated to your success.
+          We can't wait to see what you'll make!
         </p>
       </article>
 
 
       <article>
         <h2>
-          Under Construction...
+          ...but we're under construction right now so please be patient with us.
         </h2>
         <p>
           This project is currently a work in progress.

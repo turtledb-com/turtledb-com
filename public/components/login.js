@@ -12,16 +12,40 @@ const { getCpk, setCpk } = useHash(recaller)
 function getIsLoggedIn () {
   const hash = getCpk() || cpk
   const pointer = setPointerByPublicKey(hash)
+  console.log('getIsLoggedIn', pointer instanceof Committer)
   return pointer instanceof Committer
 }
 
+const EXPANDED = Symbol('explorer header')
+const COMPACT = Symbol('normal header')
+const HIDDEN = Symbol('hidden header')
+
+const classByState = {
+  [EXPANDED]: 'expanded',
+  [COMPACT]: 'compact',
+  [HIDDEN]: 'hidden'
+}
+
 window.customElements.define(elementName, class extends window.HTMLElement {
+  #state = COMPACT
   constructor () {
     super()
     this.attachShadow({ mode: 'open' })
   }
 
-  signIn (e, el) {
+  get state () {
+    recaller.reportKeyAccess(this, 'state', 'get', 'components/login.js')
+    return this.#state
+  }
+
+  set state (state) {
+    if (this.#state === state) return
+    recaller.reportKeyMutation(this, 'state', 'set', 'components/login.js')
+    this.#state = state
+    this.classList = [classByState[state]]
+  }
+
+  signIn = (e, el) => {
     e.preventDefault()
     const formData = new FormData(el)
     el.reset()
@@ -35,12 +59,64 @@ window.customElements.define(elementName, class extends window.HTMLElement {
     })
   }
 
+  toggleExpanded = (e, el) => {
+    console.log(this, e, el)
+    if (this.state === COMPACT) this.state = EXPANDED
+    else this.state = COMPACT
+  }
+
+  toggleHidden = (e, el) => {
+    console.log(this, e, el)
+    if (this.state === HIDDEN) this.state = COMPACT
+    else this.state = HIDDEN
+  }
+
   connectedCallback () {
+    const header = h`
+      <header>
+        <button class="hiddentoggle" onclick=${handle(this.toggleHidden)}>
+          <svg viewBox="-100 -100 200 200" xmlns="http://www.w3.org/2000/svg">
+            <path stroke="SeaGreen" fill="MediumSpringGreen" stroke-width="3" d="M 0 -30 L 30 -60 L 60 -30 L 30 0 L 60 30 L 30 60 L 0 30 L -30 60 L -60 30 L -30 0 L -60 -30 L -30 -60 Z"/>
+          </svg>
+        </button>
+        <button class="expandedtoggle" onclick=${handle(this.toggleExpanded)}>
+          <svg viewBox="-100 -100 200 200" xmlns="http://www.w3.org/2000/svg">
+            <path stroke="SeaGreen" fill="MediumSpringGreen" stroke-width="3" d="M 0 60 L 52 -30 L -52 -30 Z"/>
+          </svg>
+        </button>
+        <button>
+          <img src="../tinker.svg" alt="Tinker: your adorable mascot turtle (and a button)... what a scamp!" />
+        </button>
+        <span>
+          TURTLEDB.COM - believes in you!
+        </span>
+        <form onsubmit=${handle(this.signIn)}>
+          <div>
+            <input type="text" id="username" name="username" placeholder="" autocomplete="off" required />
+            <label for="username">username</label>
+          </div>
+
+          <div>
+            <input type="password" id="pass" name="password" placeholder="" autocomplete="off" required />
+            <label for="pass">password</label>
+          </div>
+
+          <div>
+            <input type="text" id="turtlename" name="turtlename" placeholder="home" autocomplete="off" />
+            <label for="turtlename">turtlename</label>
+          </div>
+
+          <input type="submit" value="Load/Create Turtle" />
+        </form>
+      </header>
+    `
     render(this.shadowRoot, () => h`
       <style>
         :host {
+          z-index: 1000;
           position: sticky;
           top: 0;
+          transition: all 200ms;
           --1-unit: 0.125rem;
           --2-units: calc(2 * var(--1-unit));
           --3-units: calc(3 * var(--1-unit));
@@ -51,6 +127,7 @@ window.customElements.define(elementName, class extends window.HTMLElement {
           --12-units: calc(12 * var(--1-unit));
           --16-units: calc(16 * var(--1-unit));
           --17-units: calc(17 * var(--1-unit));
+          --39-units: calc(39 * var(--1-unit));
           --100-units: calc(100 * var(--1-unit));
           --color-bg: MediumSeaGreen;
           --color-text: SeaGreen;
@@ -60,17 +137,32 @@ window.customElements.define(elementName, class extends window.HTMLElement {
           --input-border: var(--1-unit) solid var(--color-text);
           --input-margin-borderless: var(--2-units) var(--2-units);
           --input-margin: var(--1-unit) var(--2-units);
+        }
+        :host(.hidden) {
+          height: 0;
+          overflow: hidden;
+        }
+        :host(.expanded) {
+          height: 100%;
+          overflow: hidden;
+        }
+        header {
+          position: relative;
           color: var(--color-text);
           display: flex;
           flex-wrap: wrap;
           justify-content: space-between;
           margin: 0;
-          padding: var(--3-units) var(--8-units) var(--1-unit);
+          padding: var(--3-units) min(100vw, calc(50vw - 45rem)) var(--1-unit) 0;
           border-bottom: var(--1-unit) solid var(--color-text);
           background: var(--color-bg);
           align-items: center;
           font-size: var(--8-units);
           box-sizing: border-box;
+          transition: all 200ms;
+        }
+        :host(.hidden) header {
+          bottom: 100%;
         }
 
         form {
@@ -88,6 +180,30 @@ window.customElements.define(elementName, class extends window.HTMLElement {
           height: var(--16-units);
           width: var(--16-units);
         }
+        svg {
+          transition: all 200ms;
+          height: var(--16-units);
+          width: var(--16-units);
+        }
+        button.hiddentoggle {
+          position: fixed;
+          top: var(--3-units);
+          left: var(--3-units);
+        }
+        :host(.hidden) button.hiddentoggle {
+        }
+        button.expandedtoggle{
+          margin-left: var(--39-units);
+        }
+        :host(.expanded) .expandedtoggle svg {
+          transform: rotate(60deg);
+        }
+        :host(.hidden) .hiddentoggle svg {
+          transform: rotate(45deg);
+        }
+        button:hover svg {
+          filter: grayscale(100%) contrast(300%);
+        }
         button:hover img {
           filter: grayscale(100%) contrast(300%);
         }
@@ -102,6 +218,7 @@ window.customElements.define(elementName, class extends window.HTMLElement {
           margin: var(--input-margin-borderless);
           outline: none;
           padding: 0 var(--6-units);
+          transition: all 200ms;
         }
         button:hover {
           background: var(--color-active-bg);
@@ -190,35 +307,7 @@ window.customElements.define(elementName, class extends window.HTMLElement {
         }
       </style>
 
-      ${showIfElse(getIsLoggedIn, h`
-        loggedIn
-      `, h`
-        <button>
-          <img src="../tinker.svg" alt="Tinker: your adorable mascot turtle (and a button)... what a scamp!" />
-        </button>
-        <span>
-          TURTLEDB.COM - believes in you!
-        </span>
-        <form onsubmit=${handle(this.signIn)}>
-          <div>
-            <input type="text" id="username" name="username" placeholder="" autocomplete="off" required />
-            <label for="username">username</label>
-          </div>
-
-          <div>
-            <input type="password" id="pass" name="password" placeholder="" autocomplete="off" required />
-            <label for="pass">password</label>
-          </div>
-
-          <div>
-            <input type="text" id="turtlename" name="turtlename" placeholder="home" autocomplete="off" />
-            <label for="turtlename">turtlename</label>
-          </div>
-
-          <input type="submit" value="Load/Create Turtle" />
-        </form>
-      `)}
-
+      ${showIfElse(getIsLoggedIn, 'loggedIn', header)}
     `, recaller, elementName)
   }
 })
