@@ -2,7 +2,7 @@ import { Committer } from '../js/dataModel/Committer.js'
 import { h } from '../js/display/h.js'
 import { render } from '../js/display/render.js'
 import { setPointerByPublicKey } from '../js/net/Peer.js'
-import { componentAtPath, deriveDefaults, useHash } from '../js/utils/components.js'
+import { componentAtPath, componentNameAtPath, deriveDefaults, useHash } from '../js/utils/components.js'
 import { getPeer } from '../js/utils/connectPeer.js'
 
 const { cpk: defaultCpk, recaller, elementName } = deriveDefaults(import.meta.url)
@@ -60,6 +60,11 @@ window.customElements.define(elementName, class extends window.HTMLBodyElement {
           margin: 0;
           height: 100%;
           font-family: -apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans",Helvetica,Arial,sans-serif,"Apple Color Emoji","Segoe UI Emoji";
+          display: flex;
+          flex-direction: column;
+        }
+        div {
+          flex-grow: 1;
         }
       </style>
       ${componentAtPath('components/login.js', defaultCpk)}

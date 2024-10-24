@@ -39,6 +39,8 @@ window.customElements.define(elementName, class extends window.HTMLElement {
     render(this.shadowRoot, () => h`
       <style>
         :host {
+          position: sticky;
+          top: 0;
           --1-unit: 0.125rem;
           --2-units: calc(2 * var(--1-unit));
           --3-units: calc(3 * var(--1-unit));

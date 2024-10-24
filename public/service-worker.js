@@ -16,14 +16,14 @@ const recaller = peerRecaller
 
 self.addEventListener('install', async () => {
   console.log('install')
-  await self.skipWaiting
+  // await self.skipWaiting
 })
 
 const name = `service-worker.js#${v}`
 let ws
 self.addEventListener('activate', event => {
   console.log('activate')
-  event.waitUntil(clients.claim())
+  // event.waitUntil(clients.claim())
   const url = `wss://${location.host}`
   const connectionCycle = (receive, setSend) => new Promise((resolve, reject) => {
     ws = new WebSocket(url)
