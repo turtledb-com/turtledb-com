@@ -9,11 +9,12 @@ console.log(fallbackCPK)
 setPointerByPublicKey(fallbackCPK)
 console.log(setPointerByPublicKey(fallbackCPK))
 
-export const v = '0.0.8'
+export const v = '0.0.9'
 self.v = v
 
 const recaller = peerRecaller
 
+let ws
 const peersById = {}
 const receiveById = {}
 const updateClients = async eventName => {
@@ -27,6 +28,22 @@ const updateClients = async eventName => {
     }
   }
   console.log(' @@@ ws.readyState', ws?.readyState)
+  if (ws?.readyState === undefined) {
+    const url = `wss://${location.host}`
+    const connectionCycle = (receive, setSend) => new Promise((resolve, reject) => {
+      ws = new WebSocket(url)
+      ws.binaryType = 'arraybuffer'
+      ws.onopen = () => {
+        setSend(uint8Array => ws.send(uint8Array.buffer))
+      }
+      ws.onmessage = event => {
+        receive(new Uint8Array(event.data))
+      }
+      ws.onclose = resolve
+      ws.onerror = reject
+    })
+    newPeerPerCycle(`[${name} to WebSocket]`, recaller, connectionCycle, true)
+  }
 }
 
 self.addEventListener('install', async () => {
@@ -35,24 +52,9 @@ self.addEventListener('install', async () => {
 })
 
 const name = `service-worker.js#${v}`
-let ws
 self.addEventListener('activate', event => {
-  updateClients('activate')
   event.waitUntil(clients.claim())
-  const url = `wss://${location.host}`
-  const connectionCycle = (receive, setSend) => new Promise((resolve, reject) => {
-    ws = new WebSocket(url)
-    ws.binaryType = 'arraybuffer'
-    ws.onopen = () => {
-      setSend(uint8Array => ws.send(uint8Array.buffer))
-    }
-    ws.onmessage = event => {
-      receive(new Uint8Array(event.data))
-    }
-    ws.onclose = resolve
-    ws.onerror = reject
-  })
-  newPeerPerCycle(`[${name} to WebSocket]`, recaller, connectionCycle, true)
+  updateClients('activate')
 })
 
 const contentTypeByExtension = {
