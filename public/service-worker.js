@@ -9,21 +9,36 @@ console.log(fallbackCPK)
 setPointerByPublicKey(fallbackCPK)
 console.log(setPointerByPublicKey(fallbackCPK))
 
-export const v = '0.0.7'
+export const v = '0.0.8'
 self.v = v
 
 const recaller = peerRecaller
 
+const peersById = {}
+const receiveById = {}
+const updateClients = async eventName => {
+  const currentIds = (await clients?.matchAll?.() ?? []).map(client => client.id)
+  for (const peerId in peersById) {
+    if (!currentIds.includes(peerId)) {
+      console.log(`removing detached peer with id === '${peerId}'`)
+      peersById[peerId].cleanup()
+      delete peersById[peerId]
+      delete receiveById[peerId]
+    }
+  }
+  console.log(' @@@ ws.readyState', ws?.readyState)
+}
+
 self.addEventListener('install', async () => {
-  console.log('install')
+  updateClients('install')
   // await self.skipWaiting
 })
 
 const name = `service-worker.js#${v}`
 let ws
 self.addEventListener('activate', event => {
-  console.log('activate')
-  // event.waitUntil(clients.claim())
+  updateClients('activate')
+  event.waitUntil(clients.claim())
   const url = `wss://${location.host}`
   const connectionCycle = (receive, setSend) => new Promise((resolve, reject) => {
     ws = new WebSocket(url)
@@ -89,6 +104,7 @@ self.caches.open(v).then(cache => {
 })
 
 self.addEventListener('fetch', event => {
+  updateClients('fetch')
   event.respondWith((async () => {
     const cache = await self.caches.open(v)
     const response = await cache.match(event.request)
@@ -120,10 +136,8 @@ self.addEventListener('fetch', event => {
   })())
 })
 
-const peersById = {}
-const receiveById = {}
-
 self.addEventListener('message', message => {
+  updateClients('message')
   // console.log('message')
   if (ws?.readyState !== 1) {
     console.error(new Error(`ws.readyState: ${ws?.readyState}`))

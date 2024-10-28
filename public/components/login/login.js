@@ -1,9 +1,9 @@
-import { Committer } from '../js/dataModel/Committer.js'
-import { h } from '../js/display/h.js'
-import { handle, showIfElse } from '../js/display/helpers.js'
-import { render } from '../js/display/render.js'
-import { setPointerByPublicKey } from '../js/net/Peer.js'
-import { deriveDefaults, useHash } from '../js/utils/components.js'
+import { Committer } from '../../js/dataModel/Committer.js'
+import { h } from '../../js/display/h.js'
+import { handle } from '../../js/display/helpers.js'
+import { render } from '../../js/display/render.js'
+import { setPointerByPublicKey } from '../../js/net/Peer.js'
+import { deriveDefaults, useHash } from '../../js/utils/components.js'
 
 const { recaller, elementName, cpk } = deriveDefaults(import.meta.url)
 
@@ -42,7 +42,8 @@ window.customElements.define(elementName, class extends window.HTMLElement {
     if (this.#state === state) return
     recaller.reportKeyMutation(this, 'state', 'set', 'components/login.js')
     this.#state = state
-    this.classList = [classByState[state]]
+    this.classList.remove('expanded', 'compact', 'hidden')
+    this.classList.add(classByState[state])
   }
 
   signIn = (e, el) => {
@@ -59,57 +60,27 @@ window.customElements.define(elementName, class extends window.HTMLElement {
     })
   }
 
-  toggleExpanded = (e, el) => {
-    console.log(this, e, el)
+  toggleExpanded = () => {
     if (this.state === COMPACT) this.state = EXPANDED
     else this.state = COMPACT
   }
 
-  toggleHidden = (e, el) => {
-    console.log(this, e, el)
+  toggleHidden = () => {
     if (this.state === HIDDEN) this.state = COMPACT
     else this.state = HIDDEN
   }
 
+  goHome = () => {
+    console.log('goHome')
+    setCpk()
+  }
+
   connectedCallback () {
-    const header = h`
-      <header>
-        <button class="hiddentoggle" onclick=${handle(this.toggleHidden)}>
-          <svg viewBox="-100 -100 200 200" xmlns="http://www.w3.org/2000/svg">
-            <path stroke="SeaGreen" fill="MediumSpringGreen" stroke-width="3" d="M 0 -30 L 30 -60 L 60 -30 L 30 0 L 60 30 L 30 60 L 0 30 L -30 60 L -60 30 L -30 0 L -60 -30 L -30 -60 Z"/>
-          </svg>
-        </button>
-        <button class="expandedtoggle" onclick=${handle(this.toggleExpanded)}>
-          <svg viewBox="-100 -100 200 200" xmlns="http://www.w3.org/2000/svg">
-            <path stroke="SeaGreen" fill="MediumSpringGreen" stroke-width="3" d="M 0 60 L 52 -30 L -52 -30 Z"/>
-          </svg>
-        </button>
-        <button>
-          <img src="../tinker.svg" alt="Tinker: your adorable mascot turtle (and a button)... what a scamp!" />
-        </button>
-        <span>
-          TURTLEDB.COM - believes in you!
-        </span>
-        <form onsubmit=${handle(this.signIn)}>
-          <div>
-            <input type="text" id="username" name="username" placeholder="" autocomplete="off" required />
-            <label for="username">username</label>
-          </div>
-
-          <div>
-            <input type="password" id="pass" name="password" placeholder="" autocomplete="off" required />
-            <label for="pass">password</label>
-          </div>
-
-          <div>
-            <input type="text" id="turtlename" name="turtlename" placeholder="home" autocomplete="off" />
-            <label for="turtlename">turtlename</label>
-          </div>
-
-          <input type="submit" value="Load/Create Turtle" />
-        </form>
-      </header>
-    `
+    recaller.watch('update login.js login status', () => {
+      if (getIsLoggedIn()) this.classList.add('committer')
+      else this.classList.remove('committer')
+    })
+    console.log('reconnec')
     render(this.shadowRoot, () => h`
       <style>
         :host {
@@ -192,8 +163,14 @@ window.customElements.define(elementName, class extends window.HTMLElement {
         }
         :host(.hidden) button.hiddentoggle {
         }
-        button.expandedtoggle{
+        button.homebutton {
           margin-left: var(--39-units);
+        }
+        .expandedtoggle {
+          display: none;
+        }
+        :host(.committer) .expandedtoggle {
+          display: block;
         }
         :host(.expanded) .expandedtoggle svg {
           transform: rotate(60deg);
@@ -306,8 +283,42 @@ window.customElements.define(elementName, class extends window.HTMLElement {
           color: var(--color-active-text);
         }
       </style>
+      <header>
+        <button class="hiddentoggle" onclick=${handle(this.toggleHidden)}>
+          <svg viewBox="-100 -100 200 200" xmlns="http://www.w3.org/2000/svg">
+            <path stroke="SeaGreen" fill="MediumSpringGreen" stroke-width="3" d="M 0 -30 L 30 -60 L 60 -30 L 30 0 L 60 30 L 30 60 L 0 30 L -30 60 L -60 30 L -30 0 L -60 -30 L -30 -60 Z"/>
+          </svg>
+        </button>
+        <button class="homebutton" onclick=${handle(this.goHome)}>
+          <img src="../tinker.svg" alt="Tinker: your adorable mascot turtle (and a home button... what a scamp!)" />
+        </button>
+        <button class="expandedtoggle" onclick=${handle(this.toggleExpanded)}>
+          <svg viewBox="-100 -100 200 200" xmlns="http://www.w3.org/2000/svg">
+            <path stroke="SeaGreen" fill="MediumSpringGreen" stroke-width="3" d="M 0 60 L 52 -30 L -52 -30 Z"/>
+          </svg>
+        </button>
+        <span>
+          TURTLEDB.COM - believes in you!
+        </span>
+        <form onsubmit=${handle(this.signIn)}>
+          <div>
+            <input type="text" id="username" name="username" placeholder="" autocomplete="off" required />
+            <label for="username">username</label>
+          </div>
 
-      ${showIfElse(getIsLoggedIn, 'loggedIn', header)}
+          <div>
+            <input type="password" id="pass" name="password" placeholder="" autocomplete="off" required />
+            <label for="pass">password</label>
+          </div>
+
+          <div>
+            <input type="text" id="turtlename" name="turtlename" placeholder="home" autocomplete="off" />
+            <label for="turtlename">turtlename</label>
+          </div>
+
+          <input type="submit" value="Load/Create Turtle" />
+        </form>
+      </header>
     `, recaller, elementName)
   }
 })

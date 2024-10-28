@@ -26,20 +26,21 @@ export function connectPeer (recaller) {
         '/service-worker.js',
         { type: 'module', scope: '/' }
       ).then(serviceWorkerRegistration => {
+        console.log('register complete', serviceWorkerRegistration)
         serviceWorkerRegistration.addEventListener('updatefound', () => {
           console.log('service-worker update found')
         })
         serviceWorkerRegistration.update().then(() => {
           const { serviceWorker } = navigator
           if (!serviceWorker || allServiceWorkers.has(serviceWorker)) return
-          allServiceWorkers.add(serviceWorker)
-          setPeer(recaller, peer)
-          serviceWorker.onmessage = event => receive(new Uint8Array(event.data))
-          serviceWorker.onmessageerror = event => console.log(peer.name, 'onmessageerror', event)
-          serviceWorker.startMessages()
-          serviceWorker.oncontrollerchange = resolve
-          serviceWorker.onerror = reject
           serviceWorker.ready.then(({ active }) => {
+            allServiceWorkers.add(serviceWorker)
+            setPeer(recaller, peer)
+            serviceWorker.onmessage = event => receive(new Uint8Array(event.data))
+            serviceWorker.onmessageerror = event => console.log(peer.name, 'onmessageerror', event)
+            serviceWorker.startMessages()
+            serviceWorker.oncontrollerchange = resolve
+            serviceWorker.onerror = reject
             setSend(uint8Array => active.postMessage(uint8Array.buffer))
           })
         })

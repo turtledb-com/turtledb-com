@@ -1,9 +1,9 @@
-import { fallbackCPK } from './constants.js'
-import { h } from './display/h.js'
-import { render } from './display/render.js'
-import { getPublicKeys, peerRecaller, setPointerByPublicKey } from './net/Peer.js'
-import { componentAtPath } from './utils/components.js'
-import { connectPeer } from './utils/connectPeer.js'
+import { fallbackCPK } from './js/constants.js'
+import { h } from './js/display/h.js'
+import { render } from './js/display/render.js'
+import { getPublicKeys, peerRecaller, setPointerByPublicKey } from './js/net/Peer.js'
+import { componentAtPath } from './js/utils/components.js'
+import { connectPeer } from './js/utils/connectPeer.js'
 
 const componentRegex = /^components\//
 const renderComponentScriptLinks = _element => {

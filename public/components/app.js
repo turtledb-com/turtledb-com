@@ -2,12 +2,13 @@ import { Committer } from '../js/dataModel/Committer.js'
 import { h } from '../js/display/h.js'
 import { render } from '../js/display/render.js'
 import { setPointerByPublicKey } from '../js/net/Peer.js'
-import { componentAtPath, componentNameAtPath, deriveDefaults, useHash } from '../js/utils/components.js'
+import { componentAtPath, deriveDefaults, useHash } from '../js/utils/components.js'
 import { getPeer } from '../js/utils/connectPeer.js'
 
 const { cpk: defaultCpk, recaller, elementName } = deriveDefaults(import.meta.url)
 const { getCpk } = useHash(recaller)
 window.customElements.define(elementName, class extends window.HTMLBodyElement {
+  #startComponentsByCpk = {}
   constructor () {
     super()
     this.attachShadow({ mode: 'open' })
@@ -50,7 +51,10 @@ window.customElements.define(elementName, class extends window.HTMLBodyElement {
       `
     }
     console.log('using cpk', cpk)
-    return componentAtPath('components/main/start.js', cpk)(el)
+    if (!this.#startComponentsByCpk[cpk]) {
+      this.#startComponentsByCpk[cpk] = componentAtPath('components/main/start.js', cpk)(el)
+    }
+    return this.#startComponentsByCpk[cpk]
   }
 
   connectedCallback () {
@@ -67,7 +71,7 @@ window.customElements.define(elementName, class extends window.HTMLBodyElement {
           flex-grow: 1;
         }
       </style>
-      ${componentAtPath('components/login.js', defaultCpk)}
+      ${componentAtPath('components/login/login.js', defaultCpk)}
       ${this.body}
     `, recaller, elementName)
   }

@@ -54,11 +54,15 @@ export const parseLocation = () => ({ hash: window.location?.hash?.slice?.(1) })
 const hashStateByRecaller = new Map()
 export const useHash = recaller => {
   if (!hashStateByRecaller.has(recaller)) {
-    let hash
-    const setCpk = newHash => {
+    let hash = ''
+    const setCpk = (newHash = '') => {
       if (hash === newHash) return
+      console.log(parseLocation(), { hash, newHash })
       hash = newHash
-      window.history.pushState({}, '', hash ? `#${hash}` : '')
+      if (parseLocation().hash !== hash) {
+        console.log('bumping history', parseLocation(), hash)
+        window.history.pushState({}, '', `#${hash}`)
+      }
       recaller.reportKeyMutation(recaller, 'hash', 'setCpk', 'window.location')
     }
     const getCpk = () => {
