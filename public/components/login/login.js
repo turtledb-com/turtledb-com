@@ -121,7 +121,6 @@ window.customElements.define(elementName, class extends window.HTMLElement {
         :host(.hidden) header {
           bottom: 100%;
         }
-
         img {
           transition: all 200ms;
           height: var(--16-units);
@@ -160,7 +159,6 @@ window.customElements.define(elementName, class extends window.HTMLElement {
         button:hover img {
           filter: grayscale(100%) contrast(300%);
         }
-
         button {
           background-color: var(--color-bg);
           border: var(--input-border);
@@ -178,12 +176,10 @@ window.customElements.define(elementName, class extends window.HTMLElement {
           border-color: var(--color-active-bg);
           color: var(--color-bg);
         }
-
         span {
           flex-grow: 1000;
           text-align: center;
         }
-
       </style>
       <header>
         <button class="hiddentoggle" onclick=${handle(this.toggleHidden)}>

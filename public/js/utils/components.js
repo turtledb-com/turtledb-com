@@ -12,7 +12,6 @@ export const buildElementName = (relativePath, address, cpk) => {
 }
 
 export const componentAtPath = (relativePath, cpk, baseElement) => {
-  console.log('relativePath', relativePath)
   const componentsByElementName = {}
   return (attributes = {}, children = []) => {
     if (typeof cpk === 'function') cpk = cpk()
@@ -57,10 +56,8 @@ export const useHash = recaller => {
     let hash = ''
     const setCpk = (newHash = '') => {
       if (hash === newHash) return
-      console.log(parseLocation(), { hash, newHash })
       hash = newHash
       if (parseLocation().hash !== hash) {
-        console.log('bumping history', parseLocation(), hash)
         window.history.pushState({}, '', `#${hash}`)
       }
       recaller.reportKeyMutation(recaller, 'hash', 'setCpk', 'window.location')

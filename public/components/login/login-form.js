@@ -10,9 +10,6 @@ window.customElements.define(elementName, class extends window.HTMLElement {
   constructor () {
     super()
     this.attachShadow({ mode: 'open' })
-    this.testElement = (attributes, children) => {
-      return h`<span ${attributes}>${children}</span>`
-    }
   }
 
   signIn = (e, el) => {
@@ -135,7 +132,6 @@ window.customElements.define(elementName, class extends window.HTMLElement {
           color: var(--color-active-text);
         }
       </style>
-      <${this.testElement} ${() => ({ a: 1, b: 2 })}>asdf</>
       <form onsubmit=${handle(this.signIn)}>
         <div>
           <input type="text" id="username" name="username" placeholder="" autocomplete="off" required />
