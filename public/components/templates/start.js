@@ -1,11 +1,11 @@
 import { h } from '../../js/display/h.js'
 import { render } from '../../js/display/render.js'
-import { setPointerByPublicKey } from '../../js/net/Peer.js'
+import { getPointerByPublicKey } from '../../js/net/Peer.js'
 import { buildElementName } from '../../js/utils/components.js'
 const scriptSrc = new URL(import.meta.url)
 const address = scriptSrc.searchParams.get('address')
 const cpk = scriptSrc.searchParams.get('cpk')
-const pointer = setPointerByPublicKey(cpk)
+const pointer = getPointerByPublicKey(cpk)
 const recaller = pointer.recaller
 const elementName = buildElementName(scriptSrc.pathname, address, cpk)
 console.log(scriptSrc.pathname, address, cpk)

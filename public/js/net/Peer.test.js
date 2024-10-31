@@ -4,7 +4,7 @@ import { Recaller } from '../utils/Recaller.js'
 import { hashNameAndPassword } from '../utils/crypto.js'
 import { bigLabel } from '../utils/loggy.js'
 import { handleNextTick } from '../utils/nextTick.js'
-import { Peer, setPointerByPublicKey } from './Peer.js'
+import { Peer, getPointerByPublicKey } from './Peer.js'
 
 const { default: chai } = await import('../utils/chaiPromise.test.js')
 
@@ -67,7 +67,7 @@ describe('Peer', function () {
     const hashwordA = await hashNameAndPassword('userA', 'passwordA', 10)
     const committerA = new Committer('a', hashwordA, recallerA)
 
-    setPointerByPublicKey(committerA.compactPublicKey, recallerA, committerA)
+    getPointerByPublicKey(committerA.compactPublicKey, recallerA, committerA)
     peerA.addSourceObject(committerA.compactPublicKey, 'peerA.addSourceObject')
 
     whatsUp('A (local) should have an empty sourceObject', { asw: [0], arw: [], bsw: [], brw: [] })
@@ -86,7 +86,7 @@ describe('Peer', function () {
     whatsUp('A (both) should have a sourceObject at 2', { asw: [2], arw: [2], bsw: [2], brw: [2] })
 
     const uia8LPB = new Uint8ArrayLayerPointer(undefined, recallerB)
-    setPointerByPublicKey(committerA.compactPublicKey, recallerB, uia8LPB)
+    getPointerByPublicKey(committerA.compactPublicKey, recallerB, uia8LPB)
     peerB.addSourceObject(committerA.compactPublicKey, 'peerB.addSourceObject')
     whatsUp('B (local) should have an empty sourceObject', { asw: [2], arw: [2], bsw: [2], brw: [2] })
   })

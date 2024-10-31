@@ -11,7 +11,7 @@ export const peerRecaller = new Recaller('Peer.js')
 
 /** @type {Object.<string, Uint8ArrayLayerPointer>} */
 const pointersByPublicKey = {}
-export const setPointerByPublicKey = (
+export const getPointerByPublicKey = (
   compactPublicKey,
   recaller = peerRecaller,
   uint8ArrayLayerPointer = new Uint8ArrayLayerPointer(undefined, recaller, compactPublicKey)
@@ -19,7 +19,7 @@ export const setPointerByPublicKey = (
   if (!compactPublicKey) throw new Error('compactPublicKey required')
   const existingPointer = pointersByPublicKey[compactPublicKey]
   if (!existingPointer) {
-    recaller.reportKeyMutation(pointersByPublicKey, OWN_KEYS, 'setPointerByPublicKey', 'Peer.js')
+    recaller.reportKeyMutation(pointersByPublicKey, OWN_KEYS, 'getPointerByPublicKey', 'Peer.js')
     pointersByPublicKey[compactPublicKey] = uint8ArrayLayerPointer
     const compactPublicKeys = Object.keys(pointersByPublicKey)
     publicKeysWatchers.forEach(f => f(compactPublicKeys))
@@ -31,9 +31,9 @@ export const setPointerByPublicKey = (
       existingPointer.uint8ArrayLayer
     )
   }
-  recaller.reportKeyAccess(pointersByPublicKey, compactPublicKey, 'setPointerByPublicKey', 'Peer.js')
+  recaller.reportKeyAccess(pointersByPublicKey, compactPublicKey, 'getPointerByPublicKey', 'Peer.js')
   if (existingPointer !== pointersByPublicKey[compactPublicKey]) {
-    recaller.reportKeyMutation(pointersByPublicKey, compactPublicKey, 'setPointerByPublicKey', 'Peer.js')
+    recaller.reportKeyMutation(pointersByPublicKey, compactPublicKey, 'getPointerByPublicKey', 'Peer.js')
   }
   return pointersByPublicKey[compactPublicKey]
 }
@@ -104,7 +104,7 @@ export class Peer extends Upserter {
     msg = `${this.name}.addSourceObject(${compactPublicKey})`,
     pointer
   ) {
-    pointer = setPointerByPublicKey(compactPublicKey, this.recaller, pointer)
+    pointer = getPointerByPublicKey(compactPublicKey, this.recaller, pointer)
     if (!this.sourceObjects[compactPublicKey]) {
       this.sourceObjects[compactPublicKey] = { msg, want: [], sent: [] }
       this.updateSourceObjects(msg)
@@ -112,15 +112,19 @@ export class Peer extends Upserter {
     return pointer
   }
 
-  async login (username, password, turtlename = 'home') {
+  async login (username, password, turtlename) {
     const hashword = await hashNameAndPassword(username, password)
+    return this.hashwordLogin(this.hashwordLogin(hashword, turtlename))
+  }
+
+  async hashwordLogin (hashword, turtlename = 'home') {
     const privateKey = await hashNameAndPassword(turtlename, hashword)
     const committer = new Committer(turtlename, privateKey, this.recaller)
     const compactPublicKey = committer.compactPublicKey
-    const originalCommitter = setPointerByPublicKey(compactPublicKey, this.recaller, committer, true)
+    const originalCommitter = getPointerByPublicKey(compactPublicKey, this.recaller, committer, true)
     this.addSourceObject(
       compactPublicKey,
-    `login created Committer ${username}/${turtlename}/${compactPublicKey}`
+      `login created Committer ${turtlename}/${compactPublicKey}`
     )
     return originalCommitter
   }

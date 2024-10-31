@@ -5,7 +5,7 @@ import { dirname, join, parse, relative } from 'path'
 import { watch } from 'chokidar'
 import { program } from 'commander'
 import { question } from 'readline-sync'
-import { setPointerByPublicKey } from '../public/js/net/Peer.js'
+import { getPointerByPublicKey } from '../public/js/net/Peer.js'
 import { Recaller } from '../public/js/utils/Recaller.js'
 import { Committer } from '../public/js/dataModel/Committer.js'
 import { newPeerPerCycle } from '../public/js/utils/peerFactory.js'
@@ -43,7 +43,7 @@ const committer = new Committer(turtlename, privateKey, recaller)
 const compactPublicKey = committer.compactPublicKey
 console.log('cpk', compactPublicKey)
 
-setPointerByPublicKey(compactPublicKey, recaller, committer)
+getPointerByPublicKey(compactPublicKey, recaller, committer)
 
 const connectionCycle = (receive, setSend, peer) => new Promise((resolve, reject) => {
   global.peer = peer

@@ -1,25 +1,28 @@
 import { Committer } from '../js/dataModel/Committer.js'
 import { h } from '../js/display/h.js'
 import { render } from '../js/display/render.js'
-import { setPointerByPublicKey } from '../js/net/Peer.js'
+import { getPointerByPublicKey } from '../js/net/Peer.js'
 import { componentAtPath, deriveDefaults, useHash } from '../js/utils/components.js'
 import { getPeer } from '../js/utils/connectPeer.js'
 
 const { cpk: defaultCpk, recaller, elementName } = deriveDefaults(import.meta.url)
 const { getCpk } = useHash(recaller)
 window.customElements.define(elementName, class extends window.HTMLBodyElement {
-  #startComponentsByCpk = {}
+  #lastCpk
+  #bodyForCpk
   constructor () {
     super()
     this.attachShadow({ mode: 'open' })
   }
 
-  body = el => {
+  login = componentAtPath('components/login/login.js', defaultCpk)
+
+  body = () => {
     const cpk = getCpk()
     if (!cpk) {
-      return componentAtPath('components/home/welcome.js', defaultCpk)(el)
+      return componentAtPath('components/home/welcome.js', defaultCpk)()
     }
-    const pointer = setPointerByPublicKey(cpk)
+    const pointer = getPointerByPublicKey(cpk)
     const localLength = pointer.layerIndex + 1
     const remoteLength = getPeer(recaller)?.remoteExports?.lookup?.()?.[cpk]?.want?.[0]?.[0]
     console.log({ localLength, remoteLength })
@@ -37,7 +40,7 @@ window.customElements.define(elementName, class extends window.HTMLBodyElement {
       if (pointer instanceof Committer) {
         return h`
           <h1>no components/main/start.js</h1>
-          ${componentAtPath('components/home/template-chooser.js', defaultCpk)}
+          <${componentAtPath('components/home/template-chooser.js', defaultCpk)}/>
         `
       } else {
         return h`
@@ -50,11 +53,11 @@ window.customElements.define(elementName, class extends window.HTMLBodyElement {
         <h1>Upoading existing turtle... (${localLength} / ${remoteLength})</h1>
       `
     }
-    console.log('using cpk', cpk)
-    if (!this.#startComponentsByCpk[cpk]) {
-      this.#startComponentsByCpk[cpk] = componentAtPath('components/main/start.js', cpk)(el)
+    if (this.#lastCpk !== cpk) {
+      this.#lastCpk = cpk
+      this.#bodyForCpk = componentAtPath('components/main/start.js', cpk)()
     }
-    return this.#startComponentsByCpk[cpk]
+    return this.#bodyForCpk
   }
 
   connectedCallback () {
@@ -71,7 +74,7 @@ window.customElements.define(elementName, class extends window.HTMLBodyElement {
           flex-grow: 1;
         }
       </style>
-      ${componentAtPath('components/login/login.js', defaultCpk)}
+      ${this.login}
       ${this.body}
     `, recaller, elementName)
   }

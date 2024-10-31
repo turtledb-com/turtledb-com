@@ -1,15 +1,14 @@
 /* global self, location, WebSocket, clients */
 
 import { getCommitAddress } from './js/dataModel/Uint8ArrayLayerPointer.js'
-import { Peer, getPublicKeys, peerRecaller, setPointerByPublicKey } from './js/net/Peer.js'
+import { Peer, getPublicKeys, peerRecaller, getPointerByPublicKey } from './js/net/Peer.js'
 import { attachPeerToCycle, newPeerPerCycle } from './js/utils/peerFactory.js'
 import { fallbackCPK } from './js/constants.js'
 
-console.log(fallbackCPK)
-setPointerByPublicKey(fallbackCPK)
-console.log(setPointerByPublicKey(fallbackCPK))
+console.log(' @@@ fallbackCPK', fallbackCPK)
+getPointerByPublicKey(fallbackCPK)
 
-export const v = '0.0.9'
+export const v = '0.0.11'
 self.v = v
 
 const recaller = peerRecaller
@@ -21,14 +20,14 @@ const updateClients = async eventName => {
   const currentIds = (await clients?.matchAll?.() ?? []).map(client => client.id)
   for (const peerId in peersById) {
     if (!currentIds.includes(peerId)) {
-      console.log(`removing detached peer with id === '${peerId}'`)
+      console.log(` @@@ removing detached peer with id === '${peerId}'`)
       peersById[peerId].cleanup()
       delete peersById[peerId]
       delete receiveById[peerId]
     }
   }
-  console.log(' @@@ ws.readyState', ws?.readyState)
   if (ws?.readyState === undefined) {
+    console.log(' @@@ creating connectionCycle. ws.readyState', ws?.readyState)
     const url = `wss://${location.host}`
     const connectionCycle = (receive, setSend) => new Promise((resolve, reject) => {
       ws = new WebSocket(url)
@@ -69,7 +68,7 @@ self.caches.open(v).then(cache => {
   recaller.watch('populate cache', () => {
     const cpks = getPublicKeys()
     for (const cpk of cpks) {
-      const pointer = setPointerByPublicKey(cpk, recaller)
+      const pointer = getPointerByPublicKey(cpk, recaller)
 
       const fsRefs = pointer.lookupRefs(getCommitAddress(pointer), 'value', 'fs')
       if (!fsRefs) return
@@ -95,7 +94,7 @@ self.caches.open(v).then(cache => {
         })
         if (cpk === fallbackCPK) cache.put(absolutePath, new Response(file, { headers }))
         cache.put(`${absolutePath}?address=${address}&cpk=${cpk}`, new Response(file, { headers }))
-        console.log('caching', `${absolutePath}?address=${address}&cpk=${cpk}`)
+        console.log(' @@@ caching', `${absolutePath}?address=${address}&cpk=${cpk}`)
         if (indexed !== undefined) {
           cache.put(indexed, new Response(file, { headers }))
           cache.put(`${indexed}/`, new Response(file, { headers }))
@@ -115,10 +114,10 @@ self.addEventListener('fetch', event => {
     const address = +url.searchParams.get('address')
     const cpk = url.searchParams.get('cpk')
     if (address && cpk) {
-      const pointer = setPointerByPublicKey(cpk)
+      const pointer = getPointerByPublicKey(cpk)
       const extension = url.pathname.split(/\./).pop()
       let file = pointer.lookup(address)
-      console.log({ address, cpk, extension, fileLength: file?.length })
+      console.log(' @@@ trying to add cache for', { address, cpk, extension, fileLength: file?.length })
       if (file !== undefined) {
         try {
           if (extension === 'json') {
@@ -133,7 +132,7 @@ self.addEventListener('fetch', event => {
         }
       }
     }
-    console.log('unmatched fetch request', event.request.url, response)
+    console.log(' @@@ unmatched fetch request', event.request.url, response)
     return fetch(event.request)
   })())
 })
