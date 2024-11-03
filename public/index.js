@@ -19,9 +19,11 @@ const renderComponentScriptLinks = _element => {
   return scripts
 }
 
-const serviceWorkerEnabled = connectPeer(peerRecaller)
+const serviceWorkerEnabledPromise = connectPeer(peerRecaller).catch(err => {
+  console.log(err)
+})
 const serviceWorkerError = () => {
-  if (!serviceWorkerEnabled) {
+  if (!serviceWorkerEnabledPromise) {
     return h`<p>service worker not enabled. a refresh might resolve this. otherwise try chrome. if it's really dead open a tab with "chrome://serviceworker-internals/", search for "turtledb.com" and hit the "stop" and "unregister" buttons, and reload this tab again.</p>`
   }
 }

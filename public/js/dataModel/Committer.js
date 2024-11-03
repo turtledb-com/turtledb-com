@@ -6,7 +6,6 @@ import { cryptoPromise } from '../utils/crypto.js'
 import { ADDRESS, getCommitAddress, Uint8ArrayLayerPointer } from './Uint8ArrayLayerPointer.js'
 
 export class Committer extends Uint8ArrayLayerPointer {
-  /** @property {Uint8ArrayLayerPointer} */
   constructor (name, privateKey, recaller, uint8ArrayLayer) {
     super(uint8ArrayLayer, recaller, name)
     this.privateKey = privateKey

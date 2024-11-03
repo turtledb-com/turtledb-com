@@ -8,7 +8,7 @@ import { fallbackCPK } from './js/constants.js'
 console.log(' @@@ fallbackCPK', fallbackCPK)
 getPointerByPublicKey(fallbackCPK)
 
-export const v = '0.0.11'
+export const v = '0.0.14'
 self.v = v
 
 const recaller = peerRecaller
@@ -65,6 +65,17 @@ const contentTypeByExtension = {
 }
 const fallbackRefs = {}
 self.caches.open(v).then(cache => {
+  const putVirtualCache = (request, body, contentType) => {
+    const headers = new Headers({
+      'Content-Length': body.length,
+      'Content-Type': contentType
+    })
+    const options = { headers }
+    const response = new Response(body, options)
+    console.log(' @@@ caching', request, contentType)
+    const result = cache.put(request, response)
+    console.log('result', result)
+  }
   recaller.watch('populate cache', () => {
     const cpks = getPublicKeys()
     for (const cpk of cpks) {
@@ -80,6 +91,7 @@ self.caches.open(v).then(cache => {
         const absolutePath = `/${relativePath}`
         const indexed = absolutePath.match(/(?<indexed>.*)\/index.html?/)?.groups?.indexed
         const extension = relativePath.split(/\./).pop()
+        const contentType = contentTypeByExtension[extension]
         try {
           if (extension === 'json') {
             file = JSON.stringify(file, null, 10)
@@ -89,15 +101,21 @@ self.caches.open(v).then(cache => {
           return
         }
         fallbackRefs[relativePath] = address
-        const headers = new Headers({
-          'Content-Type': contentTypeByExtension[extension]
-        })
-        if (cpk === fallbackCPK) cache.put(absolutePath, new Response(file, { headers }))
-        cache.put(`${absolutePath}?address=${address}&cpk=${cpk}`, new Response(file, { headers }))
-        console.log(' @@@ caching', `${absolutePath}?address=${address}&cpk=${cpk}`)
+        // const headers = new Headers({
+        //   'Content-Type': contentTypeByExtension[extension]
+        // })
+        if (cpk === fallbackCPK) {
+          putVirtualCache(absolutePath, file, contentType)
+          // cache.put(absolutePath, new Response(file, { headers }))
+        }
+        putVirtualCache(`${absolutePath}?address=${address}&cpk=${cpk}`, file, contentType)
+        // cache.put(`${absolutePath}?address=${address}&cpk=${cpk}`, new Response(file, { headers }))
+        // console.log(' @@@ caching', `${absolutePath}?address=${address}&cpk=${cpk}`, file.length)
         if (indexed !== undefined) {
-          cache.put(indexed, new Response(file, { headers }))
-          cache.put(`${indexed}/`, new Response(file, { headers }))
+          putVirtualCache(indexed, file, contentType)
+          putVirtualCache(`${indexed}/`, file, contentType)
+          // cache.put(indexed, new Response(file, { headers }))
+          // cache.put(`${indexed}/`, new Response(file, { headers }))
         }
       })
     }
@@ -105,11 +123,14 @@ self.caches.open(v).then(cache => {
 })
 
 self.addEventListener('fetch', event => {
+  console.log('fetch', event.request.url)
   updateClients('fetch')
   event.respondWith((async () => {
-    const cache = await self.caches.open(v)
-    const response = await cache.match(event.request)
-    if (response) return response
+    const response = await self.caches.match(event.request)
+    if (response) {
+      console.log(' @@@ matched cache for', event.request.url)
+      return response
+    }
     const url = new URL(event.request.url)
     const address = +url.searchParams.get('address')
     const cpk = url.searchParams.get('cpk')

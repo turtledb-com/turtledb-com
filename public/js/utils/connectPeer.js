@@ -17,37 +17,46 @@ function setPeer (recaller, peer) {
   peerByRecaller.set(recaller, peer)
   recaller.reportKeyMutation(peerByRecaller, 'peer', 'setPeer', 'connectPeer.js')
 }
-export function connectPeer (recaller) {
+export async function connectPeer (recaller) {
   if (alreadyWaiting) return
   alreadyWaiting = true
   try {
-    const connectionCycle = (receive, setSend, peer) => new Promise((resolve, reject) => {
-      navigator.serviceWorker.register(
-        '/service-worker.js',
-        { type: 'module', scope: '/' }
-      ).then(serviceWorkerRegistration => {
+    const connectionCycle = async (receive, setSend, peer) => {
+      try {
+        const serviceWorkerRegistration = await navigator.serviceWorker.register(
+          '/service-worker.js',
+          { type: 'module', scope: '/' }
+        )
         console.log('register complete', serviceWorkerRegistration)
         serviceWorkerRegistration.addEventListener('updatefound', () => {
           console.log('service-worker update found')
         })
-        serviceWorkerRegistration.update().then(() => {
-          const { serviceWorker } = navigator
-          if (!serviceWorker || allServiceWorkers.has(serviceWorker)) return
-          serviceWorker.ready.then(({ active }) => {
-            allServiceWorkers.add(serviceWorker)
-            setPeer(recaller, peer)
-            serviceWorker.onmessage = event => receive(new Uint8Array(event.data))
-            serviceWorker.onmessageerror = event => console.log(peer.name, 'onmessageerror', event)
-            serviceWorker.startMessages()
-            serviceWorker.oncontrollerchange = resolve
-            serviceWorker.onerror = reject
-            setSend(uint8Array => active.postMessage(uint8Array.buffer))
-          })
+        console.log('added updatefound listener')
+        try {
+          console.log(' ^^^^^^^ serviceWorkerRegistration.update()')
+          await serviceWorkerRegistration.update()
+        } catch (err) {
+          console.log(' ^^^^^^^ serviceWorkerRegistration.update() failed', err)
+        }
+        console.log(' ^^^^^^^ serviceWorkerRegistration.update() complete')
+        const { serviceWorker } = navigator
+        if (!serviceWorker || allServiceWorkers.has(serviceWorker)) return
+        const { active } = await serviceWorker.ready
+        allServiceWorkers.add(serviceWorker)
+        setPeer(recaller, peer)
+        serviceWorker.onmessage = event => receive(new Uint8Array(event.data))
+        serviceWorker.onmessageerror = event => console.log(peer.name, 'onmessageerror', event)
+        serviceWorker.startMessages()
+        setSend(uint8Array => active.postMessage(uint8Array.buffer))
+        return new Promise((resolve, reject) => {
+          serviceWorker.oncontrollerchange = resolve
+          serviceWorker.onerror = reject
         })
-      })
-    })
-    newPeerPerCycle('[main.js to service-worker]', recaller, connectionCycle, true)
-    return true
+      } catch (error) {
+        console.error(error)
+      }
+    }
+    await newPeerPerCycle('[main.js to service-worker]', recaller, connectionCycle, true)
   } catch (error) {
     console.error(error)
     console.error('###########################################################################################')

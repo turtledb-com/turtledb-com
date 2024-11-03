@@ -38,6 +38,10 @@ export const componentNameAtPath = (relativePath, cpk) => {
   return elementName
 }
 
+/**
+ * @param {string} url
+ * @returns {{parsedURL: string, address: number, cpk: string, pointer: import('../dataModel/Uint8ArrayLayerPointer.js').Uint8ArrayLayerPointer, recaller: import('./Recaller.js').Recaller, elementName: string}}
+ **/
 export const deriveDefaults = url => {
   const parsedURL = new URL(url)
   const address = parsedURL.searchParams.get('address')

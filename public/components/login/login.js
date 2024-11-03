@@ -1,12 +1,12 @@
 import { fallbackCPK } from '../../js/constants.js'
 import { Committer } from '../../js/dataModel/Committer.js'
 import { h } from '../../js/display/h.js'
-import { handle } from '../../js/display/helpers.js'
+import { handle, showIfElse } from '../../js/display/helpers.js'
 import { render } from '../../js/display/render.js'
 import { getPointerByPublicKey } from '../../js/net/Peer.js'
 import { componentAtPath, deriveDefaults, useHash } from '../../js/utils/components.js'
 
-const { recaller, elementName, cpk } = deriveDefaults(import.meta.url)
+const { recaller, elementName, cpk, pointer } = deriveDefaults(import.meta.url)
 
 const { getCpk, setCpk } = useHash(recaller)
 
@@ -195,10 +195,25 @@ window.customElements.define(elementName, class extends window.HTMLElement {
             <path stroke="SeaGreen" fill="MediumSpringGreen" stroke-width="3" d="M 0 60 L 52 -30 L -52 -30 Z"/>
           </svg>
         </button>
-        <span>
-          TURTLEDB.COM - believes in you!
-        </span>
-        <${this.form} handleSignin=${this.handleSignin} />
+        ${showIfElse(
+          () => getCpk() === fallbackCPK,
+          () => h`
+            <span>
+              TURTLEDB.COM - believes in you!
+            </span>
+            <${this.form} handleSignin=${this.handleSignin} />
+          `,
+          h`
+            <span>
+              TURTLEDB.COM - believes in you!
+            </span>
+            ${getCpk} ${fallbackCPK}
+            <span>
+              ${() => pointer.getCommitValue('name')}
+            </span>
+            <${this.form} handleSignin=${this.handleSignin} />
+          `
+        )}
       </header>
     `, recaller, elementName)
   }
