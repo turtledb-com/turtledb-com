@@ -9,7 +9,6 @@ console.log(' @@@ fallbackCPK', fallbackCPK)
 getPointerByPublicKey(fallbackCPK)
 
 export const v = '0.0.14'
-self.v = v
 
 const recaller = peerRecaller
 
@@ -126,7 +125,8 @@ self.addEventListener('fetch', event => {
   console.log('fetch', event.request.url)
   updateClients('fetch')
   event.respondWith((async () => {
-    const response = await self.caches.match(event.request)
+    const cache = await self.caches.open(v)
+    const response = await cache.match(event.request)
     if (response) {
       console.log(' @@@ matched cache for', event.request.url)
       return response
