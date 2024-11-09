@@ -3,10 +3,10 @@ import { Committer } from '../../js/dataModel/Committer.js'
 import { h } from '../../js/display/h.js'
 import { handle, showIfElse } from '../../js/display/helpers.js'
 import { render } from '../../js/display/render.js'
-import { getPointerByPublicKey } from '../../js/net/Peer.js'
+import { getPointerByPublicKey, getPublicKeys } from '../../js/net/Peer.js'
 import { componentAtPath, deriveDefaults, useHash } from '../../js/utils/components.js'
 
-const { recaller, elementName, cpk, pointer } = deriveDefaults(import.meta.url)
+const { recaller, elementName, cpk } = deriveDefaults(import.meta.url)
 
 const { getCpk, setCpk } = useHash(recaller)
 
@@ -31,16 +31,28 @@ window.customElements.define(elementName, class extends window.HTMLElement {
   constructor () {
     super()
     this.attachShadow({ mode: 'open' })
-    this.handleSignin = () => async (username, hashwordPromise, turtlename) => {
-      const hashword = await hashwordPromise
-      console.log({ username, hashword, turtlename })
-      const pointer = await window.peer.hashwordLogin(hashword, turtlename)
-      const { compactPublicKey } = pointer
-      setCpk(compactPublicKey)
-    }
+  }
+
+  handleSignin = () => async (username, hashwordPromise, turtlename) => {
+    const hashword = await hashwordPromise
+    console.log({ username, hashword, turtlename })
+    const pointer = await window.peer.hashwordLogin(hashword, turtlename)
+    const { compactPublicKey } = pointer
+    setCpk(compactPublicKey)
   }
 
   form = componentAtPath('components/login/login-form.js', fallbackCPK)
+  explorer = componentAtPath('components/turtle-explorer/turtle-explorer.js', fallbackCPK)
+
+  listPeers = () => {
+    const cpks = getPublicKeys()
+    const liElements = cpks.map(cpk => {
+      return h`<li><${this.explorer} cpk=${cpk} key="${this.key}.${cpk}"/></li>`
+    })
+    return h`<ul>
+      ${liElements}
+    </ul>`
+  }
 
   get state () {
     recaller.reportKeyAccess(this, 'state', 'get', 'components/login.js')
@@ -99,10 +111,6 @@ window.customElements.define(elementName, class extends window.HTMLElement {
           height: 0;
           overflow: hidden;
         }
-        :host(.expanded) {
-          height: 100%;
-          overflow: hidden;
-        }
         header {
           position: relative;
           color: var(--color-text);
@@ -148,7 +156,17 @@ window.customElements.define(elementName, class extends window.HTMLElement {
           display: block;
         }
         :host(.expanded) .expandedtoggle svg {
-          transform: rotate(60deg);
+          transform: rotate(90deg);
+        }
+        ul {
+          display: none;
+          height: 0;
+          overflow: hidden;
+          transition: all 200ms;
+        }
+        :host(.expanded) ul {
+          display: block;
+          height: auto;
         }
         :host(.hidden) .hiddentoggle svg {
           transform: rotate(45deg);
@@ -180,6 +198,9 @@ window.customElements.define(elementName, class extends window.HTMLElement {
           flex-grow: 1000;
           text-align: center;
         }
+        ul {
+          width: 100%;
+        }
       </style>
       <header>
         <button class="hiddentoggle" onclick=${handle(this.toggleHidden)}>
@@ -192,16 +213,16 @@ window.customElements.define(elementName, class extends window.HTMLElement {
         </button>
         <button class="expandedtoggle" onclick=${handle(this.toggleExpanded)}>
           <svg viewBox="-100 -100 200 200" xmlns="http://www.w3.org/2000/svg">
-            <path stroke="SeaGreen" fill="MediumSpringGreen" stroke-width="3" d="M 0 60 L 52 -30 L -52 -30 Z"/>
+            <path stroke="SeaGreen" fill="MediumSpringGreen" stroke-width="3" d="M 60 0 L -30 52 L -30 -52 Z"/>
           </svg>
         </button>
         ${showIfElse(
           () => getCpk() === fallbackCPK,
-          () => h`
+          h`
             <span>
               TURTLEDB.COM - believes in you!
             </span>
-            <${this.form} handleSignin=${this.handleSignin} />
+            <${this.form} handleSignin=${this.handleSignin} key="${this.key}.form"/>
           `,
           h`
             <span>
@@ -209,11 +230,12 @@ window.customElements.define(elementName, class extends window.HTMLElement {
             </span>
             ${getCpk} ${fallbackCPK}
             <span>
-              ${() => pointer.getCommitValue('name')}
+              ${() => getCpk() && getPointerByPublicKey(getCpk()).getCommitValue('name')}
             </span>
-            <${this.form} handleSignin=${this.handleSignin} />
+            <${this.form} handleSignin=${this.handleSignin} key="${this.key}.form"/>
           `
         )}
+        ${this.listPeers}
       </header>
     `, recaller, elementName)
   }

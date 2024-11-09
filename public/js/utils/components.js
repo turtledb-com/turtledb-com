@@ -12,17 +12,24 @@ export const buildElementName = (relativePath, address, cpk) => {
 }
 
 export const componentAtPath = (relativePath, cpk, baseElement) => {
-  const componentsByElementName = {}
+  const componentsByKey = {}
   return (attributes = {}, children = []) => {
     if (typeof cpk === 'function') cpk = cpk()
     const elementName = componentNameAtPath(relativePath, cpk)
     // console.log('componentAtPath', { relativePath, cpk, elementName })
     if (elementName) {
-      if (!componentsByElementName[elementName]) {
-        if (baseElement) componentsByElementName[elementName] = h`<${baseElement} is=${elementName} ${attributes}>${children}</>`
-        else componentsByElementName[elementName] = h`<${elementName} ${attributes}>${children}</>`
+      const { key } = attributes
+      if (key && componentsByKey[key]) return componentsByKey[key]
+      let component
+      if (baseElement) {
+        component = h`<${baseElement} is=${elementName} ${attributes}>${children}</>`
+      } else {
+        component = h`<${elementName} ${attributes}>${children}</>`
       }
-      return componentsByElementName[elementName]
+      if (key) {
+        componentsByKey[key] = component
+      }
+      return component
     }
     return 'loading...'
   }

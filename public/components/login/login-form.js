@@ -29,6 +29,7 @@ window.customElements.define(elementName, class extends window.HTMLElement {
     render(this.shadowRoot, () => h`
       <style>
         :host {
+          margin-left: auto;
           transition: all 200ms;
           --1-unit: 0.125rem;
           --2-units: calc(2 * var(--1-unit));

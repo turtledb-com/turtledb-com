@@ -20,7 +20,7 @@ const renderCommit = _element => {
         name: commit?.name,
         ts: commit?.ts?.toString?.(),
         totalBytes: pointer.length,
-        layerBytes: pointer.length - pointer.uint8ArrayLayer?.parent?.length,
+        layerBytes: pointer.length - (pointer.uint8ArrayLayer?.parent?.length ?? 0),
         layerIndex: pointer.layerIndex
       })
     }

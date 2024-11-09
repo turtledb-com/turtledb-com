@@ -16,6 +16,7 @@ window.customElements.define(elementName, class extends window.HTMLBodyElement {
   }
 
   login = componentAtPath('components/login/login.js', defaultCpk)
+  templateChooser = componentAtPath('components/home/template-chooser.js', defaultCpk)
 
   body = () => {
     const cpk = getCpk()
@@ -40,7 +41,7 @@ window.customElements.define(elementName, class extends window.HTMLBodyElement {
       if (pointer instanceof Committer) {
         return h`
           <h1>no components/main/start.js</h1>
-          <${componentAtPath('components/home/template-chooser.js', defaultCpk)}/>
+          <${this.templateChooser} key="templateChooser"/>
         `
       } else {
         return h`
@@ -74,8 +75,8 @@ window.customElements.define(elementName, class extends window.HTMLBodyElement {
           flex-grow: 1;
         }
       </style>
-      ${this.login}
-      ${this.body}
+      <${this.login} key="login"/>
+      <${this.body} key="body"/>
     `, recaller, elementName)
   }
 }, { extends: 'body' })
