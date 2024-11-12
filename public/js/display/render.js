@@ -173,4 +173,5 @@ export function render (element, descriptions, recaller, debugString, xmlns = 'h
     return _setChildren(element, descriptions, xmlns, recaller, debugString)
   }
   recaller.watch(debugString, f)
+  return f
 }

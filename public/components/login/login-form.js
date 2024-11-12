@@ -9,6 +9,7 @@ const { recaller, elementName } = deriveDefaults(import.meta.url)
 window.customElements.define(elementName, class extends window.HTMLElement {
   constructor () {
     super()
+    console.log('\n\n   new form')
     this.attachShadow({ mode: 'open' })
   }
 

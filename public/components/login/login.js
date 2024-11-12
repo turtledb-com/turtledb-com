@@ -226,10 +226,6 @@ window.customElements.define(elementName, class extends window.HTMLElement {
           `,
           h`
             <span>
-              TURTLEDB.COM - believes in you!
-            </span>
-            ${getCpk} ${fallbackCPK}
-            <span>
               ${() => getCpk() && getPointerByPublicKey(getCpk()).getCommitValue('name')}
             </span>
             <${this.form} handleSignin=${this.handleSignin} key="${this.key}.form"/>

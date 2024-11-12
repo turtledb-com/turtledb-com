@@ -1,36 +1,39 @@
+import { fallbackCPK } from '../../js/constants.js'
+import { KIND, getCodecs } from '../../js/dataModel/CODECS.js'
 import { h } from '../../js/display/h.js'
-import { handle } from '../../js/display/helpers.js'
+import { handle, showIfElse } from '../../js/display/helpers.js'
 import { render } from '../../js/display/render.js'
 import { cog, equilateral } from '../../js/display/shapes.js'
 import { getPointerByPublicKey } from '../../js/net/Peer.js'
-import { deriveDefaults } from '../../js/utils/components.js'
+import { componentAtPath, deriveDefaults } from '../../js/utils/components.js'
 
 const { recaller, elementName } = deriveDefaults(import.meta.url)
 
 window.customElements.define(elementName, class extends window.HTMLElement {
   constructor () {
     super()
+    console.log('\n\n turtle-explorer')
     this.attachShadow({ mode: 'open' })
   }
 
-  #showData = false
-  get showData () {
-    recaller.reportKeyAccess(this, 'showData', 'get', elementName)
-    return this.#showData
+  #showValue = false
+  get showValue () {
+    recaller.reportKeyAccess(this, 'showValue', 'get', elementName)
+    return this.#showValue
   }
 
-  set showData (showData) {
-    recaller.reportKeyMutation(this, 'showData', 'set', elementName)
-    if (showData) {
-      this.classList.add('show-data')
+  set showValue (showValue) {
+    recaller.reportKeyMutation(this, 'showValue', 'set', elementName)
+    if (showValue) {
+      this.classList.add('show-value')
     } else {
-      this.classList.remove('show-data')
+      this.classList.remove('show-value')
     }
-    this.#showData = showData
+    this.#showValue = showValue
   }
 
-  toggleData = () => {
-    this.showData = !this.showData
+  toggleValue = () => {
+    this.showValue = !this.showValue
   }
 
   #showMeta = false
@@ -61,14 +64,29 @@ window.customElements.define(elementName, class extends window.HTMLElement {
     return getPointerByPublicKey(this.cpk).getCommitValue('name') ?? h`<i>no commits</i>`
   }
 
+  object = componentAtPath('components/turtle-explorer/object.js', fallbackCPK)
+
   commitSelector = () => {
+    const pointer = getPointerByPublicKey(this.cpk)
+    const commit = pointer.getCommit(undefined, getCodecs(KIND.REFS_TOP)) ?? {}
+    console.log(commit)
+    const meta = Object.fromEntries(Object.entries(commit).filter(([key]) => key !== 'value'))
+    const value = pointer.lookupRefs(pointer.getCommitAddress(), 'value')
     return h`
       <button onclick=${handle(this.toggleMeta)}>
         <${cog} teeth=5 class="expanded-meta"/>
       </button>
-      <button onclick=${handle(this.toggleData)}>
-        <${equilateral} class="expanded-data"/>
+      <button onclick=${handle(this.toggleValue)}>
+        <${equilateral} class="expanded-value"/>
       </button>
+      ${showIfElse(
+        () => this.showMeta,
+        h`<${this.object} ${{ pointer, value: meta, key: `${this.key}.meta` }}/>`
+      )}
+      ${showIfElse(
+        () => this.showValue,
+        h`<${this.object} ${{ pointer, value, key: `${this.key}.value` }}/>`
+      )}
     `
   }
 
@@ -80,10 +98,10 @@ window.customElements.define(elementName, class extends window.HTMLElement {
       :host(.show-meta) .expanded-meta {
         transform: rotate(90deg);
       }
-      .expanded-data {
+      .expanded-value {
         transform: translate(0, 0.1em) rotate(90deg);
       }
-      :host(.show-data) .expanded-data {
+      :host(.show-value) .expanded-value {
         transform: rotate(180deg);
       }
     </style>
