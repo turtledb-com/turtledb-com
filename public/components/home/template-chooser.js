@@ -5,6 +5,7 @@ import { handle } from '../../js/display/helpers.js'
 import { render } from '../../js/display/render.js'
 import { getPointerByPublicKey } from '../../js/net/Peer.js'
 import { deriveDefaults, useHash } from '../../js/utils/components.js'
+import { v } from '../../service-worker.js'
 
 const { cpk, recaller, elementName } = deriveDefaults(import.meta.url)
 const { getCpk } = useHash(recaller)
@@ -24,8 +25,14 @@ window.customElements.define(elementName, class extends window.HTMLElement {
     if (!value.fs || typeof value.fs !== 'object') value.fs = {}
     const defaultPointer = getPointerByPublicKey(cpk)
     value.fs['components/main/start.js'] = defaultPointer.getCommitValue('value', 'fs', 'components/templates/start.js')
-    console.log(value)
-    committer.commit('added basic template', value)
+    window.caches.open(v).then(async cache => {
+      await committer.commit('added basic template', value)
+      console.log(committer.getCommitAddress())
+      console.log(committer.getCommitAddress('value'))
+      console.log(committer.getCommitAddress('value', 'fs'))
+      const address = committer.getCommitAddress('value', 'fs', 'components/templates/start.js')
+      console.log({ address, cache, value })
+    })
   }
 
   connectedCallback () {

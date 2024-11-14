@@ -96,9 +96,11 @@ window.customElements.define(elementName, class extends window.HTMLElement {
         </h2>
         <p>
           The World Wide Web is made with you in mind.
+          This project uses the bog-standard web built into your browser.
           CSS, HTML, and JavaScript are meant to be used by everyone.
           For the last 3 decades the inventor of the internet and other really smart people (the W3C) have made continuous, thoughtful improvements.
           The web has never been more powerful or easier to use than it is today!
+          Type some words and share them online (it doesn't have to be rocket surgery to be useful).
           You can do it! 
           We believe in you!
         </p>

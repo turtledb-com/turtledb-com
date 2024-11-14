@@ -38,7 +38,7 @@ if (port) {
     global.peer = peer
     console.log('#####   global.peer is set')
     const socket = connect(s3port, s3host, () => {
-      console.log('<socket to s3peer is connected.>')
+      console.log('[repl to s3peer] is connected.')
       socket.on('data', data => {
         receive(new Uint8Array(data.buffer))
       })

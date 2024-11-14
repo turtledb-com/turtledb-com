@@ -9,6 +9,7 @@ import { getPeer } from '../js/utils/connectPeer.js'
 const { cpk: defaultCpk, recaller, elementName } = deriveDefaults(import.meta.url)
 const { getCpk } = useHash(recaller)
 window.customElements.define(elementName, class extends window.HTMLBodyElement {
+  #f
   #lastCpk
   #bodyForCpk
   constructor () {
@@ -19,12 +20,12 @@ window.customElements.define(elementName, class extends window.HTMLBodyElement {
 
   connectedCallback () {
     console.log('app.js connectedCallback')
-    this.f = render(this.shadowRoot, this.content, recaller, elementName)
+    this.#f = render(this.shadowRoot, this.content, recaller, elementName)
   }
 
   disconnectedCallback () {
     console.log('app.js disconnectedCallback')
-    recaller.unwatch(this.f)
+    recaller.unwatch(this.#f)
   }
 
   login = componentAtPath('components/login/login.js', defaultCpk)
@@ -57,7 +58,7 @@ window.customElements.define(elementName, class extends window.HTMLBodyElement {
     const remoteLength = getPeer(recaller)?.remoteExports?.lookup?.()?.[cpk]?.want?.[0]?.[0]
     console.log({ localLength, remoteLength })
     if (remoteLength === undefined) {
-      return h`<h1>Checking remote for existing turtle<h1>`
+      return h`<h1>Checking remote for existing turtle</h1>`
     }
     if (localLength < remoteLength) {
       return h`<h1>Downloading existing turtle... (${localLength} / ${remoteLength})</h1>`
@@ -73,7 +74,7 @@ window.customElements.define(elementName, class extends window.HTMLBodyElement {
       }
     }
     if (localLength !== remoteLength) {
-      return h`<h1>Upoading existing turtle... (${localLength} / ${remoteLength})</h1>`
+      return h`<h1>Uploading existing turtle... (${localLength} / ${remoteLength})</h1>`
     }
     if (this.#lastCpk !== cpk) {
       this.#lastCpk = cpk

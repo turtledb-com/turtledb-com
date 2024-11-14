@@ -9,11 +9,26 @@ import { componentAtPath, deriveDefaults } from '../../js/utils/components.js'
 
 const { recaller, elementName } = deriveDefaults(import.meta.url)
 
+let watchedCount = 0
+
 window.customElements.define(elementName, class extends window.HTMLElement {
+  #f
   constructor () {
     super()
-    console.log('\n\n turtle-explorer')
+    console.log('turtle-explorer.js constructor')
     this.attachShadow({ mode: 'open' })
+  }
+
+  connectedCallback () {
+    this.#f = render(this.shadowRoot, this.content, recaller, elementName)
+    ++watchedCount
+    console.log('turtle-explorer.js connectedCallback', watchedCount)
+  }
+
+  disconnectedCallback () {
+    recaller.unwatch(this.#f)
+    --watchedCount
+    console.log('turtle-explorer.js disconnectedCallback', watchedCount)
   }
 
   #showValue = false
@@ -56,10 +71,6 @@ window.customElements.define(elementName, class extends window.HTMLElement {
     this.showMeta = !this.showMeta
   }
 
-  connectedCallback () {
-    render(this.shadowRoot, this.content, recaller, elementName)
-  }
-
   name = () => {
     return getPointerByPublicKey(this.cpk).getCommitValue('name') ?? h`<i>no commits</i>`
   }
@@ -80,13 +91,13 @@ window.customElements.define(elementName, class extends window.HTMLElement {
         <${equilateral} class="expanded-value"/>
       </button>
       ${showIfElse(
-        () => this.showMeta,
-        h`<${this.object} ${{ pointer, value: meta, key: `${this.key}.meta` }}/>`
-      )}
+      () => this.showMeta,
+      h`<${this.object} ${{ pointer, value: meta, key: `${this.key}.meta` }}/>`
+    )}
       ${showIfElse(
-        () => this.showValue,
-        h`<${this.object} ${{ pointer, value, key: `${this.key}.value` }}/>`
-      )}
+      () => this.showValue,
+      h`<${this.object} ${{ pointer, value, key: `${this.key}.value` }}/>`
+    )}
     `
   }
 
