@@ -37,5 +37,5 @@ render(document, h`<html style="height: 100%;">
     ${renderComponentScriptLinks}
   </head>
   <${serviceWorkerError}/>
-  <${componentAtPath('components/app.js', fallbackCPK, 'body')}/>
+  <${componentAtPath('components/app.js', fallbackCPK, 'body')} key="app"/>
 </html>`, peerRecaller, 'index.js')

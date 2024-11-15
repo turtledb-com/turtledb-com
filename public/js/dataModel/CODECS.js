@@ -176,9 +176,8 @@ export const KIND = {
   OPAQUE: Symbol('uninterpreted data')
 }
 
-/** @type {Array.<Codec>} */
-export const CODECS = [
-  new Codec({
+export const CODEC = {
+  UNDEFINED: new Codec({
     name: 'undefined',
     footerPrefix: 0b00000000,
     test: value => value === undefined,
@@ -187,7 +186,7 @@ export const CODECS = [
     valueToBlocks: () => [],
     blocksToValue: () => undefined
   }),
-  new Codec({
+  NULL: new Codec({
     name: 'null',
     footerPrefix: 0b00000001,
     test: value => value === null,
@@ -196,7 +195,7 @@ export const CODECS = [
     valueToBlocks: () => [],
     blocksToValue: () => null
   }),
-  new Codec({
+  FALSE: new Codec({
     name: 'boolean(false)',
     footerPrefix: 0b00000010,
     test: value => value === false,
@@ -205,7 +204,7 @@ export const CODECS = [
     valueToBlocks: () => [],
     blocksToValue: () => false
   }),
-  new Codec({
+  TRUE: new Codec({
     name: 'boolean(true)',
     footerPrefix: 0b00000011,
     test: value => value === true,
@@ -214,7 +213,7 @@ export const CODECS = [
     valueToBlocks: () => [],
     blocksToValue: () => true
   }),
-  new Codec({
+  NUMBER: new Codec({
     name: 'number',
     footerPrefix: 0b000001,
     test: value => (typeof value === 'number'),
@@ -227,7 +226,7 @@ export const CODECS = [
       uint8ArrayLayer.lookup(decodeVariable(encodedBlocks[0]), getCodecs(KIND.UINT8ARRAY)).buffer
     )[0]
   }),
-  new Codec({
+  STRING: new Codec({
     name: 'string',
     footerPrefix: 0b000010,
     test: value => (typeof value === 'string'),
@@ -238,7 +237,7 @@ export const CODECS = [
       uint8ArrayLayer.lookup(decodeVariable(encodedBlocks[0]), getCodecs(KIND.UINT8ARRAY))
     )
   }),
-  new Codec({
+  DATE: new Codec({
     name: 'date',
     footerPrefix: 0b000011,
     test: value => value instanceof Date,
@@ -251,7 +250,7 @@ export const CODECS = [
       new Float64Array(uint8ArrayLayer.lookup(decodeVariable(encodedBlocks[0]), getCodecs(KIND.UINT8ARRAY)).buffer)[0]
     )
   }),
-  new Codec({
+  BIGINT: new Codec({
     name: 'bigint',
     footerPrefix: 0b00010,
     test: value => (typeof value === 'bigint'),
@@ -271,7 +270,7 @@ export const CODECS = [
       return sign * BigInt(`0x${[...uint8Array].map(byte => `0${byte.toString(16)}`.slice(-2)).join('')}`)
     }
   }),
-  new Codec({
+  UINT8ARRAY_SHORT: new Codec({
     name: 'Uint8Array(length<=4)',
     footerPrefix: 0b00111,
     test: value => (value instanceof Uint8Array && value.length <= 4),
@@ -280,7 +279,7 @@ export const CODECS = [
     valueToBlocks: (_upserter, value) => [value],
     blocksToValue: (_uint8ArrayLayer, encodedBlocks) => encodedBlocks[0]
   }),
-  new Codec({
+  UINT8ARRAY_LONG: new Codec({
     name: 'Uint8Array(length>4)',
     footerPrefix: 0b0100,
     test: value => (value instanceof Uint8Array),
@@ -297,7 +296,7 @@ export const CODECS = [
       ...encodedBlocks.map(value => uint8ArrayLayer.lookup(decodeVariable(value), getCodecs(KIND.UINT8ARRAY)))
     )
   }),
-  new Codec({
+  ARRAY: new Codec({
     name: 'array',
     footerPrefix: 0b000111,
     test: value => Array.isArray(value),
@@ -317,7 +316,7 @@ export const CODECS = [
       return Object.assign([], array)
     }
   }),
-  new Codec({
+  PARTIAL_LONG: new Codec({
     name: 'partial(length>1)',
     footerPrefix: 0b0010,
     test: value => value?.length > 1,
@@ -336,7 +335,7 @@ export const CODECS = [
       return partialArray?.[IS_PARTIAL] ? partialArray : [partialArray]
     }).flat())
   }),
-  new Codec({
+  PARTIAL_SHORT: new Codec({
     name: 'partial(length=1)',
     footerPrefix: 0b001100,
     test: value => value?.length === 1,
@@ -345,7 +344,7 @@ export const CODECS = [
     valueToBlocks: (upserter, value) => [encodeVariable(upserter.upsert(value[0]))],
     blocksToValue: (uint8ArrayLayer, encodedBlocks) => setPartial([uint8ArrayLayer.lookup(decodeVariable(encodedBlocks[0]))])
   }),
-  new Codec({
+  PARTIAL_EMPTY: new Codec({
     name: 'partial(length=0)',
     footerPrefix: 0b00110100,
     test: value => value?.length === 0,
@@ -354,7 +353,7 @@ export const CODECS = [
     valueToBlocks: () => [],
     blocksToValue: () => setPartial([])
   }),
-  new Codec({
+  TYPED_ARRAY: new Codec({
     name: 'TypedArray',
     footerPrefix: 0b10,
     test: value => (value instanceof Object.getPrototypeOf(Uint8Array)),
@@ -368,7 +367,7 @@ export const CODECS = [
       uint8ArrayLayer.lookup(decodeVariable(encodedBlocks[1]), getCodecs(KIND.UINT8ARRAY)).buffer
     )
   }),
-  new Codec({
+  MAP: new Codec({
     name: 'map',
     footerPrefix: 0b111101,
     test: value => value instanceof Map,
@@ -381,7 +380,7 @@ export const CODECS = [
       ksVsToPairs(uint8ArrayLayer.lookup(decodeVariable(encodedBlocks[0]), getCodecs(KIND.PARTIAL_ARRAY)))
     )
   }),
-  new Codec({
+  SET: new Codec({
     name: 'set',
     footerPrefix: 0b111110,
     test: value => value instanceof Set,
@@ -394,7 +393,7 @@ export const CODECS = [
       uint8ArrayLayer.lookup(decodeVariable(encodedBlocks[0]), getCodecs(KIND.PARTIAL_ARRAY))
     )
   }),
-  new Codec({
+  OBJECT: new Codec({
     name: 'object',
     footerPrefix: 0b111111,
     test: value => (typeof value === 'object'),
@@ -408,8 +407,8 @@ export const CODECS = [
     )
   }),
 
-  /* shallow codecs */
-  new Codec({
+  /* reference codecs */
+  ARRAY_REF: new Codec({
     name: '*array',
     footerPrefix: 0b000111,
     test: value => Array.isArray(value),
@@ -431,7 +430,7 @@ export const CODECS = [
       return Object.assign([], array, { length: uint8ArrayLayer.lookup(array.length) })
     }
   }),
-  new Codec({
+  PARTIAL_LONG_REF: new Codec({
     name: '*partial(length>1)',
     footerPrefix: 0b0010,
     test: value => value?.length > 1,
@@ -451,7 +450,7 @@ export const CODECS = [
       return partialArray?.[IS_PARTIAL] ? partialArray : [partialArray]
     }).flat())
   }),
-  new Codec({
+  PARTIAL_SHORT_REF: new Codec({
     name: '*partial(length=1)',
     footerPrefix: 0b001100,
     test: value => value?.length === 1,
@@ -460,7 +459,7 @@ export const CODECS = [
     valueToBlocks: (_upserter, value) => [encodeVariable(value[0])],
     blocksToValue: (uint8ArrayLayer, encodedBlocks) => setPartial([uint8ArrayLayer.lookup(decodeVariable(encodedBlocks[0]), getCodecs(KIND.REF))])
   }),
-  new Codec({
+  PARTIAL_EMPTY_REF: new Codec({
     name: '*partial(length=0)',
     footerPrefix: 0b00110100,
     test: value => value?.length === 0,
@@ -469,7 +468,7 @@ export const CODECS = [
     valueToBlocks: () => [],
     blocksToValue: () => setPartial([])
   }),
-  new Codec({
+  MAP_REF: new Codec({
     name: '*map',
     footerPrefix: 0b111101,
     test: value => value instanceof Map,
@@ -483,7 +482,7 @@ export const CODECS = [
       uint8ArrayLayer
     )
   }),
-  new Codec({
+  SET_REF: new Codec({
     name: '*set',
     footerPrefix: 0b111110,
     test: value => value instanceof Set,
@@ -496,7 +495,7 @@ export const CODECS = [
       uint8ArrayLayer.lookup(decodeVariable(encodedBlocks[0]), getCodecs(KIND.REFS_PARTIAL_ARRAY))
     )
   }),
-  new Codec({
+  OBJECT_REF: new Codec({
     name: '*object',
     footerPrefix: 0b111111,
     test: value => (value && typeof value === 'object' && !(value instanceof Date)),
@@ -513,7 +512,7 @@ export const CODECS = [
       uint8ArrayLayer
     ))
   }),
-  new Codec({
+  OPAQUE: new Codec({
     name: '__opaque(uint8Array)__',
     footerPrefix: 0b000110, // only ever looked for explicitely
     test: () => true,
@@ -527,7 +526,7 @@ export const CODECS = [
       return uint8ArrayLayer.slice(address, address + length)
     }
   }),
-  new Codec({
+  ANY_REF: new Codec({
     name: '*any',
     footerPrefix: 0b0, // matches any-single-byte >>> 8
     test: () => true,
@@ -536,11 +535,14 @@ export const CODECS = [
     valueToBlocks: (_upserter, value) => [encodeVariable(value)],
     blocksToValue: (_uint8ArrayLayer, _encodedBlocks, address) => address
   })
-]
+}
+
+/** @type {Array.<Codec>} */
+export const ALL_CODECS = Object.values(CODEC)
 
 /** @type {Object.<string,Array.<Codec>>} */
 const codecsByKind = {}
-for (const codec of CODECS) {
+for (const codec of ALL_CODECS) {
   for (const kind of codec.kinds) {
     codecsByKind[kind] ??= []
     codecsByKind[kind].push(codec)

@@ -1,5 +1,5 @@
 import { Recaller } from '../utils/Recaller.js'
-import { CODECS, Codec, KIND, getCodecs } from './CODECS.js'
+import { ALL_CODECS, Codec, KIND, getCodecs } from './CODECS.js'
 import { Uint8ArrayLayer, collapseUint8Arrays } from './Uint8ArrayLayer.js'
 import { Uint8ArrayLayerPointer } from './Uint8ArrayLayerPointer.js'
 
@@ -34,7 +34,7 @@ export class Upserter extends Uint8ArrayLayerPointer {
     while (end > start) {
       uint8ArrayLayer = uint8ArrayLayer.getLayerContainingAddress(end)
       const footer = uint8ArrayLayer.getByte(end)
-      const codec = Codec.calculateCodec(footer, CODECS)
+      const codec = Codec.calculateCodec(footer, ALL_CODECS)
       const isOpaque = codec.kinds.includes(KIND.OPAQUE)
       const { blocks, nextAddress } = codec.decodeBlocksAndNextAddress(uint8ArrayLayer, end, footer)
       const code = collapseUint8Arrays(...blocks, footer)

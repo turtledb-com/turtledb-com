@@ -80,7 +80,7 @@ window.customElements.define(elementName, class extends window.HTMLElement {
   commitSelector = () => {
     const pointer = getPointerByPublicKey(this.cpk)
     const commit = pointer.getCommit(undefined, getCodecs(KIND.REFS_TOP)) ?? {}
-    console.log(commit)
+    console.log(this.cpk, commit)
     const meta = Object.fromEntries(Object.entries(commit).filter(([key]) => key !== 'value'))
     const value = pointer.lookupRefs(pointer.getCommitAddress(), 'value')
     return h`

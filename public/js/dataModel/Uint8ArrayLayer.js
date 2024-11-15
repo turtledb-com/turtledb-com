@@ -1,5 +1,4 @@
-import { Codec, KIND, getCodecs } from './CODECS.js'
-import { getCommitAddress } from './Uint8ArrayLayerPointer.js'
+import { CODEC, ALL_CODECS, Codec, KIND, getCodecs } from './CODECS.js'
 
 export class Uint8ArrayLayer {
   /** @type {Array.<Uint8ArrayLayer>} */
@@ -116,6 +115,37 @@ export class Uint8ArrayLayer {
     return storage.uint8Array.slice(start - storage.offset, end - storage.offset)
   }
 
+  getAddress (...path) {
+    let address = this.length - 1
+    if (typeof path[0] === 'number') address = path.shift()
+    if (address < 0) return undefined
+    const footer = this.getByte(address)
+    const codec = Codec.calculateCodec(footer, ALL_CODECS)
+    if (codec === CODEC.OPAQUE) {
+      const { blocks } = codec.decodeBlocksAndNextAddress(this, address, footer)
+      address -= (1 + blocks.length + 64)
+    }
+    while (path.length) {
+      const refs = this.lookup(address, getCodecs(KIND.REFS_TOP))
+      const name = path.shift()
+      if (!Object.hasOwn(refs, name)) throw new Error(`no "${name}" in`, refs)
+      address = refs?.[name]
+    }
+    return address
+  }
+
+  getValue (...path) {
+    let codecs
+    if (Array.isArray(path[path.length - 1])) codecs = path.pop()
+    const address = this.getAddress(...path)
+    if (!address) return undefined
+    return this.lookup(address, codecs)
+  }
+
+  getRefs (...path) {
+    return this.getValue(...path, getCodecs(KIND.REFS_TOP))
+  }
+
   lookupRefs (address, ...path) {
     let value = this.lookup(address, getCodecs(KIND.REFS_TOP))
     while (value && path.length) {
@@ -127,7 +157,11 @@ export class Uint8ArrayLayer {
   }
 
   getCommitAddress (address = this.length - 1) {
-    return getCommitAddress(this, address)
+    if (address < 0) return undefined
+    const footer = this.getByte(address)
+    const codec = Codec.calculateCodec(footer, ALL_CODECS)
+    const { blocks } = codec.decodeBlocksAndNextAddress(this, address, footer)
+    return address - 1 - blocks.length - 64
   }
 
   getCommit (address, codecs) {

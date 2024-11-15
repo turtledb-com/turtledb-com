@@ -1,3 +1,5 @@
+import { hashNameAndPassword } from '../utils/crypto.js'
+import { Committer } from './Committer.js'
 import { Uint8ArrayLayer } from './Uint8ArrayLayer.js'
 
 const { default: chai } = await import('../utils/chaiPromise.test.js')
@@ -35,5 +37,26 @@ describe('Uint8ArrayLayer', function () {
     chai.assert.equal(ui8Layer.uint8Array[ui8Layer.length - 1], 0b11111)
     chai.assert.equal(ui8Layer.uint8Array[ui8Layer.length], undefined)
     chai.assert.equal(ui8Layer.length, ui8Layer.uint8Array.length)
+  })
+  it('handles getting commit values', async () => {
+    const hashword = await hashNameAndPassword('test-user', 'password')
+    const committer = new Committer('test', hashword)
+    await committer.commit('test commit', {
+      a: ['one', 'two'],
+      b: {
+        x: {
+          n: true
+        },
+        y: null,
+        z: undefined
+      },
+      c: new Map([
+        ['p', 'pea'],
+        ['q', 'queue']
+      ])
+    })
+    console.log(committer.getCommitAddress())
+    console.log(committer.getValue('value', 'b', 'x', 'n'))
+    console.log(committer.getRefs('value', 'c'))
   })
 })

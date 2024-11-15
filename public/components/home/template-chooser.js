@@ -28,8 +28,8 @@ window.customElements.define(elementName, class extends window.HTMLElement {
     window.caches.open(v).then(async cache => {
       await committer.commit('added basic template', value)
       console.log(committer.getCommitAddress())
-      console.log(committer.getCommitAddress('value'))
-      console.log(committer.getCommitAddress('value', 'fs'))
+      console.log(committer.getCommitValue('value'))
+      console.log(committer.getCommitValue('value', 'fs'))
       const address = committer.getCommitAddress('value', 'fs', 'components/templates/start.js')
       console.log({ address, cache, value })
     })
