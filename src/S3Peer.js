@@ -32,7 +32,7 @@ export class S3Peer extends Upserter {
         remoteWant.forEach(([start, end]) => {
           for (let index = start; index <= layerIndex && index < end; ++index) {
             if (!sent[index]) {
-              const { commit, error } = getCommit(this.s3Client, this.bucket, compactPublicKey, index, this.recaller)
+              const { commit, error } = getValue(this.s3Client, this.bucket, compactPublicKey, index, this.recaller)
               if (error) {
                 commitErrors ??= []
                 commitErrors[index] = error
@@ -159,7 +159,7 @@ export function putCommit (s3Client, bucket, compactPublicKey, index, commit, re
     commitSyncs[index] = {
       promise: (async () => {
         if (index > 0) {
-          const prevCommit = await getCommit(s3Client, bucket, compactPublicKey, index - 1).promise
+          const prevCommit = await getValue(s3Client, bucket, compactPublicKey, index - 1).promise
           const verified = await Committer.verifySignedCommit(commit, prevCommit, compactPublicKey)
           if (!verified) {
             commitSyncs[index].error = `failed to verify commit ${index}`
@@ -190,9 +190,9 @@ export function putCommit (s3Client, bucket, compactPublicKey, index, commit, re
 /**
  * @returns {CommitSync}
  */
-export function getCommit (s3Client, bucket, compactPublicKey, index, recaller = s3PeerRecaller) {
+export function getValue (s3Client, bucket, compactPublicKey, index, recaller = s3PeerRecaller) {
   const layerPointerSyncs = getS3LayerPointerSyncs(bucket, compactPublicKey)
-  recaller.reportKeyAccess(layerPointerSyncs, index, 'getCommit', `${bucket}/${compactPublicKey}`)
+  recaller.reportKeyAccess(layerPointerSyncs, index, 'getValue', `${bucket}/${compactPublicKey}`)
   const { commitSyncs } = layerPointerSyncs
   if (!commitSyncs[index] || commitSyncs[index].error) {
     commitSyncs[index] = {
@@ -204,7 +204,7 @@ export function getCommit (s3Client, bucket, compactPublicKey, index, recaller =
           }))
           const commit = await object.Body.transformToByteArray()
           commitSyncs[index].commit = commit
-          recaller.reportKeyMutation(layerPointerSyncs, index, 'getCommit', `${bucket}/${compactPublicKey}`)
+          recaller.reportKeyMutation(layerPointerSyncs, index, 'getValue', `${bucket}/${compactPublicKey}`)
           console.log(`### [s3peer to s3] ${commit.length} bytes incoming`)
           return commit
         } catch (error) {

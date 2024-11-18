@@ -27,7 +27,7 @@ window.customElements.define(elementName, class extends window.HTMLElement {
           ${() => Object.keys(value).map(fieldName => {
             return h`
               <dt>${fieldName}</dt>
-              <dd><${this.object} ${{ pointer, value: pointer.lookupRefs(value[fieldName]), key: `${this.key}.${fieldName}` }}/></dd>
+              <dd><${this.object} ${{ pointer, value: pointer.getRefs(value[fieldName]), key: `${this.key}.${fieldName}` }}/></dd>
             `
           })}
         </dl>

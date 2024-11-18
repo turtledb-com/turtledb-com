@@ -12,7 +12,7 @@ import { newPeerPerCycle } from '../public/js/utils/peerFactory.js'
 import { hashNameAndPassword } from '../public/js/utils/crypto.js'
 import { mkdirSync, readFileSync, rmSync, writeFileSync } from 'fs'
 import { KIND, getCodecs } from '../public/js/dataModel/CODECS.js'
-import { getCommitAddress } from '../public/js/dataModel/Uint8ArrayLayerPointer.js'
+import { getAddress } from '../public/js/dataModel/Uint8ArrayLayerPointer.js'
 
 const ignored = /(?:\.ds_store|.*\.ico|~)$/i
 
@@ -72,25 +72,29 @@ const checkTurtle = () => {
   if (availableLength !== undefined && loadedLayers === availableLength - 1) {
     startedLoading = true
     console.log('stop watching')
-    const valueRefs = committer.workspace.lookupRefs(getCommitAddress(committer), 'value') || {}
-    const fsRefs = valueRefs.fs && committer.workspace.lookup(valueRefs.fs, getCodecs(KIND.REFS_OBJECT))
-    const removed = []
-    const filteredRefs = Object.fromEntries(
-      Object.entries(fsRefs || {})
-        .filter(([relativePath]) => {
-          const ignore = relativePath.match(ignored)
-          if (ignore) removed.push(relativePath)
-          return !ignore
-        })
-    )
-    if (removed.length) {
-      console.log('removed files', removed)
-      valueRefs.fs = committer.workspace.upsert(filteredRefs, getCodecs(KIND.REFS_OBJECT))
-      const valueAddress = committer.workspace.upsert(valueRefs, getCodecs(KIND.REFS_OBJECT))
-      committer.commitAddress('remove bad filenames', valueAddress)
-        .then(resolveTurtleCheck)
-    } else {
-      resolveTurtleCheck()
+    try {
+      const valueRefs = committer.workspace.getRefs('value') || {}
+      const fsRefs = valueRefs.fs && committer.workspace.lookup(valueRefs.fs, getCodecs(KIND.REFS_OBJECT))
+      const removed = []
+      const filteredRefs = Object.fromEntries(
+        Object.entries(fsRefs || {})
+          .filter(([relativePath]) => {
+            const ignore = relativePath.match(ignored)
+            if (ignore) removed.push(relativePath)
+            return !ignore
+          })
+      )
+      if (removed.length) {
+        console.log('removed files', removed)
+        valueRefs.fs = committer.workspace.upsert(filteredRefs, getCodecs(KIND.REFS_OBJECT))
+        const valueAddress = committer.workspace.upsert(valueRefs, getCodecs(KIND.REFS_OBJECT))
+        committer.commitAddress('remove bad filenames', valueAddress)
+          .then(resolveTurtleCheck)
+      } else {
+        resolveTurtleCheck()
+      }
+    } catch (error) {
+      console.error('handled error', error)
     }
   }
 }
@@ -111,7 +115,12 @@ let commitInProgress = emptyPromise
 
 let valueRefs
 const debounceEdits = (message) => {
-  if (!valueRefs) valueRefs = committer.workspace.lookupRefs(getCommitAddress(committer), 'value') ?? {}
+  try {
+    if (!valueRefs) valueRefs = committer.workspace.getRefs(getAddress(committer), 'value') ?? {}
+  } catch (error) {
+    console.error('handled error', error)
+    valueRefs = {}
+  }
   const possibleNextCommit = new Promise(resolve => {
     setTimeout(() => {
       if (possibleNextCommit === commitInProgress) {
@@ -149,7 +158,7 @@ watch(root, { ignored }).on('all', (event, path) => {
     }
     const fileAddress = committer.workspace.upsert(file)
     const valueRefs = debounceEdits('fspeer watch all')
-    // const valueRefs = committer.workspace.lookupRefs(getCommitAddress(committer), 'value') ?? {}
+    // const valueRefs = committer.workspace.getRefs(getAddress(committer), 'value') ?? {}
     const fsRefs = valueRefs.fs ? committer.workspace.lookup(valueRefs.fs, getCodecs(KIND.REFS_OBJECT)) : {}
     if (fsRefs[prefixedPath] === fileAddress) return
     console.log(` -- ${event}, ${relativePath}, ${lastRefs[prefixedPath]} => ${fileAddress}`)
@@ -159,7 +168,7 @@ watch(root, { ignored }).on('all', (event, path) => {
     // debounceEdits(valueRefs, 'fspeer watch all')
   } else if (event === 'unlink') {
     const valueRefs = debounceEdits('fspeer watch all')
-    // const valueRefs = committer.workspace.lookupRefs(getCommitAddress(committer), 'value')
+    // const valueRefs = committer.workspace.getRefs(getAddress(committer), 'value')
     if (!valueRefs || !valueRefs.fs) return
     const fsRefs = committer.workspace.lookup(valueRefs.fs, getCodecs(KIND.REFS_OBJECT))
     if (!fsRefs[prefixedPath]) return
@@ -175,12 +184,12 @@ watch(root, { ignored }).on('all', (event, path) => {
 
 await commitInProgress
 
-console.log(committer.lookupRefs(getCommitAddress(committer), 'value', 'fs'))
+console.log(committer.getRefs(getAddress(committer), 'value', 'fs'))
 
 console.log(' === and write to fs')
 
 recaller.watch('write to fs', () => {
-  const commitAddress = getCommitAddress(committer)
+  const commitAddress = getAddress(committer)
   if (commitAddress > 0) {
     const committerRefs = committer.lookup(commitAddress, getCodecs(KIND.REFS_OBJECT))
     const valueAddress = committerRefs?.value

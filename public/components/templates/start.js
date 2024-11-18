@@ -11,7 +11,7 @@ const elementName = buildElementName(scriptSrc.pathname, address, cpk)
 console.log(scriptSrc.pathname, address, cpk)
 const renderCommit = _element => {
   if (pointer.length) {
-    const commitAddress = pointer.getCommitAddress()
+    const commitAddress = pointer.getAddress()
     if (commitAddress) {
       const commit = pointer.lookup(commitAddress)
       return JSON.stringify({

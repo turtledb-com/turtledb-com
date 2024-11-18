@@ -72,17 +72,17 @@ window.customElements.define(elementName, class extends window.HTMLElement {
   }
 
   name = () => {
-    return getPointerByPublicKey(this.cpk).getCommitValue('name') ?? h`<i>no commits</i>`
+    return getPointerByPublicKey(this.cpk).getValue('name') ?? h`<i>no commits</i>`
   }
 
   object = componentAtPath('components/turtle-explorer/object.js', fallbackCPK)
 
   commitSelector = () => {
     const pointer = getPointerByPublicKey(this.cpk)
-    const commit = pointer.getCommit(undefined, getCodecs(KIND.REFS_TOP)) ?? {}
+    const commit = pointer.getValue(undefined, getCodecs(KIND.REFS_TOP)) ?? {}
     console.log(this.cpk, commit)
     const meta = Object.fromEntries(Object.entries(commit).filter(([key]) => key !== 'value'))
-    const value = pointer.lookupRefs(pointer.getCommitAddress(), 'value')
+    const value = pointer.getRefs(pointer.getAddress(), 'value')
     return h`
       <button onclick=${handle(this.toggleMeta)}>
         <${cog} teeth=5 class="expanded-meta"/>

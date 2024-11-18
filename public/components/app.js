@@ -63,7 +63,7 @@ window.customElements.define(elementName, class extends window.HTMLBodyElement {
     if (localLength < remoteLength) {
       return h`<h1>Downloading existing turtle... (${localLength} / ${remoteLength})</h1>`
     }
-    if (!pointer.getCommitValue('value', 'fs', 'components/main/start.js')) {
+    if (!pointer.getValue('value', 'fs', 'components/main/start.js')) {
       if (pointer instanceof Committer) {
         return h`
           <h1>no components/main/start.js</h1>

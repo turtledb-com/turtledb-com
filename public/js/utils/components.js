@@ -37,7 +37,7 @@ export const componentAtPath = (relativePath, cpk, baseElement) => {
 
 export const componentNameAtPath = (relativePath, cpk) => {
   const turtle = getPointerByPublicKey(cpk)
-  const fsRefs = turtle.lookupRefs(turtle.getCommitAddress(), 'value', 'fs')
+  const fsRefs = turtle.getRefs(turtle.getAddress(), 'value', 'fs')
   if (!fsRefs) return
   const address = fsRefs[relativePath]
   if (address === undefined) return

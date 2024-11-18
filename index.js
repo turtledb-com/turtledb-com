@@ -2,7 +2,7 @@ export { Peer, peerRecaller, getPointerByPublicKey, unwatchPublicKeys, watchPubl
 
 export { Committer, b64ToUi8, ui8ToB64 } from './public/js/dataModel/Committer.js'
 export { ADD_STALE_WATCHER, DELETE_STALE_WATCHER, FRESH_ADDRESS_GETTER, Upserter } from './public/js/dataModel/Upserter.js'
-export { ADDRESS, OWN_KEYS, UINT8ARRAYLAYER, Uint8ArrayLayerPointer, getCommitAddress } from './public/js/dataModel/Uint8ArrayLayerPointer.js'
+export { ADDRESS, OWN_KEYS, UINT8ARRAYLAYER, Uint8ArrayLayerPointer, getAddress } from './public/js/dataModel/Uint8ArrayLayerPointer.js'
 export { Uint8ArrayLayer, collapseUint8Arrays } from './public/js/dataModel/Uint8ArrayLayer.js'
 export { CODECS, Codec, KIND, getCodecs, ksVsToPairs } from './public/js/dataModel/CODECS.js'
 

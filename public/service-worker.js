@@ -1,6 +1,6 @@
 /* global self, location, WebSocket, clients */
 
-import { getCommitAddress } from './js/dataModel/Uint8ArrayLayerPointer.js'
+import { getAddress } from './js/dataModel/Uint8ArrayLayerPointer.js'
 import { Peer, getPublicKeys, peerRecaller, getPointerByPublicKey } from './js/net/Peer.js'
 import { attachPeerToCycle, newPeerPerCycle } from './js/utils/peerFactory.js'
 import { fallbackCPK } from './js/constants.js'
@@ -80,7 +80,7 @@ self.caches.open(v).then(cache => {
     for (const cpk of cpks) {
       const pointer = getPointerByPublicKey(cpk, recaller)
 
-      const fsRefs = pointer.lookupRefs(getCommitAddress(pointer), 'value', 'fs')
+      const fsRefs = pointer.getRefs(getAddress(pointer), 'value', 'fs')
       if (!fsRefs) return
 
       Object.keys(fsRefs).forEach(relativePath => {

@@ -20,17 +20,17 @@ window.customElements.define(elementName, class extends window.HTMLElement {
     console.log('basic template')
     const committer = getPointerByPublicKey(getCpk(), recaller, new Uint8ArrayLayerPointer(undefined, recaller, 'passed-turtlename'))
     if (!(committer instanceof Committer)) throw new Error('must be logged in to add template')
-    let value = committer.getCommitValue()
+    let value = committer.getValue()
     if (!value || typeof value !== 'object') value = {}
     if (!value.fs || typeof value.fs !== 'object') value.fs = {}
     const defaultPointer = getPointerByPublicKey(cpk)
-    value.fs['components/main/start.js'] = defaultPointer.getCommitValue('value', 'fs', 'components/templates/start.js')
+    value.fs['components/main/start.js'] = defaultPointer.getValue('value', 'fs', 'components/templates/start.js')
     window.caches.open(v).then(async cache => {
       await committer.commit('added basic template', value)
-      console.log(committer.getCommitAddress())
-      console.log(committer.getCommitValue('value'))
-      console.log(committer.getCommitValue('value', 'fs'))
-      const address = committer.getCommitAddress('value', 'fs', 'components/templates/start.js')
+      console.log(committer.getAddress())
+      console.log(committer.getValue('value'))
+      console.log(committer.getValue('value', 'fs'))
+      const address = committer.getAddress('value', 'fs', 'components/templates/start.js')
       console.log({ address, cache, value })
     })
   }

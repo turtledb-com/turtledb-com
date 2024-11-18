@@ -55,7 +55,7 @@ describe('Uint8ArrayLayer', function () {
         ['q', 'queue']
       ])
     })
-    console.log(committer.getCommitAddress())
+    console.log(committer.getAddress())
     console.log(committer.getValue('value', 'b', 'x', 'n'))
     console.log(committer.getRefs('value', 'c'))
   })

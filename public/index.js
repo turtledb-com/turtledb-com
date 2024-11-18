@@ -11,7 +11,7 @@ const renderComponentScriptLinks = _element => {
   const scripts = []
   for (const cpk of cpks) {
     const pointer = getPointerByPublicKey(cpk)
-    const fsRefs = pointer.lookupRefs(pointer.getCommitAddress(), 'value', 'fs')
+    const fsRefs = pointer.getRefs(pointer.getAddress(), 'value', 'fs')
     Object.keys(fsRefs || {}).filter(relativePath => relativePath.match(componentRegex)).forEach(relativePath => {
       scripts.push(h`<script type="module" src="${relativePath}?address=${fsRefs[relativePath]}&amp;cpk=${cpk}"></script>`)
     })

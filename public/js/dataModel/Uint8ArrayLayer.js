@@ -117,18 +117,22 @@ export class Uint8ArrayLayer {
 
   getAddress (...path) {
     let address = this.length - 1
+    if (path[0] === undefined) path.shift()
     if (typeof path[0] === 'number') address = path.shift()
     if (address < 0) return undefined
     const footer = this.getByte(address)
     const codec = Codec.calculateCodec(footer, ALL_CODECS)
+    // console.log(codec)
     if (codec === CODEC.OPAQUE) {
       const { blocks } = codec.decodeBlocksAndNextAddress(this, address, footer)
       address -= (1 + blocks.length + 64)
     }
     while (path.length) {
       const refs = this.lookup(address, getCodecs(KIND.REFS_TOP))
+      // if (typeof refs === 'number') console.log(this.lookup(refs))
+      // console.log({ refs })
       const name = path.shift()
-      if (!Object.hasOwn(refs, name)) throw new Error(`no "${name}" in`, refs)
+      if (!Object.hasOwn(refs, name)) throw new Error(`no "${name}" in ${refs}, ${address}`)
       address = refs?.[name]
     }
     return address
@@ -144,43 +148,6 @@ export class Uint8ArrayLayer {
 
   getRefs (...path) {
     return this.getValue(...path, getCodecs(KIND.REFS_TOP))
-  }
-
-  lookupRefs (address, ...path) {
-    let value = this.lookup(address, getCodecs(KIND.REFS_TOP))
-    while (value && path.length) {
-      const address = value[path.shift()]
-      if (!address) return undefined
-      value = this.lookup(address, getCodecs(KIND.REFS_TOP))
-    }
-    return value
-  }
-
-  getCommitAddress (address = this.length - 1) {
-    if (address < 0) return undefined
-    const footer = this.getByte(address)
-    const codec = Codec.calculateCodec(footer, ALL_CODECS)
-    const { blocks } = codec.decodeBlocksAndNextAddress(this, address, footer)
-    return address - 1 - blocks.length - 64
-  }
-
-  getCommit (address, codecs) {
-    return this.lookup(this.getCommitAddress(address), codecs)
-  }
-
-  getCommitValue (...path) {
-    let valueName = 'value'
-    if (path.length && typeof path[path.length - 1] === 'string') {
-      valueName = path.pop()
-    }
-    let codecs
-    if (path.length && Array.isArray(path[0])) {
-      codecs = path.shift()
-    }
-    const refs = this.lookupRefs(this.getCommitAddress(), ...path)
-    const valueAddress = refs?.[valueName]
-    if (typeof valueAddress !== 'number') return
-    return this.lookup(refs[valueName], codecs)
   }
 }
 

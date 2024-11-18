@@ -67,14 +67,6 @@ export class Uint8ArrayLayerPointer {
 
   getRefs (...path) { return this.uint8ArrayLayer?.getRefs?.(...path) }
 
-  lookupRefs (address, ...path) { return this.uint8ArrayLayer?.lookupRefs?.(address, ...path) }
-
-  getCommitAddress (address) { return this.uint8ArrayLayer?.getCommitAddress?.(address) }
-
-  getCommit (address, codecs) { return this.uint8ArrayLayer?.getCommit?.(address, codecs) }
-
-  getCommitValue (...path) { return this.uint8ArrayLayer?.getCommitValue?.(...path) }
-
   presenterProxy (address, name = `${this.name}.proxy`) {
     if (!this.#uint8ArrayLayer) return this.uint8ArrayLayer // trigger reportKeyAccess
     const cached = {}
@@ -146,7 +138,7 @@ export class Uint8ArrayLayerPointer {
 }
 
 /** @param {Uint8ArrayLayerPointer} uint8ArrayLayerPointer  */
-export function getCommitAddress (uint8ArrayLayerPointer, signatureAddress = uint8ArrayLayerPointer.length - 1) {
+export function getAddress (uint8ArrayLayerPointer, signatureAddress = uint8ArrayLayerPointer.length - 1) {
   if (signatureAddress < 0) return undefined
   const uint8ArrayLayer = uint8ArrayLayerPointer.getLayerContainingAddress(signatureAddress)
   const footer = uint8ArrayLayerPointer.getByte(signatureAddress)
