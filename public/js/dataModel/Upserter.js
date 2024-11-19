@@ -16,7 +16,7 @@ export class Upserter extends Uint8ArrayLayerPointer {
    */
   constructor (name = 'Upserter', recaller = new Recaller(name), uint8ArrayLayer) {
     super(uint8ArrayLayer, recaller, name)
-    if (this.length === -1) return
+    if (this.length === undefined) return
     const end = uint8ArrayLayer.length - 1
     this.lexicograph(0, end)
   }

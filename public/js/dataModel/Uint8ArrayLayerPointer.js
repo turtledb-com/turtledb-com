@@ -36,7 +36,7 @@ export class Uint8ArrayLayerPointer {
     this.recaller.reportKeyMutation(this, UINT8ARRAYLAYER, 'set', this.name)
   }
 
-  get length () { return this.uint8ArrayLayer?.length ?? -1 }
+  get length () { return this.uint8ArrayLayer?.length }
 
   get layerIndex () { return this.uint8ArrayLayer?.layerIndex ?? -1 }
 

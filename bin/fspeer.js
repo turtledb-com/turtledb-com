@@ -112,10 +112,16 @@ let valueRefs
 const debounceEdits = (message) => {
   const footer = committer.getByte(committer.workspace.length - 1)
   if (!footer) {
-    console.log(committer.workspace.length)
-    if (!valueRefs) valueRefs = {}
+    if (!valueRefs) {
+      valueRefs = {}
+      console.log('\n--- committer.workspace', committer.workspace)
+      console.log(committer.length)
+    }
   } else {
-    if (!valueRefs) valueRefs = committer.workspace.getRefs('value') ?? {}
+    if (!valueRefs) {
+      valueRefs = committer.workspace.getRefs('value') ?? {}
+      console.log('\n--- valueRefs', valueRefs)
+    }
   }
   const possibleNextCommit = new Promise(resolve => {
     setTimeout(() => {
