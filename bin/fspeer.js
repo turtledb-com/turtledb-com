@@ -71,29 +71,25 @@ const checkTurtle = () => {
   if (availableLength !== undefined && loadedLayers === availableLength - 1) {
     startedLoading = true
     console.log('stop watching')
-    try {
-      const valueRefs = committer.workspace.getRefs('value') || {}
-      const fsRefs = valueRefs.fs && committer.workspace.lookup(valueRefs.fs, getCodecs(KIND.REFS_OBJECT))
-      const removed = []
-      const filteredRefs = Object.fromEntries(
-        Object.entries(fsRefs || {})
-          .filter(([relativePath]) => {
-            const ignore = relativePath.match(ignored)
-            if (ignore) removed.push(relativePath)
-            return !ignore
-          })
-      )
-      if (removed.length) {
-        console.log('removed files', removed)
-        valueRefs.fs = committer.workspace.upsert(filteredRefs, getCodecs(KIND.REFS_OBJECT))
-        const valueAddress = committer.workspace.upsert(valueRefs, getCodecs(KIND.REFS_OBJECT))
-        committer.commitAddress('remove bad filenames', valueAddress)
-          .then(resolveTurtleCheck)
-      } else {
-        resolveTurtleCheck()
-      }
-    } catch (error) {
-      console.error('handled error', error)
+    const valueRefs = committer.workspace.getRefs('value') || {}
+    const fsRefs = valueRefs.fs && committer.workspace.lookup(valueRefs.fs, getCodecs(KIND.REFS_OBJECT))
+    const removed = []
+    const filteredRefs = Object.fromEntries(
+      Object.entries(fsRefs || {})
+        .filter(([relativePath]) => {
+          const ignore = relativePath.match(ignored)
+          if (ignore) removed.push(relativePath)
+          return !ignore
+        })
+    )
+    if (removed.length) {
+      console.log('removed files', removed)
+      valueRefs.fs = committer.workspace.upsert(filteredRefs, getCodecs(KIND.REFS_OBJECT))
+      const valueAddress = committer.workspace.upsert(valueRefs, getCodecs(KIND.REFS_OBJECT))
+      committer.commitAddress('remove bad filenames', valueAddress)
+        .then(resolveTurtleCheck)
+    } else {
+      resolveTurtleCheck()
     }
   }
 }
@@ -114,11 +110,12 @@ let commitInProgress = emptyPromise
 
 let valueRefs
 const debounceEdits = (message) => {
-  try {
+  const footer = committer.getByte(committer.workspace.length - 1)
+  if (!footer) {
+    console.log(committer.workspace.length)
+    if (!valueRefs) valueRefs = {}
+  } else {
     if (!valueRefs) valueRefs = committer.workspace.getRefs('value') ?? {}
-  } catch (error) {
-    console.error('handled error', error)
-    valueRefs = {}
   }
   const possibleNextCommit = new Promise(resolve => {
     setTimeout(() => {

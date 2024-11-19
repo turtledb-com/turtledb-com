@@ -62,12 +62,17 @@ const contentTypeByExtension = {
   svg: 'image/svg+xml'
 }
 const fallbackRefs = {}
-export const cacheFile = async (cpk, filename, file, recaller) => {
-  const pointer = getPointerByPublicKey(cpk, recaller)
-  console.log(cpk, filename, file)
-}
-// self.caches.open(v).then(cache => {
-const putVirtualCache = async (request, body, contentType) => {
+export const putVirtualCache = async (request, body) => {
+  const extension = request.split(/\?/)[0].split(/\./).pop()
+  const contentType = contentTypeByExtension[extension]
+  try {
+    if (extension === 'json') {
+      body = JSON.stringify(body, null, 10)
+    }
+  } catch (error) {
+    console.error(error)
+    return
+  }
   const headers = new Headers({
     'Content-Length': body.length,
     'Content-Type': contentType
@@ -89,40 +94,29 @@ recaller.watch('populate cache', () => {
     Object.keys(fsRefs).forEach(relativePath => {
       if (fsRefs[relativePath] === fallbackRefs[relativePath]) return
       const address = fsRefs[relativePath]
-      let file = pointer.lookup(address)
+      const file = pointer.lookup(address)
       const absolutePath = `/${relativePath}`
       const indexed = absolutePath.match(/(?<indexed>.*)\/index.html?/)?.groups?.indexed
-      const extension = relativePath.split(/\./).pop()
-      const contentType = contentTypeByExtension[extension]
-      try {
-        if (extension === 'json') {
-          file = JSON.stringify(file, null, 10)
-        }
-      } catch (error) {
-        console.error(error)
-        return
-      }
       fallbackRefs[relativePath] = address
       // const headers = new Headers({
       //   'Content-Type': contentTypeByExtension[extension]
       // })
       if (cpk === fallbackCPK) {
-        putVirtualCache(absolutePath, file, contentType)
+        putVirtualCache(absolutePath, file)
         // cache.put(absolutePath, new Response(file, { headers }))
       }
-      putVirtualCache(`${absolutePath}?address=${address}&cpk=${cpk}`, file, contentType)
+      putVirtualCache(`${absolutePath}?address=${address}&cpk=${cpk}`, file)
       // cache.put(`${absolutePath}?address=${address}&cpk=${cpk}`, new Response(file, { headers }))
       // console.log(' @@@ caching', `${absolutePath}?address=${address}&cpk=${cpk}`, file.length)
       if (indexed !== undefined) {
-        putVirtualCache(indexed, file, contentType)
-        putVirtualCache(`${indexed}/`, file, contentType)
+        putVirtualCache(indexed, file)
+        putVirtualCache(`${indexed}/`, file)
         // cache.put(indexed, new Response(file, { headers }))
         // cache.put(`${indexed}/`, new Response(file, { headers }))
       }
     })
   }
 })
-// })
 
 self.addEventListener('fetch', event => {
   console.log('fetch', event.request.url)

@@ -5,7 +5,7 @@ import { handle } from '../../js/display/helpers.js'
 import { render } from '../../js/display/render.js'
 import { getPointerByPublicKey } from '../../js/net/Peer.js'
 import { deriveDefaults, useHash } from '../../js/utils/components.js'
-import { v } from '../../service-worker.js'
+import { putVirtualCache } from '../../service-worker.js'
 
 const { cpk, recaller, elementName } = deriveDefaults(import.meta.url)
 const { getCpk } = useHash(recaller)
@@ -26,13 +26,11 @@ window.customElements.define(elementName, class extends window.HTMLElement {
     const defaultPointer = getPointerByPublicKey(cpk)
     const file = defaultPointer.getValue('value', 'fs', 'components/templates/start.js')
     value.fs['components/main/start.js'] = file
-    window.caches.open(v).then(async cache => {
-      await committer.commit('added basic template', value)
-      console.log(committer.getAddress())
-      console.log(committer.getValue('value'))
-      console.log(committer.getValue('value', 'fs'))
+    const addr = committer.workspace.upsert(file)
+    committer.commit('added basic template', value).then(() => {
       const address = committer.getAddress('value', 'fs', 'components/main/start.js')
-      console.log({ address, cache, value })
+      console.log({ addr, address })
+      putVirtualCache(`/components/main/start.js?address=${address}&cpk=${cpk}`, file)
     })
   }
 

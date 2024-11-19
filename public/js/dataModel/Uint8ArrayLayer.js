@@ -1,4 +1,4 @@
-import { CODEC, ALL_CODECS, Codec, KIND, getCodecs } from './CODECS.js'
+import { CODEC, Codec, KIND, getCodecs } from './CODECS.js'
 
 export class Uint8ArrayLayer {
   /** @type {Array.<Uint8ArrayLayer>} */
