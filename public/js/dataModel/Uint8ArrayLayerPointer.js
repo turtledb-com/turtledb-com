@@ -1,5 +1,5 @@
 import { Recaller } from '../utils/Recaller.js'
-import { ALL_CODECS, Codec, KIND, getCodecs } from './CODECS.js'
+import { KIND, getCodecs } from './CODECS.js'
 import { Uint8ArrayLayer } from './Uint8ArrayLayer.js'
 
 export const UINT8ARRAYLAYER = Symbol('uint8ArrayLayer update')
@@ -72,7 +72,7 @@ export class Uint8ArrayLayerPointer {
   /**
    * @param {number} [address=this.length-1]
    * @param  {...string} path
-   * @param {Array.<Codec>} [codecs]
+   * @param {Array.<import('./CODECS.js').Codec>} [codecs]
    * @returns {any}
    */
   getValue (...path) { return this.uint8ArrayLayer?.getValue?.(...path) }
@@ -152,13 +152,4 @@ export class Uint8ArrayLayerPointer {
       }
     })
   }
-}
-
-/** @param {Uint8ArrayLayerPointer} uint8ArrayLayerPointer  */
-export function getAddress (uint8ArrayLayerPointer, signatureAddress = uint8ArrayLayerPointer.length - 1) {
-  if (signatureAddress < 0) return undefined
-  const uint8ArrayLayer = uint8ArrayLayerPointer.getLayerContainingAddress(signatureAddress)
-  const footer = uint8ArrayLayerPointer.getByte(signatureAddress)
-  const codec = Codec.calculateCodec(footer, ALL_CODECS)
-  return codec.decodeBlocksAndNextAddress(uint8ArrayLayer, signatureAddress, footer).nextAddress
 }

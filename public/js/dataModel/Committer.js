@@ -3,7 +3,7 @@ import { signAsync, getPublicKey, verify } from '../utils/noble-secp256k1.js'
 import { collapseUint8Arrays, Uint8ArrayLayer } from './Uint8ArrayLayer.js'
 import { Upserter } from './Upserter.js'
 import { cryptoPromise } from '../utils/crypto.js'
-import { ADDRESS, getAddress, Uint8ArrayLayerPointer } from './Uint8ArrayLayerPointer.js'
+import { ADDRESS, Uint8ArrayLayerPointer } from './Uint8ArrayLayerPointer.js'
 
 export class Committer extends Uint8ArrayLayerPointer {
   constructor (name, privateKey, recaller, uint8ArrayLayer) {
@@ -62,7 +62,7 @@ export class Committer extends Uint8ArrayLayerPointer {
     const opaqueCodec = Codec.calculateCodec(footer, getCodecs(KIND.OPAQUE))
     const signedCommitLayer = new Uint8ArrayLayer(signedCommit)
     const signature = opaqueCodec.decodeValue(signedCommitLayer, signatureAddress, footer)
-    const commitEndInclusive = getAddress(signedCommitLayer, signatureAddress) + 1
+    const commitEndInclusive = signedCommitLayer.getAddress(signatureAddress) + 1
     const newSignedSlice = signedCommit.slice(0, commitEndInclusive)
     const hash = await digestData(collapseUint8Arrays(lastSignedCommit, newSignedSlice))
     if (verify(signature, hash, b64ToUi8(publicKey))) {
