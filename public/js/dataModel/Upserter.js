@@ -39,7 +39,7 @@ export class Upserter extends Uint8ArrayLayerPointer {
       const { blocks, nextAddress } = codec.decodeBlocksAndNextAddress(uint8ArrayLayer, end, footer)
       const code = collapseUint8Arrays(...blocks, footer)
       if (!isOpaque) this.#setAddressForCode(code, end)
-      end = nextAddress - 1
+      end = nextAddress
       if (end < start - 1) {
         console.error({ start, end, blocks, nextAddress, code })
         throw new Error('block miscalculation')

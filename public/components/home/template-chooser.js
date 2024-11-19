@@ -24,13 +24,14 @@ window.customElements.define(elementName, class extends window.HTMLElement {
     if (!value || typeof value !== 'object') value = {}
     if (!value.fs || typeof value.fs !== 'object') value.fs = {}
     const defaultPointer = getPointerByPublicKey(cpk)
-    value.fs['components/main/start.js'] = defaultPointer.getValue('value', 'fs', 'components/templates/start.js')
+    const file = defaultPointer.getValue('value', 'fs', 'components/templates/start.js')
+    value.fs['components/main/start.js'] = file
     window.caches.open(v).then(async cache => {
       await committer.commit('added basic template', value)
       console.log(committer.getAddress())
       console.log(committer.getValue('value'))
       console.log(committer.getValue('value', 'fs'))
-      const address = committer.getAddress('value', 'fs', 'components/templates/start.js')
+      const address = committer.getAddress('value', 'fs', 'components/main/start.js')
       console.log({ address, cache, value })
     })
   }

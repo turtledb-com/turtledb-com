@@ -63,63 +63,67 @@ const contentTypeByExtension = {
   svg: 'image/svg+xml'
 }
 const fallbackRefs = {}
-self.caches.open(v).then(cache => {
-  const putVirtualCache = (request, body, contentType) => {
-    const headers = new Headers({
-      'Content-Length': body.length,
-      'Content-Type': contentType
-    })
-    const options = { headers }
-    const response = new Response(body, options)
-    console.log(' @@@ caching', request, contentType)
-    const result = cache.put(request, response)
-    console.log('result', result)
-  }
-  recaller.watch('populate cache', () => {
-    const cpks = getPublicKeys()
-    for (const cpk of cpks) {
-      const pointer = getPointerByPublicKey(cpk, recaller)
-
-      const fsRefs = pointer.getRefs(getAddress(pointer), 'value', 'fs')
-      if (!fsRefs) return
-
-      Object.keys(fsRefs).forEach(relativePath => {
-        if (fsRefs[relativePath] === fallbackRefs[relativePath]) return
-        const address = fsRefs[relativePath]
-        let file = pointer.lookup(address)
-        const absolutePath = `/${relativePath}`
-        const indexed = absolutePath.match(/(?<indexed>.*)\/index.html?/)?.groups?.indexed
-        const extension = relativePath.split(/\./).pop()
-        const contentType = contentTypeByExtension[extension]
-        try {
-          if (extension === 'json') {
-            file = JSON.stringify(file, null, 10)
-          }
-        } catch (error) {
-          console.error(error)
-          return
-        }
-        fallbackRefs[relativePath] = address
-        // const headers = new Headers({
-        //   'Content-Type': contentTypeByExtension[extension]
-        // })
-        if (cpk === fallbackCPK) {
-          putVirtualCache(absolutePath, file, contentType)
-          // cache.put(absolutePath, new Response(file, { headers }))
-        }
-        putVirtualCache(`${absolutePath}?address=${address}&cpk=${cpk}`, file, contentType)
-        // cache.put(`${absolutePath}?address=${address}&cpk=${cpk}`, new Response(file, { headers }))
-        // console.log(' @@@ caching', `${absolutePath}?address=${address}&cpk=${cpk}`, file.length)
-        if (indexed !== undefined) {
-          putVirtualCache(indexed, file, contentType)
-          putVirtualCache(`${indexed}/`, file, contentType)
-          // cache.put(indexed, new Response(file, { headers }))
-          // cache.put(`${indexed}/`, new Response(file, { headers }))
-        }
-      })
-    }
+export const cacheFile = async (cpk, filename, file, recaller) => {
+  const pointer = getPointerByPublicKey(cpk, recaller)
+  console.log(cpk, filename, file)
+}
+// self.caches.open(v).then(cache => {
+const putVirtualCache = async (request, body, contentType) => {
+  const headers = new Headers({
+    'Content-Length': body.length,
+    'Content-Type': contentType
   })
+  const options = { headers }
+  const response = new Response(body, options)
+  const cache = await self.caches.open(v)
+  console.log(' @@@ caching', request, contentType)
+  cache.put(request, response)
+}
+recaller.watch('populate cache', () => {
+  const cpks = getPublicKeys()
+  for (const cpk of cpks) {
+    const pointer = getPointerByPublicKey(cpk, recaller)
+
+    const fsRefs = pointer.getRefs(getAddress(pointer), 'value', 'fs')
+    if (!fsRefs) return
+
+    Object.keys(fsRefs).forEach(relativePath => {
+      if (fsRefs[relativePath] === fallbackRefs[relativePath]) return
+      const address = fsRefs[relativePath]
+      let file = pointer.lookup(address)
+      const absolutePath = `/${relativePath}`
+      const indexed = absolutePath.match(/(?<indexed>.*)\/index.html?/)?.groups?.indexed
+      const extension = relativePath.split(/\./).pop()
+      const contentType = contentTypeByExtension[extension]
+      try {
+        if (extension === 'json') {
+          file = JSON.stringify(file, null, 10)
+        }
+      } catch (error) {
+        console.error(error)
+        return
+      }
+      fallbackRefs[relativePath] = address
+      // const headers = new Headers({
+      //   'Content-Type': contentTypeByExtension[extension]
+      // })
+      if (cpk === fallbackCPK) {
+        putVirtualCache(absolutePath, file, contentType)
+        // cache.put(absolutePath, new Response(file, { headers }))
+      }
+      putVirtualCache(`${absolutePath}?address=${address}&cpk=${cpk}`, file, contentType)
+      // cache.put(`${absolutePath}?address=${address}&cpk=${cpk}`, new Response(file, { headers }))
+      // console.log(' @@@ caching', `${absolutePath}?address=${address}&cpk=${cpk}`, file.length)
+      if (indexed !== undefined) {
+        putVirtualCache(indexed, file, contentType)
+        putVirtualCache(`${indexed}/`, file, contentType)
+        // cache.put(indexed, new Response(file, { headers }))
+        // cache.put(`${indexed}/`, new Response(file, { headers }))
+      }
+    })
+  }
 })
+// })
 
 self.addEventListener('fetch', event => {
   console.log('fetch', event.request.url)

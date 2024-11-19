@@ -115,29 +115,35 @@ export class Uint8ArrayLayer {
     return storage.uint8Array.slice(start - storage.offset, end - storage.offset)
   }
 
+  /**
+   * @param {number} [address=this.length-1]
+   * @param  {...string} path
+   * @returns {number|undefined}
+   */
   getAddress (...path) {
     let address = this.length - 1
     if (path[0] === undefined) path.shift()
     if (typeof path[0] === 'number') address = path.shift()
     if (address < 0) return undefined
     const footer = this.getByte(address)
-    const codec = Codec.calculateCodec(footer, ALL_CODECS)
-    // console.log(codec)
-    if (codec === CODEC.OPAQUE) {
-      const { blocks } = codec.decodeBlocksAndNextAddress(this, address, footer)
-      address -= (1 + blocks.length + 64)
+    if (CODEC.OPAQUE.prefixMatch(footer)) { // if commit skip signature and jump to data
+      address = CODEC.OPAQUE.decodeBlocksAndNextAddress(this, address, footer).nextAddress
     }
     while (path.length) {
       const refs = this.lookup(address, getCodecs(KIND.REFS_TOP))
-      // if (typeof refs === 'number') console.log(this.lookup(refs))
-      // console.log({ refs })
       const name = path.shift()
-      if (!Object.hasOwn(refs, name)) throw new Error(`no "${name}" in ${refs}, ${address}`)
+      if (!Object.hasOwn(refs, name)) throw new Error(`no "${name}" in ${JSON.stringify(refs)}, ${address}`)
       address = refs?.[name]
     }
     return address
   }
 
+  /**
+   * @param {number} [address=this.length-1]
+   * @param  {...string} path
+   * @param {Array.<Codec>} [codecs]
+   * @returns {number|undefined}
+   */
   getValue (...path) {
     let codecs
     if (Array.isArray(path[path.length - 1])) codecs = path.pop()
@@ -146,6 +152,11 @@ export class Uint8ArrayLayer {
     return this.lookup(address, codecs)
   }
 
+  /**
+   * @param {number} [address=this.length-1]
+   * @param  {...string} path
+   * @returns {number|undefined}
+   */
   getRefs (...path) {
     return this.getValue(...path, getCodecs(KIND.REFS_TOP))
   }

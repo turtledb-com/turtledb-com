@@ -54,6 +54,7 @@ export class Uint8ArrayLayerPointer {
 
   /**
    * @param {Uint8Array} uint8Array
+   * @returns {number}
    */
   append (uint8Array) {
     if (!this.uint8ArrayLayer) this.uint8ArrayLayer = new Uint8ArrayLayer(uint8Array)
@@ -61,10 +62,26 @@ export class Uint8ArrayLayerPointer {
     return this.uint8ArrayLayer.length
   }
 
+  /**
+   * @param {number} [address=this.length-1]
+   * @param  {...string} path
+   * @returns {number|undefined}
+   */
   getAddress (...path) { return this.uint8ArrayLayer?.getAddress?.(...path) }
 
+  /**
+   * @param {number} [address=this.length-1]
+   * @param  {...string} path
+   * @param {Array.<Codec>} [codecs]
+   * @returns {any}
+   */
   getValue (...path) { return this.uint8ArrayLayer?.getValue?.(...path) }
 
+  /**
+   * @param {number} [address=this.length-1]
+   * @param  {...string} path
+   * @returns {number|undefined}
+   */
   getRefs (...path) { return this.uint8ArrayLayer?.getRefs?.(...path) }
 
   presenterProxy (address, name = `${this.name}.proxy`) {
@@ -143,6 +160,5 @@ export function getAddress (uint8ArrayLayerPointer, signatureAddress = uint8Arra
   const uint8ArrayLayer = uint8ArrayLayerPointer.getLayerContainingAddress(signatureAddress)
   const footer = uint8ArrayLayerPointer.getByte(signatureAddress)
   const codec = Codec.calculateCodec(footer, ALL_CODECS)
-  const { blocks } = codec.decodeBlocksAndNextAddress(uint8ArrayLayer, signatureAddress, footer)
-  return signatureAddress - 1 - blocks.length - 64
+  return codec.decodeBlocksAndNextAddress(uint8ArrayLayer, signatureAddress, footer).nextAddress
 }

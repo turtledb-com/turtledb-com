@@ -12,7 +12,6 @@ import { newPeerPerCycle } from '../public/js/utils/peerFactory.js'
 import { hashNameAndPassword } from '../public/js/utils/crypto.js'
 import { mkdirSync, readFileSync, rmSync, writeFileSync } from 'fs'
 import { KIND, getCodecs } from '../public/js/dataModel/CODECS.js'
-import { getAddress } from '../public/js/dataModel/Uint8ArrayLayerPointer.js'
 
 const ignored = /(?:\.ds_store|.*\.ico|~)$/i
 
@@ -116,7 +115,7 @@ let commitInProgress = emptyPromise
 let valueRefs
 const debounceEdits = (message) => {
   try {
-    if (!valueRefs) valueRefs = committer.workspace.getRefs(getAddress(committer), 'value') ?? {}
+    if (!valueRefs) valueRefs = committer.workspace.getRefs('value') ?? {}
   } catch (error) {
     console.error('handled error', error)
     valueRefs = {}
@@ -158,17 +157,14 @@ watch(root, { ignored }).on('all', (event, path) => {
     }
     const fileAddress = committer.workspace.upsert(file)
     const valueRefs = debounceEdits('fspeer watch all')
-    // const valueRefs = committer.workspace.getRefs(getAddress(committer), 'value') ?? {}
     const fsRefs = valueRefs.fs ? committer.workspace.lookup(valueRefs.fs, getCodecs(KIND.REFS_OBJECT)) : {}
     if (fsRefs[prefixedPath] === fileAddress) return
     console.log(` -- ${event}, ${relativePath}, ${lastRefs[prefixedPath]} => ${fileAddress}`)
     lastRefs[prefixedPath] = fileAddress
     fsRefs[prefixedPath] = fileAddress
     valueRefs.fs = committer.workspace.upsert(fsRefs, getCodecs(KIND.REFS_OBJECT))
-    // debounceEdits(valueRefs, 'fspeer watch all')
   } else if (event === 'unlink') {
     const valueRefs = debounceEdits('fspeer watch all')
-    // const valueRefs = committer.workspace.getRefs(getAddress(committer), 'value')
     if (!valueRefs || !valueRefs.fs) return
     const fsRefs = committer.workspace.lookup(valueRefs.fs, getCodecs(KIND.REFS_OBJECT))
     if (!fsRefs[prefixedPath]) return
@@ -176,22 +172,20 @@ watch(root, { ignored }).on('all', (event, path) => {
     delete lastRefs[prefixedPath]
     delete fsRefs[prefixedPath]
     valueRefs.fs = committer.workspace.upsert(fsRefs, getCodecs(KIND.REFS_OBJECT))
-    // debounceEdits(valueRefs, 'fspeer watch all')
   } else {
-    console.log('unhandled chokidar.watch event', event)
+    console.log('unmatched chokidar.watch event', event)
   }
 })
 
 await commitInProgress
 
-console.log(committer.getRefs(getAddress(committer), 'value', 'fs'))
+console.log(committer.getRefs('value', 'fs'))
 
 console.log(' === and write to fs')
 
 recaller.watch('write to fs', () => {
-  const commitAddress = getAddress(committer)
-  if (commitAddress > 0) {
-    const committerRefs = committer.lookup(commitAddress, getCodecs(KIND.REFS_OBJECT))
+  if (committer.length > 0) {
+    const committerRefs = committer.getValue(getCodecs(KIND.REFS_OBJECT))
     const valueAddress = committerRefs?.value
     if (valueAddress) {
       const valueRefs = committer.lookup(valueAddress, getCodecs(KIND.REFS_OBJECT))

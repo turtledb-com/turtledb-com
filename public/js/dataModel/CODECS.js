@@ -112,27 +112,42 @@ export class Codec {
     return collapseUint8Arrays(...blocks, footer)
   }
 
+  /**
+   * @param {import('./Uint8ArrayLayer.js').Uint8ArrayLayer} uint8ArrayLayer
+   * @param {number} address
+   * @param {number} footer
+   * @returns {any}
+   */
   decodeValue (uint8ArrayLayer, address, footer) {
     const { blocks } = this.decodeBlocksAndNextAddress(uint8ArrayLayer, address, footer)
     return this.blocksToValue(uint8ArrayLayer, blocks, address)
   }
 
+  /**
+   * @param {import('./Uint8ArrayLayer.js').Uint8ArrayLayer} uint8ArrayLayer
+   * @param {number} address
+   * @param {number} footer
+   * @returns {{blocks: Array.<Block>, nextAddress: number}}
+   */
   decodeBlocksAndNextAddress (uint8ArrayLayer, address, footer) {
-    let nextAddress = address
     let bitOffset = 8
     const blocks = []
     for (let i = this.blocks.length - 1; i >= 0; --i) {
       const block = this.blocks[i]
-      const { value, end } = block.decodeBlock(uint8ArrayLayer, nextAddress, footer, bitOffset)
+      const { value, end } = block.decodeBlock(uint8ArrayLayer, address, footer, bitOffset)
       blocks[i] = value
-      nextAddress = end
+      address = end
       bitOffset -= block.bitWidth
     }
-    return { blocks, nextAddress }
+    return { blocks, nextAddress: address - 1 }
   }
 
+  /**
+   * @param {number} footer
+   * @param {Array.<Codec>} codecs
+   * @returns {Codec}
+   */
   static calculateCodec (footer, codecs) {
-    if (!Array.isArray(codecs)) return { codec: codecs, footer }
     const codec = (codecs.length > 1) ? codecs.find(codec => codec.prefixMatch(footer)) : codecs[0]
     if (!codec) {
       console.error({ footer, codecs })
