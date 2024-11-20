@@ -110,7 +110,7 @@ let commitInProgress = emptyPromise
 
 let valueRefs
 const debounceEdits = (message) => {
-  const footer = committer.getByte(committer.workspace.length - 1)
+  const footer = committer.workspace.getByte()
   if (!footer) {
     if (!valueRefs) {
       valueRefs = {}

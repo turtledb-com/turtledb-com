@@ -77,7 +77,7 @@ export class Uint8ArrayLayer {
    * @param {number} address
    * @returns {number}
    */
-  getByte (address) {
+  getByte (address = this.length - 1) {
     const storage = this.getLayerContainingAddress(address)
     if (!storage) return
     return storage.uint8Array[address - storage.offset]
