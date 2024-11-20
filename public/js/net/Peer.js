@@ -56,7 +56,7 @@ export class Peer extends Upserter {
   sourceObjects = {}
 
   #updateSourceObjects = () => {
-    const lastLayer = this.layerIndex
+    const lastLayer = this.layerIndex ?? -1
     const remoteWantSents = this.remoteExports.lookup()
     Object.keys(remoteWantSents ?? {}).forEach(compactPublicKey => {
       if (!this.sourceObjects[compactPublicKey]) {
@@ -67,16 +67,16 @@ export class Peer extends Upserter {
       const pointer = pointersByPublicKey[compactPublicKey]
       /** @type {SourceObject|undefined} */
       const remoteState = this.remoteExports.lookup()?.[compactPublicKey]
-      while (remoteState?.sent?.[pointer.layerIndex + 1]) {
-        const address = remoteState.sent[pointer.layerIndex + 1]
+      while (remoteState?.sent?.[(pointer.layerIndex ?? -1) + 1]) {
+        const address = remoteState.sent[(pointer.layerIndex ?? -1) + 1]
         if (address) {
           const data = this.remoteExports.lookup(address)
           pointer.append(data)
         }
       }
-      sourceObject.want = [[pointer.layerIndex + 1, Number.POSITIVE_INFINITY]]
+      sourceObject.want = [[(pointer.layerIndex ?? -1) + 1, Number.POSITIVE_INFINITY]]
       remoteState?.want?.forEach?.(([start, end]) => {
-        while (start < end && sourceObject.sent[start] === undefined && pointer.layerIndex >= start) {
+        while (start < end && sourceObject.sent[start] === undefined && (pointer.layerIndex ?? -1) >= start) {
           sourceObject.sent[start] = this.upsert(pointer.getLayerAtIndex(start).uint8Array, getCodecs(KIND.OPAQUE))
           ++start
         }
@@ -86,7 +86,7 @@ export class Peer extends Upserter {
         sourceObject
       ]
     })))
-    if (this.layerIndex > lastLayer + 1) this.collapseTo(lastLayer + 1)
+    if ((this.layerIndex ?? -1) > lastLayer + 1) this.collapseTo(lastLayer + 1)
   }
 
   constructor (

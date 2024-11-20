@@ -16,15 +16,15 @@ describe('Peer', function () {
     const peerB = new Peer('peerB', recallerB, undefined, {})
     recallerA.watch('send updates from A to B', () => {
       // console.log('@@@@@@@@@@@@ recallerA sending A to B: peerA.layerIndex:', peerA.layerIndex, 'peerB.remoteExports.layerIndex:', peerB.remoteExports.layerIndex)
-      while (peerA.layerIndex > peerB.remoteExports.layerIndex) {
-        peerB.remoteExports.append(peerA.getLayerAtIndex(peerB.remoteExports.layerIndex + 1).uint8Array)
+      while (peerA.layerIndex > (peerB.remoteExports.layerIndex ?? -1)) {
+        peerB.remoteExports.append(peerA.getLayerAtIndex((peerB.remoteExports.layerIndex ?? -1) + 1).uint8Array)
       }
       // console.log('@@@@@@@@@@@@ recallerA sent A to B: peerA.layerIndex:', peerA.layerIndex, 'peerB.remoteExports.layerIndex:', peerB.remoteExports.layerIndex)
     })
     recallerB.watch('send updates from B to A', () => {
       // console.log('@@@@@@@@@@@@ recallerB sending B to A: peerB.layerIndex:', peerB.layerIndex, 'peerA.remoteExports.layerIndex:', peerA.remoteExports.layerIndex)
-      while (peerB.layerIndex > peerA.remoteExports.layerIndex) {
-        peerA.remoteExports.append(peerB.getLayerAtIndex(peerA.remoteExports.layerIndex + 1).uint8Array)
+      while ((peerB.layerIndex ?? -1) > (peerA.remoteExports.layerIndex ?? -1)) {
+        peerA.remoteExports.append(peerB.getLayerAtIndex((peerA.remoteExports.layerIndex ?? -1) + 1).uint8Array)
       }
       // console.log('@@@@@@@@@@@@ recallerB sent B to A: peerB.layerIndex:', peerB.layerIndex, 'peerA.remoteExports.layerIndex:', peerA.remoteExports.layerIndex)
     })

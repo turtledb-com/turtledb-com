@@ -65,7 +65,7 @@ let startedLoading = false
 const checkTurtle = () => {
   if (startedLoading) return
   console.log('check turtle')
-  const loadedLayers = committer.layerIndex
+  const loadedLayers = committer.layerIndex ?? -1
   const availableLength = global.peer?.remoteExports?.lookup?.()?.[compactPublicKey]?.want?.[0]?.[0]
   console.log('our length:', loadedLayers + 1, 'their length:', availableLength)
   if (availableLength !== undefined && loadedLayers === availableLength - 1) {

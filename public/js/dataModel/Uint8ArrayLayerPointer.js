@@ -38,7 +38,7 @@ export class Uint8ArrayLayerPointer {
 
   get length () { return this.uint8ArrayLayer?.length }
 
-  get layerIndex () { return this.uint8ArrayLayer?.layerIndex ?? -1 }
+  get layerIndex () { return this.uint8ArrayLayer?.layerIndex }
 
   lookup (address, codecs) { return this.uint8ArrayLayer?.lookup?.(address, codecs) }
 
