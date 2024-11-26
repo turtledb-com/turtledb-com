@@ -1,4 +1,4 @@
-import { fallbackCPK } from '../../js/constants.js'
+import { defaultCPK } from '../../js/constants.js'
 import { h } from '../../js/display/h.js'
 import { render } from '../../js/display/render.js'
 import { componentAtPath, deriveDefaults } from '../../js/utils/components.js'
@@ -16,7 +16,7 @@ window.customElements.define(elementName, class extends window.HTMLElement {
     render(this.shadowRoot, this.content, recaller, elementName)
   }
 
-  object = componentAtPath('components/turtle-explorer/object.js', fallbackCPK)
+  object = componentAtPath('components/turtle-explorer/object.js', defaultCPK)
 
   content = () => {
     /** @type {{pointer: import('../../js/dataModel/Uint8ArrayLayerPointer.js').Uint8ArrayLayerPointer, address: number, exclude: Array.<String>}} */

@@ -1,4 +1,4 @@
-import { fallbackCPK } from '../../js/constants.js'
+import { defaultCPK } from '../../js/constants.js'
 import { Committer } from '../../js/dataModel/Committer.js'
 import { h } from '../../js/display/h.js'
 import { handle, showIfElse } from '../../js/display/helpers.js'
@@ -41,8 +41,8 @@ window.customElements.define(elementName, class extends window.HTMLElement {
     setCpk(compactPublicKey)
   }
 
-  form = componentAtPath('components/login/login-form.js', fallbackCPK)
-  explorer = componentAtPath('components/turtle-explorer/turtle-explorer.js', fallbackCPK)
+  form = componentAtPath('components/login/login-form.js', defaultCPK)
+  explorer = componentAtPath('components/turtle-explorer/turtle-explorer.js', defaultCPK)
 
   listPeers = () => {
     const cpks = getPublicKeys()
@@ -217,7 +217,7 @@ window.customElements.define(elementName, class extends window.HTMLElement {
           </svg>
         </button>
         ${showIfElse(
-          () => getCpk() === fallbackCPK,
+          () => getCpk() === defaultCPK,
           h`
             <span>
               TURTLEDB.COM - believes in you!

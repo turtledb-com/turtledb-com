@@ -1,4 +1,4 @@
-import { fallbackCPK } from '../js/constants.js'
+import { defaultCPK } from '../js/constants.js'
 import { Committer } from '../js/dataModel/Committer.js'
 import { h } from '../js/display/h.js'
 import { render } from '../js/display/render.js'
@@ -50,7 +50,7 @@ window.customElements.define(elementName, class extends window.HTMLBodyElement {
 
   body = () => {
     const cpk = getCpk()
-    if (!cpk || cpk === fallbackCPK) {
+    if (!cpk || cpk === defaultCPK) {
       return componentAtPath('components/home/welcome.js', defaultCpk)()
     }
     const pointer = getPointerByPublicKey(cpk)

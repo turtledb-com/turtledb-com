@@ -2,10 +2,10 @@
 
 import { Peer, getPublicKeys, peerRecaller, getPointerByPublicKey } from './js/net/Peer.js'
 import { attachPeerToCycle, newPeerPerCycle } from './js/utils/peerFactory.js'
-import { fallbackCPK } from './js/constants.js'
+import { defaultCPK } from './js/constants.js'
 
-console.log(' @@@ fallbackCPK', fallbackCPK)
-getPointerByPublicKey(fallbackCPK)
+console.log(' @@@ defaultCPK', defaultCPK)
+getPointerByPublicKey(defaultCPK)
 
 export const v = '0.0.14'
 
@@ -101,7 +101,7 @@ recaller.watch('populate cache', () => {
       // const headers = new Headers({
       //   'Content-Type': contentTypeByExtension[extension]
       // })
-      if (cpk === fallbackCPK) {
+      if (cpk === defaultCPK) {
         putVirtualCache(absolutePath, file)
         // cache.put(absolutePath, new Response(file, { headers }))
       }

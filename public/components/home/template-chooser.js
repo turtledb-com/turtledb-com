@@ -1,3 +1,4 @@
+import { defaultCPK } from '../../js/constants.js'
 import { Committer } from '../../js/dataModel/Committer.js'
 import { Uint8ArrayLayerPointer } from '../../js/dataModel/Uint8ArrayLayerPointer.js'
 import { h } from '../../js/display/h.js'
@@ -7,7 +8,7 @@ import { getPointerByPublicKey } from '../../js/net/Peer.js'
 import { deriveDefaults, useHash } from '../../js/utils/components.js'
 import { putVirtualCache } from '../../service-worker.js'
 
-const { cpk, recaller, elementName } = deriveDefaults(import.meta.url)
+const { recaller, elementName } = deriveDefaults(import.meta.url)
 const { getCpk } = useHash(recaller)
 console.log(elementName)
 window.customElements.define(elementName, class extends window.HTMLElement {
@@ -23,14 +24,15 @@ window.customElements.define(elementName, class extends window.HTMLElement {
     let value = committer.getValue()
     if (!value || typeof value !== 'object') value = {}
     if (!value.fs || typeof value.fs !== 'object') value.fs = {}
-    const defaultPointer = getPointerByPublicKey(cpk)
+    const defaultPointer = getPointerByPublicKey(defaultCPK)
     const file = defaultPointer.getValue('value', 'fs', 'components/templates/start.js')
     value.fs['components/main/start.js'] = file
     const addr = committer.workspace.upsert(file)
+    const path = `/components/main/start.js?address=${addr}&cpk=${getCpk()}`
+    putVirtualCache(path, file)
     committer.commit('added basic template', value).then(() => {
       const address = committer.getAddress('value', 'fs', 'components/main/start.js')
-      console.log({ addr, address })
-      putVirtualCache(`/components/main/start.js?address=${address}&cpk=${cpk}`, file)
+      console.log(`component/main/start.js committed at ${address}`)
     })
   }
 

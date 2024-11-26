@@ -59,7 +59,7 @@ window.customElements.define(elementName, class extends window.HTMLElement {
           Make something.
         </h1>
         <p>
-          turtledb.com makes it easy.
+          turtledb.com makes it easy (for a certain value of "easy").
           <ol>
             <li>
               Choose a username.

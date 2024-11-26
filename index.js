@@ -18,6 +18,6 @@ export { buildElementName, getBase, getCpkSlice } from './public/js/utils/compon
 export { cryptoPromise, hashNameAndPassword } from './public/js/utils/crypto.js'
 export * as nobleSecp256k1 from './public/js/utils/noble-secp256k1.js'
 
-export { fallbackCPK } from './public/js/constants.js'
+export { defaultCPK } from './public/js/constants.js'
 export { manageCert } from './src/manageCert.js'
 export * as s3Peer from './src/S3Peer.js'

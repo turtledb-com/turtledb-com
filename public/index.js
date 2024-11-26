@@ -1,4 +1,4 @@
-import { fallbackCPK } from './js/constants.js'
+import { defaultCPK } from './js/constants.js'
 import { h } from './js/display/h.js'
 import { render } from './js/display/render.js'
 import { getPublicKeys, peerRecaller, getPointerByPublicKey } from './js/net/Peer.js'
@@ -37,5 +37,5 @@ render(document, h`<html style="height: 100%;">
     ${renderComponentScriptLinks}
   </head>
   <${serviceWorkerError}/>
-  <${componentAtPath('components/app.js', fallbackCPK, 'body')} key="app"/>
+  <${componentAtPath('components/app.js', defaultCPK, 'body')} key="app"/>
 </html>`, peerRecaller, 'index.js')

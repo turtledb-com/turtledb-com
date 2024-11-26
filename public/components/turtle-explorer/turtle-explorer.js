@@ -1,4 +1,4 @@
-import { fallbackCPK } from '../../js/constants.js'
+import { defaultCPK } from '../../js/constants.js'
 import { KIND, getCodecs } from '../../js/dataModel/CODECS.js'
 import { h } from '../../js/display/h.js'
 import { handle, showIfElse } from '../../js/display/helpers.js'
@@ -75,7 +75,7 @@ window.customElements.define(elementName, class extends window.HTMLElement {
     return getPointerByPublicKey(this.cpk).getValue('name') ?? h`<i>no commits</i>`
   }
 
-  object = componentAtPath('components/turtle-explorer/object.js', fallbackCPK)
+  object = componentAtPath('components/turtle-explorer/object.js', defaultCPK)
 
   commitSelector = () => {
     const pointer = getPointerByPublicKey(this.cpk)
