@@ -108,21 +108,8 @@ const emptyPromise = new Promise(resolve => setTimeout(() => {
 }), 1000)
 let commitInProgress = emptyPromise
 
-let valueRefs
+const valueRefs = {}
 const debounceEdits = (message) => {
-  const footer = committer.workspace.getByte()
-  if (!footer) {
-    if (!valueRefs) {
-      valueRefs = {}
-      console.log('\n--- committer.workspace', committer.workspace)
-      console.log(committer.length)
-    }
-  } else {
-    if (!valueRefs) {
-      valueRefs = committer.workspace.getRefs('value') ?? {}
-      console.log('\n--- valueRefs', valueRefs)
-    }
-  }
   const possibleNextCommit = new Promise(resolve => {
     setTimeout(() => {
       if (possibleNextCommit === commitInProgress) {
@@ -130,7 +117,6 @@ const debounceEdits = (message) => {
           message,
           committer.workspace.upsert(valueRefs, getCodecs(KIND.REFS_OBJECT))
         ).then(commit => {
-          valueRefs = undefined
           resolve(commit)
         })
       } else {
