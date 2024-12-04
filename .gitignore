@@ -7,5 +7,9 @@ node_modules/
 # secp256k1 to be copied
 public/js/utils/noble-secp256k1.js
 
+# files copied for testing
+public/test/chai.*
+public/test/mocha.*
+
 # self signed certs for dev go here
 dev/

@@ -88,13 +88,19 @@ export class Uint8ArrayLayer {
    * @returns {Uint8ArrayLayer}
    */
   collapseTo (layerIndex = 0) {
+    if (this.layerIndex === undefined) return this
     let tempLayer = this
-    const uint8Arrays = []
-    while (tempLayer?.layerIndex >= layerIndex) {
-      uint8Arrays.unshift(tempLayer.uint8Array)
-      tempLayer = tempLayer.seekLayers[tempLayer.seekLayers.length - 1]
+    // console.log('tempLayer.layerIndex', tempLayer.layerIndex)
+    // console.time('fill uint8Arrays')
+    const uint8Arrays = new Array(tempLayer.layerIndex - layerIndex)
+    while (tempLayer && tempLayer.layerIndex >= layerIndex) {
+      uint8Arrays[tempLayer.layerIndex - layerIndex] = tempLayer.uint8Array
+      tempLayer = tempLayer.parent
     }
-    const collapsedUint8Array = collapseUint8Arrays(...uint8Arrays)
+    // console.timeEnd('fill uint8Arrays')
+    // console.log('uint8Arrays.length', uint8Arrays.length)
+    const collapsedUint8Array = collapseUi8AA(uint8Arrays)
+    // console.log('collapsedUint8Array.length', collapsedUint8Array.length)
     return new Uint8ArrayLayer(collapsedUint8Array, tempLayer)
   }
 
@@ -167,6 +173,10 @@ export class Uint8ArrayLayer {
  * @returns {Uint8Array}
  */
 export function collapseUint8Arrays (...uint8Arrays) {
+  return collapseUi8AA(uint8Arrays)
+}
+
+function collapseUi8AA (uint8Arrays) {
   uint8Arrays = uint8Arrays.map(uint8Array => {
     if (uint8Array instanceof Uint8Array) return uint8Array
     if (uint8Array instanceof Object.getPrototypeOf(Uint8Array)) return new Uint8Array(uint8Array.buffer)

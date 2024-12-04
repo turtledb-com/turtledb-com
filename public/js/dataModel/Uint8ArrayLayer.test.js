@@ -2,7 +2,7 @@ import { hashNameAndPassword } from '../utils/crypto.js'
 import { Committer } from './Committer.js'
 import { Uint8ArrayLayer } from './Uint8ArrayLayer.js'
 
-const { default: chai } = await import('../utils/chaiPromise.test.js')
+const { default: chai } = await import('../utils/chaiPromise.js')
 
 describe('Uint8ArrayLayer', function () {
   it('does basic indexing through multiple layers', function () {

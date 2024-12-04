@@ -6,7 +6,7 @@ import { bigLabel } from '../utils/loggy.js'
 import { handleNextTick } from '../utils/nextTick.js'
 import { Peer, getPointerByPublicKey } from './Peer.js'
 
-const { default: chai } = await import('../utils/chaiPromise.test.js')
+const { default: chai } = await import('../utils/chaiPromise.js')
 
 describe('Peer', function () {
   it('more basic synchronization', async function () {

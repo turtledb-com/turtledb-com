@@ -1,6 +1,6 @@
 import { NestedSet } from './NestedSet.js'
 
-const { default: chai } = await import('./chaiPromise.test.js')
+const { default: chai } = await import('./chaiPromise.js')
 
 describe('NestedSet', function () {
   it('adds, gets values, and calculates size', function () {

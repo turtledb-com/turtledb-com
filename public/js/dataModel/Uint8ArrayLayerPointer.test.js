@@ -3,7 +3,7 @@ import { handleNextTick } from '../utils/nextTick.js'
 import { ADDRESS, Uint8ArrayLayerPointer } from './Uint8ArrayLayerPointer.js'
 import { Upserter } from './Upserter.js'
 
-const { default: chai } = await import('../utils/chaiPromise.test.js')
+const { default: chai } = await import('../utils/chaiPromise.js')
 
 describe('Uint8ArrayLayerPointer', function () {
   it('triggers appropriate updates when changes occur', function () {

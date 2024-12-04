@@ -184,8 +184,9 @@ recaller.watch('write to fs', () => {
         for (const relativePath in lastRefs) {
           if (fsRefs[relativePath] === undefined) {
             console.log(' +++ delete', relativePath)
-            rmSync(join(root, relativePath))
+            // rmSync(join(root, relativePath))
             delete lastRefs[relativePath]
+            throw new Error('no deleting during testing')
           }
         }
         for (const relativePath in fsRefs) {

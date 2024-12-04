@@ -2,7 +2,7 @@ import { handleNextTick } from '../utils/nextTick.js'
 import { KIND, getCodecs } from './CODECS.js'
 import { FRESH_ADDRESS_GETTER, Upserter } from './Upserter.js'
 
-const { default: chai } = await import('../utils/chaiPromise.test.js')
+const { default: chai } = await import('../utils/chaiPromise.js')
 
 function upsertAndLookupEach (values, codec, isOpaque = false) {
   const upserter = new Upserter()

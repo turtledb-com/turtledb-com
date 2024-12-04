@@ -87,34 +87,37 @@ recaller.watch('populate cache', () => {
   const cpks = getPublicKeys()
   for (const cpk of cpks) {
     const pointer = getPointerByPublicKey(cpk, recaller)
+    try {
+      const fsRefs = pointer.getRefs('value', 'fs')
+      if (typeof fsRefs !== 'object') throw new Error('value.fs must be object')
 
-    const fsRefs = pointer.getRefs('value', 'fs')
-    if (!fsRefs) return
-
-    Object.keys(fsRefs).forEach(relativePath => {
-      if (fsRefs[relativePath] === fallbackRefs[relativePath]) return
-      const address = fsRefs[relativePath]
-      const file = pointer.lookup(address)
-      const absolutePath = `/${relativePath}`
-      const indexed = absolutePath.match(/(?<indexed>.*)\/index.html?/)?.groups?.indexed
-      fallbackRefs[relativePath] = address
-      // const headers = new Headers({
-      //   'Content-Type': contentTypeByExtension[extension]
-      // })
-      if (cpk === defaultCPK) {
-        putVirtualCache(absolutePath, file)
-        // cache.put(absolutePath, new Response(file, { headers }))
-      }
-      putVirtualCache(`${absolutePath}?address=${address}&cpk=${cpk}`, file)
-      // cache.put(`${absolutePath}?address=${address}&cpk=${cpk}`, new Response(file, { headers }))
-      // console.log(' @@@ caching', `${absolutePath}?address=${address}&cpk=${cpk}`, file.length)
-      if (indexed !== undefined) {
-        putVirtualCache(indexed, file)
-        putVirtualCache(`${indexed}/`, file)
-        // cache.put(indexed, new Response(file, { headers }))
-        // cache.put(`${indexed}/`, new Response(file, { headers }))
-      }
-    })
+      Object.keys(fsRefs).forEach(relativePath => {
+        if (fsRefs[relativePath] === fallbackRefs[relativePath]) return
+        const address = fsRefs[relativePath]
+        const file = pointer.lookup(address)
+        const absolutePath = `/${relativePath}`
+        const indexed = absolutePath.match(/(?<indexed>.*)\/index.html?/)?.groups?.indexed
+        fallbackRefs[relativePath] = address
+        // const headers = new Headers({
+        //   'Content-Type': contentTypeByExtension[extension]
+        // })
+        if (cpk === defaultCPK) {
+          putVirtualCache(absolutePath, file)
+          // cache.put(absolutePath, new Response(file, { headers }))
+        }
+        putVirtualCache(`${absolutePath}?address=${address}&cpk=${cpk}`, file)
+        // cache.put(`${absolutePath}?address=${address}&cpk=${cpk}`, new Response(file, { headers }))
+        // console.log(' @@@ caching', `${absolutePath}?address=${address}&cpk=${cpk}`, file.length)
+        if (indexed !== undefined) {
+          putVirtualCache(indexed, file)
+          putVirtualCache(`${indexed}/`, file)
+          // cache.put(indexed, new Response(file, { headers }))
+          // cache.put(`${indexed}/`, new Response(file, { headers }))
+        }
+      })
+    } catch (error) {
+      console.error(error)
+    }
   }
 })
 

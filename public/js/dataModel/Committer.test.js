@@ -1,7 +1,7 @@
 import { hashNameAndPassword } from '../utils/crypto.js'
 import { Committer, b64ToUi8, ui8ToB64 } from './Committer.js'
 
-const { default: chai } = await import('../utils/chaiPromise.test.js')
+const { default: chai } = await import('../utils/chaiPromise.js')
 
 describe('Committer', function () {
   it('creates signed commits that can be verified', async function () {

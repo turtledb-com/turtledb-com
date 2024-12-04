@@ -1,7 +1,7 @@
 import { Recaller } from './Recaller.js'
 import { handleNextTick } from './nextTick.js'
 
-const { default: chai } = await import('./chaiPromise.test.js')
+const { default: chai } = await import('./chaiPromise.js')
 
 describe('Recaller', function () {
   it('calls watched functions when accessed values change', function () {
