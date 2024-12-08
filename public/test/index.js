@@ -26,33 +26,11 @@ const tests = () => {
       console.log(counter++)
       if (counter === tests.length) mocha.run()
     }
-    return h`
-      <script type="module" key="mocha-init.${pointer.layerIndex}">
-        console.log('tests to follow')
-        mocha.setup('bdd')
-        mocha.checkLeaks()
-      </script>
-      ${tests.map(test => h`<script type="module" src="/${test}" key="${test}" onload=${onload}></script>`)}
-    `
-    /*
-    const testScripts = [
-      h`<div id="mocha"></div>`,
-      h`<script class="mocha-init">
-        mocha.setup('bdd')
-        mocha.checkLeaks()
-      </script>`,
-      ...tests.map(test => h`<script type="module" src="/${test}"></script>`),
-      h`<script type="module" class="mocha-exec">
-        console.log(mocha)
-        setTimeout(() => {
-          console.log('about to run')
-          mocha.run()
-          console.log('just ran')
-        }, 1000)
-      </script>`
-    ]
-    return testScripts
-    */
+    console.log('tests to follow')
+    mocha.cleanReferencesAfterRun = false
+    mocha.setup('bdd')
+    mocha.checkLeaks()
+    return tests.map(test => h`<script type="module" src="/${test}" key="${test}" onload=${onload}></script>`)
   } catch (error) {
     console.error(error)
     return '// loading...'

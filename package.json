@@ -46,7 +46,7 @@
     "fspeer": "./bin/fspeer.js --s3host turtledb.com --s3port 1024 --path ./public/",
     "fspeer.main": "./bin/fspeer.js --s3host turtledb.com --s3port 1024 --path ./public/components/main/ --prefix components/main",
     "canary": "open '/Applications/Google Chrome Canary.app' --args --auto-open-devtools-for-tabs --allow-insecure-localhost --ignore-certificate-errors --unsafely-treat-insecure-origin-as-secure=https://localhost:8080/ https://localhost:8080/",
-    "postinstall": "pwd; ls; cp ./node_modules/@noble/secp256k1/index.js ./public/js/utils/noble-secp256k1.js; cp ./node_modules/mocha/mocha.* ./public/test/; cp ./node_modules/chai/chai.* ./public/test/;",
+    "postinstall": "pwd; ls; cp ./node_modules/@noble/secp256k1/index.js ./public/js/utils/noble-secp256k1.js",
     "test": "mocha './public/js/**/*.test.js'",
     "coverage": "c8 -r html -r text -r json-summary -x '**/*.test.js' $npm_execpath run test",
     "docker.build": "docker build -t turtledb-com/turtledb-com .",
