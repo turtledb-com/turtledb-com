@@ -80,7 +80,7 @@ export const putVirtualCache = async (request, body) => {
   const options = { headers }
   const response = new Response(body, options)
   const cache = await self.caches.open(v)
-  console.log(' @@@ caching', request, contentType)
+  // console.log(' @@@ caching', request, contentType)
   cache.put(request, response)
 }
 recaller.watch('populate cache', () => {
@@ -122,13 +122,13 @@ recaller.watch('populate cache', () => {
 })
 
 self.addEventListener('fetch', event => {
-  console.log('fetch', event.request.url)
+  // console.log('fetch', event.request.url)
   updateClients('fetch')
   event.respondWith((async () => {
     const cache = await self.caches.open(v)
     const response = await cache.match(event.request)
     if (response) {
-      console.log(' @@@ matched cache for', event.request.url)
+      // console.log(' @@@ matched cache for', event.request.url)
       return response
     }
     const url = new URL(event.request.url)
