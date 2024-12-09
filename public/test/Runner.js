@@ -4,14 +4,14 @@ import { Recaller } from '../js/utils/Recaller.js'
 export const PASS = '✓'
 // export const FAIL = '❌'
 export const FAIL = '✖'
-// export const BUSY = '⏳'
+// export const RUNNING = '⏳'
 export const WAIT = '⧖'
-export const BUSY = '…'
+export const RUNNING = '…'
 // export const SKIP = '🚫'
 export const SKIP = '•'
 
 export const runnerRecaller = new Recaller('Runner.js')
-runnerRecaller.debug = true
+// runnerRecaller.debug = true
 let runnerCount = 0
 
 export class Runner {
@@ -21,39 +21,35 @@ export class Runner {
   #f
 
   /**
-   * @param {string} [name='test collection']
+   * @param {string} [name='test-collection']
    * @param {string} [type='Runner']
    * @param {Runner} parent
    * @param {number} [verbose=1]
    * @param {Recaller} [recaller=runnerRecaller]
    * @param {() => void} [f=() => {}]
-   * @param {boolean} [runImmediately=false]
    */
   constructor (
-    name = 'test collection',
+    name = 'test-collection',
     type = 'Runner',
-    parent, verbose = 1,
+    parent,
+    verbose = 1,
     recaller = runnerRecaller,
-    f = async () => await this.runChildren(),
-    runImmediately = false
+    f = () => this.runChildren()
   ) {
     this.parent = parent
     this.name = name
     this.type = type
     this.verbose = verbose
     this.recaller = recaller
-    this.#runState = WAIT
+    this.runState = WAIT
     this.#f = f
     this.index = parent?.index ?? ++runnerCount
-    if (runImmediately) {
-      this.run()
-    }
   }
 
   async run () {
-    this.runState = BUSY
+    this.runState = RUNNING
     try {
-      this.result = await this.#f()
+      this.result = await this.#f(this)
       this.runState = PASS
     } catch (error) {
       this.error = error
@@ -104,10 +100,13 @@ export class Runner {
    * @param {(runner: Runner) => any} f
    * @returns {Runner}
    */
-  async appendChild (type, name, f, runImmediately = false) {
-    const child = new Runner(name, type, this, this.verbose, this.recaller, this.#runState, f, runImmediately)
+  async appendChild (name, f, type) {
+    const child = new Runner(name, type, this, this.verbose, this.recaller, f)
     this.#children.push(child)
     this.recaller.reportKeyMutation(this, 'children', 'appendChild', this.name)
+    if (this.runState === RUNNING) {
+      await child.run()
+    }
   }
 
   /**
@@ -116,7 +115,7 @@ export class Runner {
    * @returns {Runner}
    */
   async describe (name, f) {
-    return this.appendChild('Suite', name, f)
+    return this.appendChild(name, f, 'Suite')
   }
 
   /**
@@ -125,7 +124,7 @@ export class Runner {
    * @returns {Runner}
    */
   async it (name, f) {
-    return this.appendChild('Test', name, f)
+    return this.appendChild(name, f, 'Test')
   }
 
   /**
@@ -134,14 +133,14 @@ export class Runner {
    * @returns {Runner}
    */
   async test (name, f) {
-    return this.appendChild('Test', name, f)
+    return this.appendChild(name, f, 'Test')
   }
 
   async equal (expected, actual, message = `expected === actual : ${JSON.stringify(expected)} === ${JSON.stringify(actual)}`, runImmediately = true) {
-    this.appendChild('equal', message, () => {
+    this.appendChild(message, () => {
       const equal = expected === actual
       if (!equal) throw new Error(message)
-    }, runImmediately)
+    }, 'equal')
   }
 
   /** @type {Array.<Runner>} */
@@ -158,11 +157,14 @@ export class Runner {
 }
 
 const runner = Runner.currentRunner
+/*
 runnerRecaller.watch('update status', () => {
   console.log(JSON.stringify(runner.status, undefined, 2))
 })
+*/
 runner.describe('abc', async suite => {
   await suite.it('xyz', async assert => {
+    await new Promise(resolve => setTimeout(resolve, 1000))
     assert.equal(1, 1)
     await new Promise(resolve => setTimeout(resolve, 1000))
     assert.equal(1, 1)
@@ -170,5 +172,6 @@ runner.describe('abc', async suite => {
   })
 })
 
-const result = await runner.run()
-console.log({ result })
+console.log('--- start run')
+await runner.run()
+console.log(JSON.stringify(runner.status, undefined, 2))
