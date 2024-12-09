@@ -20,13 +20,13 @@
     "concurrently": "^9.0.1",
     "express": "^4.21.1",
     "mkcert": "^3.0.0",
-    "mocha": "^10.2.0",
     "npm-run-all": "^4.1.5",
     "ws": "^8.14.2"
   },
   "devDependencies": {
     "c8": "^10.1.2",
     "chai": "^5.1.2",
+    "mocha": "^10.2.0",
     "readline-sync": "^1.4.10",
     "standard": "^17.1.0"
   },
