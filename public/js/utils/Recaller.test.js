@@ -1,10 +1,9 @@
+import { globalRunner, urlToName } from '../../test/Runner.js'
 import { Recaller } from './Recaller.js'
 import { handleNextTick } from './nextTick.js'
 
-const { default: chai } = await import('./chaiPromise.js')
-
-describe('Recaller', function () {
-  it('calls watched functions when accessed values change', function () {
+globalRunner.describe(urlToName(import.meta.url), suite => {
+  suite.it('calls watched functions when accessed values change', ({ assert }) => {
     const recaller = new Recaller('calls watched functions')
     const a = {}
     const b = {}
@@ -14,22 +13,22 @@ describe('Recaller', function () {
       recaller.reportKeyAccess(a, 'x')
       recaller.reportKeyAccess(b, 'y')
     })
-    chai.assert.equal(counter, 1, 'function should get called at start')
+    assert.equal(counter, 1, 'function should get called at start')
 
     recaller.reportKeyMutation(a, 'x')
     recaller.reportKeyMutation(a, 'x')
     recaller.reportKeyMutation(b, 'y')
     handleNextTick()
-    chai.assert.equal(counter, 2, 'function should get called once per tic')
+    assert.equal(counter, 2, 'function should get called once per tic')
 
     recaller.reportKeyMutation(a, 'y')
     recaller.reportKeyMutation(a, 'y')
     recaller.reportKeyMutation(b, 'x')
     handleNextTick()
-    chai.assert.equal(counter, 2, 'function should not get called when unaccessed values change')
+    assert.equal(counter, 2, 'function should not get called when unaccessed values change')
   })
 
-  it('calls beforeNextUpdate and afterNextUpdate functions in order', function () {
+  suite.it('calls beforeNextUpdate and afterNextUpdate functions in order', ({ assert }) => {
     const recaller = new Recaller('calls beforeNextUpdate and afterNextUpdate')
     const o = {}
     let output = ''
@@ -43,16 +42,16 @@ describe('Recaller', function () {
       recaller.reportKeyAccess(o, 'x')
       output = output + 'w'
     })
-    chai.assert.equal(output, 'w', 'called at start')
+    assert.equal(output, 'w', 'called at start')
     handleNextTick()
-    chai.assert.equal(output, 'w', 'nothing triggered')
+    assert.equal(output, 'w', 'nothing triggered')
     recaller.reportKeyMutation(o, 'x')
-    chai.assert.equal(output, 'w', 'still nothing triggered')
+    assert.equal(output, 'w', 'still nothing triggered')
     handleNextTick()
-    chai.assert.equal(output, 'wbwa', 'everything triggered in order')
+    assert.equal(output, 'wbwa', 'everything triggered in order')
   })
 
-  it('skips replaced triggers', function () {
+  suite.it('skips replaced triggers', ({ assert }) => {
     const recaller = new Recaller('skips replaced triggers')
     let callCount = 0
     const watchedFunction = () => {
@@ -61,16 +60,16 @@ describe('Recaller', function () {
       ++callCount
     }
     recaller.watch('watchedFunction', watchedFunction)
-    chai.assert.equal(callCount, 1)
+    assert.equal(callCount, 1)
     handleNextTick()
-    chai.assert.equal(callCount, 1)
+    assert.equal(callCount, 1)
     recaller.reportKeyMutation(recaller, 'key', 'test', 'test')
-    chai.assert.equal(callCount, 1)
+    assert.equal(callCount, 1)
     handleNextTick()
-    chai.assert.equal(callCount, 2)
+    assert.equal(callCount, 2)
     recaller.watch('watchedFunction', watchedFunction)
-    chai.assert.equal(callCount, 3)
+    assert.equal(callCount, 3)
     handleNextTick()
-    chai.assert.equal(callCount, 3)
+    assert.equal(callCount, 3)
   })
 })

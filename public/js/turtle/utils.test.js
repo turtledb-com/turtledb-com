@@ -1,11 +1,8 @@
-import { assert } from '../../test/chai.js'
+import { globalRunner, urlToName } from '../../test/Runner.js'
 import { zabacaba } from './utils.js'
 
-/** @type {import('chai').assert} */
-
-console.log('\n\nasdfasdf\n')
-describe('zabacaba', function () {
-  it('returns expected values for a zabacaba function', function () {
+globalRunner.describe(urlToName(import.meta.url), suite => {
+  suite.it('returns expected values for a zabacaba function', ({ assert }) => {
     const expectedResults = [
       0,
       1, 2, 1, 3, 1, 2, 1, 4, 1, 2, 1, 3, 1, 2, 1, 5,

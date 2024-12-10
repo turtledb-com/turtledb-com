@@ -1,17 +1,16 @@
+import { globalRunner, urlToName } from '../../test/Runner.js'
 import { Recaller } from '../utils/Recaller.js'
 import { handleNextTick } from '../utils/nextTick.js'
 import { ADDRESS, Uint8ArrayLayerPointer } from './Uint8ArrayLayerPointer.js'
 import { Upserter } from './Upserter.js'
 
-const { default: chai } = await import('../utils/chaiPromise.js')
-
-describe('Uint8ArrayLayerPointer', function () {
-  it('triggers appropriate updates when changes occur', function () {
+globalRunner.describe(urlToName(import.meta.url), suite => {
+  suite.it('triggers appropriate updates when changes occur', ({ assert }) => {
     const recaller = new Recaller('TRIGGERS-APPROPRIATELY')
     // recaller.debug = true
     const upserter = new Upserter(undefined, recaller)
     const uint8ArrayLayerPointer = new Uint8ArrayLayerPointer(upserter.uint8ArrayLayer, recaller, 'TRIGGERS-APPROPRIATELY')
-    chai.assert.isUndefined(uint8ArrayLayerPointer.presenterProxy())
+    assert.equal(undefined, uint8ArrayLayerPointer.presenterProxy())
     upserter.upsert({ a: 1, b: 2 })
     uint8ArrayLayerPointer.uint8ArrayLayer = upserter.uint8ArrayLayer
     const presenterProxy = uint8ArrayLayerPointer.presenterProxy()
@@ -27,19 +26,19 @@ describe('Uint8ArrayLayerPointer', function () {
       changes.push(`b:${presenterProxy.b}`)
     })
     handleNextTick()
-    chai.assert.deepEqual(changes, ['a:1', 'b:2'])
+    assert.equal(changes, ['a:1', 'b:2'])
     upserter.upsert({ a: 1, b: 3 })
     handleNextTick()
-    chai.assert.deepEqual(changes, ['a:1', 'b:2', 'b:3'])
+    assert.equal(changes, ['a:1', 'b:2', 'b:3'])
   })
-  it('proxies arrays too', function () {
+  suite.it('proxies arrays too', ({ assert }) => {
     const upserter = new Upserter()
     upserter.upsert(['abc', 'xyz'])
-    chai.assert.deepEqual(upserter.presenterProxy(), ['abc', 'xyz'])
+    assert.equal(upserter.presenterProxy(), ['abc', 'xyz'])
     upserter.upsert({ a: 123, x: 456 })
     upserter.upsert({ a: 321, x: 456 })
     upserter.upsert(['abcd', 'wxyz'])
-    chai.assert.deepEqual(upserter.presenterProxy(), ['abcd', 'wxyz'])
-    chai.assert.deepEqual([...upserter.presenterProxy()], ['abcd', 'wxyz'])
+    assert.equal(upserter.presenterProxy(), ['abcd', 'wxyz'])
+    assert.equal([...upserter.presenterProxy()], ['abcd', 'wxyz'])
   })
 })

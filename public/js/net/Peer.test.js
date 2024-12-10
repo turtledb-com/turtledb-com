@@ -1,3 +1,4 @@
+import { globalRunner, urlToName } from '../../test/Runner.js'
 import { Committer } from '../dataModel/Committer.js'
 import { Uint8ArrayLayerPointer } from '../dataModel/Uint8ArrayLayerPointer.js'
 import { Recaller } from '../utils/Recaller.js'
@@ -6,10 +7,8 @@ import { bigLabel } from '../utils/loggy.js'
 import { handleNextTick } from '../utils/nextTick.js'
 import { Peer, getPointerByPublicKey } from './Peer.js'
 
-const { default: chai } = await import('../utils/chaiPromise.js')
-
-describe('Peer', function () {
-  it('more basic synchronization', async function () {
+globalRunner.describe(urlToName(import.meta.url), suite => {
+  suite.it('more basic synchronization', async ({ assert }) => {
     const recallerA = new Recaller('recallerA')
     const peerA = new Peer('peerA', recallerA, undefined, {})
     const recallerB = new Recaller('recallerB')
@@ -59,7 +58,7 @@ describe('Peer', function () {
         })
       }
       if (assertWants) {
-        chai.assert.deepEqual(wants, assertWants, message)
+        assert.equal(wants, assertWants, message)
       }
     }
     whatsUp('should all be empty', { asw: [], arw: [], bsw: [], brw: [] }, false)

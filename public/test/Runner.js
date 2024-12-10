@@ -20,6 +20,13 @@ export function urlToName (url) {
 export const runnerRecaller = new Recaller('Runner.js')
 // runnerRecaller.debug = true
 
+class RunnerError extends Error {
+  constructor (message, options) {
+    super(message, options)
+    this.name = this.constructor.name
+  }
+}
+
 export class Runner {
   /** @type {Array.<Runner>} */
   #children = []
@@ -66,6 +73,10 @@ export class Runner {
         await this.runChildren()
       } catch (error) {
         this.error = error
+        console.error(error)
+        if (!(error instanceof RunnerError)) {
+          this.it(`run error: ${error.message}`, () => { throw new RunnerError(`${this.name}.run`, { cause: error }) })
+        }
         this.runState = FAIL
       }
       // console.groupEnd()
@@ -95,7 +106,7 @@ export class Runner {
     // console.groupEnd()
     // console.log('^^^ ranChildren', this.name, this.type)
     if (errors.length) {
-      throw new Error(this.name, { cause: errors })
+      throw new RunnerError(`${this.name}.runChildren`, { cause: errors })
     }
     this.runState = PASS
   }
@@ -129,16 +140,21 @@ export class Runner {
       case FAIL:
         runState = chalk.red(runState)
         name = chalk.red(name)
-        type = chalk.dim(type)
+        type = chalk.red(type)
         break
       case PASS:
         runState = chalk.green(runState)
         name = chalk.black(name)
-        type = chalk.dim(type)
+        type = chalk.green(type)
         break
       case RUNNING:
         runState = chalk.green(runState)
         name = chalk.green(name)
+        type = chalk.dim(type)
+        break
+      case WAIT:
+        runState = chalk.green(runState)
+        name = chalk.dim(name)
         type = chalk.dim(type)
         break
       default:

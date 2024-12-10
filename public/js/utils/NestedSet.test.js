@@ -1,9 +1,8 @@
+import { globalRunner, urlToName } from '../../test/Runner.js'
 import { NestedSet } from './NestedSet.js'
 
-const { default: chai } = await import('./chaiPromise.js')
-
-describe('NestedSet', function () {
-  it('adds, gets values, and calculates size', function () {
+globalRunner.describe(urlToName(import.meta.url), suite => {
+  suite.it('adds, gets values, and calculates size', ({ assert }) => {
     const nestedSet = new NestedSet()
     nestedSet.add(1, 2, 3)
     nestedSet.add(1, 2, 3, 3)
@@ -13,19 +12,19 @@ describe('NestedSet', function () {
     nestedSet.add(3, 2, 3)
 
     const nestedSetCopy = new NestedSet(nestedSet.asObject)
-    chai.assert.deepEqual(nestedSetCopy, nestedSet)
+    assert.equal(nestedSetCopy, nestedSet)
 
-    chai.assert.equal(nestedSet.size, 3)
-    chai.assert.deepEqual(nestedSet.values(), [3, 4, 5])
-    chai.assert.deepEqual(nestedSet.values(1), [3, 4])
-    chai.assert.deepEqual(nestedSet.values(1, 2), [3])
-    chai.assert.deepEqual(nestedSet.values(1, 2, 3), [3])
-    chai.assert.deepEqual(nestedSet.values(2), [5])
+    assert.equal(nestedSet.size, 3)
+    assert.equal(nestedSet.values(), [3, 4, 5])
+    assert.equal(nestedSet.values(1), [3, 4])
+    assert.equal(nestedSet.values(1, 2), [3])
+    assert.equal(nestedSet.values(1, 2, 3), [3])
+    assert.equal(nestedSet.values(2), [5])
 
     nestedSet.delete(1, 2, 3)
-    chai.assert.deepEqual(nestedSet.values(), [3, 4, 5])
-    chai.assert.deepEqual(nestedSet.values(1, 2), [])
+    assert.equal(nestedSet.values(), [3, 4, 5])
+    assert.equal(nestedSet.values(1, 2), [])
     nestedSet.delete(1, 3)
-    chai.assert.deepEqual(nestedSet.values(1), [4])
+    assert.equal(nestedSet.values(1), [4])
   })
 })

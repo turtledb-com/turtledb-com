@@ -1,10 +1,11 @@
+import { globalRunner, urlToName } from '../../test/Runner.js'
 import { handleNextTick } from '../utils/nextTick.js'
 import { KIND, getCodecs } from './CODECS.js'
 import { FRESH_ADDRESS_GETTER, Upserter } from './Upserter.js'
 
 const { default: chai } = await import('../utils/chaiPromise.js')
 
-function upsertAndLookupEach (values, codec, isOpaque = false) {
+function upsertAndLookupEach (assert, values, codec, isOpaque = false) {
   const upserter = new Upserter()
   const addresses = []
   for (const value of values) addresses.push(upserter.upsert(value, codec))
@@ -13,23 +14,23 @@ function upsertAndLookupEach (values, codec, isOpaque = false) {
     const address = addresses[i]
     const expected = values[i]
     const actual = upserter.lookup(address, codec)
-    chai.assert.deepEqual(actual, expected)
+    assert.equal(actual, expected)
     recovered.push(actual)
   }
   const addresses2 = []
   for (const value of values) addresses2.push(upserter.upsert(value))
   if (isOpaque) {
     for (let i = 0; i < addresses.length; ++i) {
-      chai.assert.notEqual(addresses[i], addresses2[i])
+      assert.notEqual(addresses[i], addresses2[i])
     }
   } else {
-    chai.assert.deepEqual(addresses, addresses2)
+    assert.equal(addresses, addresses2)
   }
 }
 
-describe('Upserter', function () {
-  it('basic types', function () {
-    upsertAndLookupEach([
+globalRunner.describe(urlToName(import.meta.url), suite => {
+  suite.it('basic types', ({ assert }) => {
+    upsertAndLookupEach(assert, [
       true, false, undefined, null,
       new Uint8Array(),
       new Uint8Array([0]),
@@ -54,10 +55,10 @@ describe('Upserter', function () {
       new Date(0), new Date()
     ])
   })
-  it('object types', function () {
+  suite.it('object types', ({ assert }) => {
     const arrayWithX = ['a', 'b', 'c']
     arrayWithX.x = 'def'
-    upsertAndLookupEach([
+    upsertAndLookupEach(assert, [
       [],
       ['abc'],
       [123, 456],
@@ -70,7 +71,7 @@ describe('Upserter', function () {
       new Set(), new Set([[123], 'asdf', 4321, true])
     ])
   })
-  it('Upserter.upsert and lookup return in a reasonable amount of time', function () {
+  suite.it('Upserter.upsert and lookup return in a reasonable amount of time', ({ assert }) => {
     const upserter = new Upserter()
     const t0 = new Date()
     upserter.upsert(lipsum)
@@ -78,21 +79,21 @@ describe('Upserter', function () {
     const recovered = upserter.lookup()
     const t2 = new Date()
     const compressionRatio = lipsum.length / upserter.uint8ArrayLayer.length
-    chai.assert.isAbove(compressionRatio, 0.71, '"compression" ratio has worsened')
-    chai.assert.isBelow(compressionRatio, 0.72, '"compression" ratio has improved? (this is good! update this test and buy yourself something nice)')
+    assert.isAbove(compressionRatio, 0.71, '"compression" ratio has worsened')
+    assert.isBelow(compressionRatio, 0.72, '"compression" ratio has improved? (this is good! update this test and buy yourself something nice)')
     try {
-      chai.assert.isBelow(t1 - t0, 600, 'slow encode (watching out for dramatic increases but can probably be ignored)')
+      assert.isBelow(t1 - t0, 600, 'slow encode (watching out for dramatic increases but can probably be ignored)')
     } catch (error) {
       console.error(error.message)
     }
     try {
-      chai.assert.isBelow(t2 - t1, 200, 'slow decode (watching out for dramatic increases but can probably be ignored)')
+      assert.isBelow(t2 - t1, 200, 'slow decode (watching out for dramatic increases but can probably be ignored)')
     } catch (error) {
       console.error(error.message)
     }
-    chai.assert.equal(recovered, lipsum)
+    assert.equal(recovered, lipsum)
   })
-  it('upserts from existing Uint8ArrayLayer', function () {
+  suite.it('upserts from existing Uint8ArrayLayer', ({ assert }) => {
     const upserter = new Upserter()
     const a = 'hello world!'
     const b = { foo: 'bar', baz: -1234 }
@@ -101,51 +102,51 @@ describe('Upserter', function () {
     const upserterCopy = new Upserter('from existing', undefined, upserter.uint8ArrayLayer)
     const aCopyAddress = upserterCopy.upsert(a)
     const bCopyAddress = upserterCopy.upsert(b)
-    chai.assert.equal(aAddress, aCopyAddress)
-    chai.assert.equal(bAddress, bCopyAddress)
+    assert.equal(aAddress, aCopyAddress)
+    assert.equal(bAddress, bCopyAddress)
     const upserterCopyCollapsed = new Upserter('from collapsed', undefined, upserter.uint8ArrayLayer.collapseTo())
     const aCopyCollapsedAddress = upserterCopyCollapsed.upsert(a)
     const bCopyCollapsedAddress = upserterCopyCollapsed.upsert(b)
-    chai.assert.equal(aAddress, aCopyCollapsedAddress)
-    chai.assert.equal(bAddress, bCopyCollapsedAddress)
+    assert.equal(aAddress, aCopyCollapsedAddress)
+    assert.equal(bAddress, bCopyCollapsedAddress)
     const add1 = upserterCopyCollapsed.upsert({ foo: -1234, baz: 'bar' })
     upserterCopyCollapsed.collapseTo(1)
     upserter.append(upserterCopyCollapsed.uint8ArrayLayer.uint8Array)
     const add2 = upserter.upsert({ foo: -1234, baz: 'bar' })
-    chai.assert.equal(add1, add2)
+    assert.equal(add1, add2)
   })
-  it('supports shallow queries', function () {
+  suite.it('supports shallow queries', ({ assert }) => {
     const upserter = new Upserter()
     const msg = 'hello world!'
     const msgAddress = upserter.upsert(msg)
     const objAddress = upserter.upsert({ foo: 'bar', baz: msg })
     const shallowObj = upserter.lookup(objAddress, getCodecs(KIND.REFS_TOP))
-    chai.assert.equal(shallowObj.baz, msgAddress)
+    assert.equal(shallowObj.baz, msgAddress)
     shallowObj.foo = shallowObj.baz
     const editedObjAddress = upserter.upsert(shallowObj, getCodecs(KIND.REFS_OBJECT))
     const editedObj = upserter.lookup(editedObjAddress)
-    chai.assert.equal(editedObj.foo, msg)
+    assert.equal(editedObj.foo, msg)
 
     const denseAddress = upserter.upsert([5, 4, 3, 2])
     const shallowDense = upserter.lookup(denseAddress, getCodecs(KIND.REFS_TOP))
     shallowDense.push(shallowDense[0])
     const shallowDenseAddress = upserter.upsert(shallowDense, getCodecs(KIND.REFS_TOP))
     const editedDense = upserter.lookup(shallowDenseAddress)
-    chai.assert.deepEqual(editedDense, [5, 4, 3, 2, 5])
+    assert.deepEqual(editedDense, [5, 4, 3, 2, 5])
 
     const sparseAddress = upserter.upsert([,, 'a',, 'b',,])
     const shallowSparse = upserter.lookup(sparseAddress, getCodecs(KIND.REFS_TOP))
     shallowSparse[10] = shallowSparse[2]
     const shallowSparseAddress = upserter.upsert(shallowSparse, getCodecs(KIND.REFS_TOP))
     const editedSparse = upserter.lookup(shallowSparseAddress)
-    chai.assert.deepEqual(editedSparse, [,, 'a',, 'b',,,,,, 'a'])
+    assert.deepEqual(editedSparse, [,, 'a',, 'b',,,,,, 'a'])
 
     const setAddress = upserter.upsert(new Set([5, 6, msg, 7, 8]))
     const shallowSet = upserter.lookup(setAddress, getCodecs(KIND.REFS_TOP))
     shallowSet.delete(msgAddress)
     const shallowSetAddress = upserter.upsert(shallowSet, getCodecs(KIND.REFS_TOP))
     const editedSet = upserter.lookup(shallowSetAddress)
-    chai.assert.deepEqual(editedSet, new Set([5, 6, 7, 8]))
+    assert.deepEqual(editedSet, new Set([5, 6, 7, 8]))
 
     const mapAddress = upserter.upsert(new Map([[msg, 5], [5, msg], [9, 10]]))
     const shallowMap = upserter.lookup(mapAddress, getCodecs(KIND.REFS_TOP))
@@ -153,56 +154,56 @@ describe('Upserter', function () {
     shallowMap.set(msgAddress, msgAddress)
     const shallowMapAddress = upserter.upsert(shallowMap, getCodecs(KIND.REFS_TOP))
     const editedMap = upserter.lookup(shallowMapAddress)
-    chai.assert.deepEqual(editedMap, new Map([[msg, msg], [9, 10]]))
+    assert.deepEqual(editedMap, new Map([[msg, msg], [9, 10]]))
   })
-  it('notifies when uint8ArrayLayer changes', function () {
+  suite.it('notifies when uint8ArrayLayer changes', ({ assert }) => {
     const upserter = new Upserter()
     const updates = []
     upserter.recaller.watch('upserter test', () => {
       updates.push(upserter.uint8ArrayLayer?.length)
     })
-    chai.assert.equal(updates.length, 1)
+    assert.equal(updates.length, 1)
     handleNextTick()
-    chai.assert.equal(updates.length, 1)
+    assert.equal(updates.length, 1)
     upserter.upsert('abc')
     handleNextTick()
-    chai.assert.equal(updates.length, 2)
+    assert.equal(updates.length, 2)
     upserter.upsert('def')
     handleNextTick()
-    chai.assert.equal(updates.length, 3)
+    assert.equal(updates.length, 3)
     upserter.upsert('abc')
     handleNextTick()
-    chai.assert.equal(updates.length, 3)
+    assert.equal(updates.length, 3)
   })
-  it('creates an upserterProxy that can be committed', function () {
+  suite.it('creates an upserterProxy that can be committed', ({ assert }) => {
     const upserter = new Upserter()
     upserter.upsert([0, 1, true, { name: 'three' }])
     const upserterProxy = upserter.upserterProxy()
     upserterProxy[2] = false
     const newState = upserter.lookup(upserterProxy[FRESH_ADDRESS_GETTER]())
-    chai.assert.deepEqual(newState, [0, 1, false, { name: 'three' }])
+    assert.deepEqual(newState, [0, 1, false, { name: 'three' }])
     upserterProxy[3].name = 'trois'
     const newNewState = upserter.lookup(upserterProxy[FRESH_ADDRESS_GETTER]())
-    chai.assert.deepEqual(newNewState, [0, 1, false, { name: 'trois' }])
+    assert.deepEqual(newNewState, [0, 1, false, { name: 'trois' }])
     upserterProxy[0] = { value: { sourceObjects: {} } }
     upserter.upsert(upserterProxy)
-    chai.assert.deepEqual(upserter.upserterProxy(), [{ value: { sourceObjects: {} } }, 1, false, { name: 'trois' }])
+    assert.deepEqual(upserter.upserterProxy(), [{ value: { sourceObjects: {} } }, 1, false, { name: 'trois' }])
 
     const remote = new Upserter()
     for (let i = 0; i < 3; ++i) {
       const proxy = remote.upserterProxy() ?? [{ value: { sourceObjects: {} } }]
       proxy[0].value.sourceObjects[i] = { msg: 'asdf', i }
-      chai.assert.deepEqual(proxy[0].value.sourceObjects[i], { msg: 'asdf', i })
+      assert.deepEqual(proxy[0].value.sourceObjects[i], { msg: 'asdf', i })
       const remoteSourceObject = proxy[0].value.sourceObjects[i]
       remoteSourceObject.msg = 'updated from s3'
-      chai.assert.deepEqual(proxy[0].value.sourceObjects[i], { msg: 'updated from s3', i })
-      chai.assert.equal(Object.keys(remote.lookup()?.[0]?.value?.sourceObjects ?? {}).length, i)
+      assert.deepEqual(proxy[0].value.sourceObjects[i], { msg: 'updated from s3', i })
+      assert.equal(Object.keys(remote.lookup()?.[0]?.value?.sourceObjects ?? {}).length, i)
       remote.upsert(proxy)
-      chai.assert.equal(Object.keys(remote.lookup()[0].value.sourceObjects ?? {}).length, i + 1)
+      assert.equal(Object.keys(remote.lookup()[0].value.sourceObjects ?? {}).length, i + 1)
     }
   })
-  it('uploads opaque data blocks', function () {
-    upsertAndLookupEach([
+  suite.it('uploads opaque data blocks', ({ assert }) => {
+    upsertAndLookupEach(assert, [
       new Uint8Array([1, 2, 3, 4]),
       new Uint8Array([5, 6, 7, 8, 9, 10, 11, 12])
     ], getCodecs(KIND.OPAQUE), true)
