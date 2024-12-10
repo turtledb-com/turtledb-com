@@ -112,34 +112,42 @@ export class Runner {
   toString (indent = '', isLastChild = true) {
     const collapsed = this.type === TEST && this.runState === PASS
     const hasChildren = !collapsed && this.children.length
-    const pipes = `${isLastChild ? '╰' : '├'}─${hasChildren ? '┬' : '─'}─╼ `
+    const pipes = `${isLastChild ? '╰' : '├'}─${hasChildren ? '┬' : '─'}─╴`
     const childIndent = `${indent}${isLastChild ? ' ' : '│'} `
-    let runState
-    let name
-    let type
+    let runState = this.runState
+    let name = this.name
+    let type = this.type
+
+    if (this.type === RUNNER) {
+      name = chalk.underline(name)
+    } else if (this.type === SUITE) {
+      // name = chalk.bold(name)
+    } else if (this.type !== TEST) {
+      name = chalk.italic(name)
+    }
     switch (this.runState) {
       case FAIL:
-        runState = chalk.red(this.runState)
-        name = chalk.red(this.name)
-        type = chalk.dim(this.type)
+        runState = chalk.red(runState)
+        name = chalk.red(name)
+        type = chalk.dim(type)
         break
       case PASS:
-        runState = chalk.green(this.runState)
-        name = chalk.black(this.name)
-        type = chalk.dim(this.type)
+        runState = chalk.green(runState)
+        name = chalk.black(name)
+        type = chalk.dim(type)
         break
       case RUNNING:
-        runState = chalk.yellow(this.runState)
-        name = chalk.yellow(this.name)
-        type = chalk.dim(this.type)
+        runState = chalk.green(runState)
+        name = chalk.green(name)
+        type = chalk.dim(type)
         break
       default:
-        runState = chalk.magenta(this.runState)
-        name = chalk.dim(this.name)
-        type = chalk.magenta(this.type)
+        runState = chalk.magenta(runState)
+        name = chalk.dim(name)
+        type = chalk.magenta(type)
     }
 
-    const header = `${indent}${pipes}${runState} ${type} ${name}`
+    const header = `${indent}${pipes}${type} ${runState} ${name}`
     let lines
     let children = []
     if (hasChildren) {
