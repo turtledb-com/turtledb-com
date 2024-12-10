@@ -1,4 +1,5 @@
-import { globalRunner, Runner, urlToName } from './Runner.js'
+import { ASSERTION } from './Assert.js'
+import { globalRunner, RUNNER, Runner, SUITE, TEST, urlToName } from './Runner.js'
 
 globalRunner.describe(urlToName(import.meta.url), suite => {
   suite.it('waits for tests to complete', async test => {
@@ -17,18 +18,18 @@ globalRunner.describe(urlToName(import.meta.url), suite => {
       })
       suite.it('z', async (assert) => {
         await new Promise(resolve => setTimeout(resolve, 100))
-        assert.assert.equal(3, 3, '3=3')
+        assert.assert.equal(3, 3, '3==3')
       })
     })
 
     test.assert.equal({
-      name: 'test-collection',
-      type: 'Runner',
+      name: 'unnamed-test-runner',
+      type: RUNNER,
       runState: '⧖',
       children: [
         {
           name: 'abc',
-          type: 'Suite',
+          type: SUITE,
           runState: '⧖',
           children: []
         }
@@ -36,29 +37,29 @@ globalRunner.describe(urlToName(import.meta.url), suite => {
     }, runner.status, 'after describe')
     await runner.run()
     test.assert.equal({
-      name: 'test-collection',
-      type: 'Runner',
+      name: 'unnamed-test-runner',
+      type: RUNNER,
       runState: '✓',
       children: [
         {
           name: 'abc',
-          type: 'Suite',
+          type: SUITE,
           runState: '✓',
           children: [
             {
               name: 'xy',
-              type: 'Test',
+              type: TEST,
               runState: '✓',
               children: [
                 {
                   name: '1==1',
-                  type: 'equal',
+                  type: ASSERTION,
                   runState: '✓',
                   children: []
                 },
                 {
                   name: '2==2',
-                  type: 'equal',
+                  type: ASSERTION,
                   runState: '✓',
                   children: []
                 }
@@ -66,12 +67,12 @@ globalRunner.describe(urlToName(import.meta.url), suite => {
             },
             {
               name: 'z',
-              type: 'Test',
+              type: TEST,
               runState: '✓',
               children: [
                 {
-                  name: '3=3',
-                  type: 'equal',
+                  name: '3==3',
+                  type: ASSERTION,
                   runState: '✓',
                   children: []
                 }
@@ -95,29 +96,29 @@ globalRunner.describe(urlToName(import.meta.url), suite => {
     })
 
     test.assert.equal({
-      name: 'test-collection',
-      type: 'Runner',
+      name: 'unnamed-test-runner',
+      type: RUNNER,
       runState: '✓',
       children: [
         {
           name: 'abc',
-          type: 'Suite',
+          type: SUITE,
           runState: '✓',
           children: [
             {
               name: 'xy',
-              type: 'Test',
+              type: TEST,
               runState: '✓',
               children: [
                 {
                   name: '1==1',
-                  type: 'equal',
+                  type: ASSERTION,
                   runState: '✓',
                   children: []
                 },
                 {
                   name: '2==2',
-                  type: 'equal',
+                  type: ASSERTION,
                   runState: '✓',
                   children: []
                 }
@@ -125,12 +126,12 @@ globalRunner.describe(urlToName(import.meta.url), suite => {
             },
             {
               name: 'z',
-              type: 'Test',
+              type: TEST,
               runState: '✓',
               children: [
                 {
-                  name: '3=3',
-                  type: 'equal',
+                  name: '3==3',
+                  type: ASSERTION,
                   runState: '✓',
                   children: []
                 }
@@ -138,7 +139,7 @@ globalRunner.describe(urlToName(import.meta.url), suite => {
             },
             {
               name: 'm',
-              type: 'Test',
+              type: TEST,
               runState: '⧖',
               children: []
             }
@@ -146,7 +147,7 @@ globalRunner.describe(urlToName(import.meta.url), suite => {
         },
         {
           name: 'n',
-          type: 'Suite',
+          type: SUITE,
           runState: '⧖',
           children: []
         }
@@ -155,29 +156,29 @@ globalRunner.describe(urlToName(import.meta.url), suite => {
 
     await _suite.rerunChildren()
     test.assert.equal({
-      name: 'test-collection',
-      type: 'Runner',
+      name: 'unnamed-test-runner',
+      type: RUNNER,
       runState: '✖',
       children: [
         {
           name: 'abc',
-          type: 'Suite',
+          type: SUITE,
           runState: '✖',
           children: [
             {
               name: 'xy',
-              type: 'Test',
+              type: TEST,
               runState: '✓',
               children: [
                 {
                   name: '1==1',
-                  type: 'equal',
+                  type: ASSERTION,
                   runState: '✓',
                   children: []
                 },
                 {
                   name: '2==2',
-                  type: 'equal',
+                  type: ASSERTION,
                   runState: '✓',
                   children: []
                 }
@@ -185,12 +186,12 @@ globalRunner.describe(urlToName(import.meta.url), suite => {
             },
             {
               name: 'z',
-              type: 'Test',
+              type: TEST,
               runState: '✓',
               children: [
                 {
-                  name: '3=3',
-                  type: 'equal',
+                  name: '3==3',
+                  type: ASSERTION,
                   runState: '✓',
                   children: []
                 }
@@ -198,12 +199,12 @@ globalRunner.describe(urlToName(import.meta.url), suite => {
             },
             {
               name: 'm',
-              type: 'Test',
+              type: TEST,
               runState: '✖',
               children: [
                 {
                   name: '4!=5',
-                  type: 'not equal',
+                  type: ASSERTION,
                   runState: '✖',
                   children: []
                 }
@@ -213,12 +214,12 @@ globalRunner.describe(urlToName(import.meta.url), suite => {
         },
         {
           name: 'n',
-          type: 'Suite',
+          type: SUITE,
           runState: '✓',
           children: [
             {
               name: '5==5',
-              type: 'equal',
+              type: ASSERTION,
               runState: '✓',
               children: []
             }

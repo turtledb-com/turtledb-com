@@ -1,3 +1,5 @@
+export const ASSERTION = '→'
+
 export class Assert {
   /**
    *
@@ -14,7 +16,7 @@ export class Assert {
       message ??= 'expected === actual'
       this.runner.appendChild(message, () => {
         return { expectedAddress, actualAddress }
-      }, 'equal')
+      }, ASSERTION)
     } else {
       message ??= 'expected !== actual'
       this.runner.appendChild(message, () => {
@@ -23,7 +25,7 @@ export class Assert {
           printDiff(this.runner.upserter, expectedAddress, actualAddress, '  ')
         }
         throw new Error(message, { cause: { expectedAddress, actualAddress } })
-      }, 'not equal')
+      }, ASSERTION)
     }
   }
 }

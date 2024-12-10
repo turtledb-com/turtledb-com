@@ -7,7 +7,11 @@ export const PASS = '✓'
 export const FAIL = '✖'
 export const WAIT = '⧖'
 export const RUNNING = '…'
-export const SKIP = '•'
+export const SKIP = '-'
+
+export const RUNNER = '߷'
+export const SUITE = '●'
+export const TEST = '⇶'
 
 export function urlToName (url) {
   return /(?<=\/public\/).*/.exec(url)?.[0] ?? url
@@ -26,7 +30,7 @@ export class Runner {
 
   /**
    * @param {string} [name='test-collection']
-   * @param {string} [type='Runner']
+   * @param {string} [type=RUNNER]
    * @param {Runner} parent
    * @param {() => void} f
    * @param {Recaller} [recaller=runnerRecaller]
@@ -34,8 +38,8 @@ export class Runner {
    * @param {Upserter} [upserter=new Upserter(name, recaller)]
    */
   constructor (
-    name = 'test-collection',
-    type = 'Runner',
+    name = 'unnamed-test-runner',
+    type = RUNNER,
     parent,
     f,
     recaller = runnerRecaller,
@@ -105,15 +109,50 @@ export class Runner {
     }
   }
 
-  toString (indent = '') {
-    let header = `${indent}${this.runState} ${this.name} ${this.type}`
-    if (this.runState === FAIL) header = `${indent}${chalk.red(this.runState)} ${chalk.red(this.name)} ${this.type}`
-    else if (this.runState === PASS) header = `${indent}${chalk.green(this.runState)} ${this.name} ${this.type}`
-    else header = `${indent}${chalk.yellow(this.runState)} ${chalk.yellow(this.name)} ${this.type}`
-    return [
-      header,
-      ...this.children.map(child => child.toString(`${indent}  `))
-    ].join('\n')
+  toString (indent = '', isLastChild = true) {
+    const collapsed = this.type === TEST && this.runState === PASS
+    const hasChildren = !collapsed && this.children.length
+    const pipes = `${isLastChild ? '╰' : '├'}─${hasChildren ? '┬' : '─'}─╼ `
+    const childIndent = `${indent}${isLastChild ? ' ' : '│'} `
+    let runState
+    let name
+    let type
+    switch (this.runState) {
+      case FAIL:
+        runState = chalk.red(this.runState)
+        name = chalk.red(this.name)
+        type = chalk.dim(this.type)
+        break
+      case PASS:
+        runState = chalk.green(this.runState)
+        name = chalk.black(this.name)
+        type = chalk.dim(this.type)
+        break
+      case RUNNING:
+        runState = chalk.yellow(this.runState)
+        name = chalk.yellow(this.name)
+        type = chalk.dim(this.type)
+        break
+      default:
+        runState = chalk.magenta(this.runState)
+        name = chalk.dim(this.name)
+        type = chalk.magenta(this.type)
+    }
+
+    const header = `${indent}${pipes}${runState} ${type} ${name}`
+    let lines
+    let children = []
+    if (hasChildren) {
+      children = this.children.map((child, index) => child.toString(childIndent, index === this.children.length - 1))
+    }
+    if (this.type === RUNNER) {
+      lines = [`${indent}╷`, header, ...children]
+    } else if (this.type === SUITE) {
+      lines = [`${indent}╷`, header, ...children]
+    } else {
+      lines = [header, ...children]
+    }
+    return lines.join('\n')
   }
 
   get children () {
@@ -152,7 +191,7 @@ export class Runner {
    * @returns {Runner}
    */
   async describe (name, f) {
-    return this.appendChild(name, f, 'Suite')
+    return this.appendChild(name, f, SUITE)
   }
 
   /**
@@ -161,7 +200,7 @@ export class Runner {
    * @returns {Runner}
    */
   async it (name, f) {
-    return this.appendChild(name, f, 'Test')
+    return this.appendChild(name, f, TEST)
   }
 
   /**
@@ -170,7 +209,7 @@ export class Runner {
    * @returns {Runner}
    */
   async test (name, f) {
-    return this.appendChild(name, f, 'Test')
+    return this.appendChild(name, f, TEST)
   }
 }
 
