@@ -1,15 +1,17 @@
+import chalk from 'chalk'
+import { Upserter } from '../js/dataModel/Upserter.js'
 import { Recaller } from '../js/utils/Recaller.js'
 import { Assert } from './Assert.js'
 
-// export const PASS = '✅'
 export const PASS = '✓'
-// export const FAIL = '❌'
 export const FAIL = '✖'
-// export const RUNNING = '⏳'
 export const WAIT = '⧖'
 export const RUNNING = '…'
-// export const SKIP = '🚫'
 export const SKIP = '•'
+
+export function urlToName (url) {
+  return /(?<=\/public\/).*/.exec(url)?.[0] ?? url
+}
 
 export const runnerRecaller = new Recaller('Runner.js')
 // runnerRecaller.debug = true
@@ -29,6 +31,7 @@ export class Runner {
    * @param {() => void} f
    * @param {Recaller} [recaller=runnerRecaller]
    * @param {number} [verbose=1]
+   * @param {Upserter} [upserter=new Upserter(name, recaller)]
    */
   constructor (
     name = 'test-collection',
@@ -36,7 +39,8 @@ export class Runner {
     parent,
     f,
     recaller = runnerRecaller,
-    verbose = 1
+    verbose = 1,
+    upserter = new Upserter(name, recaller)
   ) {
     this.parent = parent
     this.name = name
@@ -44,12 +48,14 @@ export class Runner {
     this.#f = f
     this.recaller = recaller
     this.verbose = verbose
+    this.upserter = upserter
     this.#runState = WAIT
     this.assert = new Assert(this)
   }
 
   async run () {
     this.#runPromise ??= (async () => {
+      // console.group('vvv run', this.name, this.type)
       this.runState = RUNNING
       try {
         if (this.#f) await this.#f(this)
@@ -58,6 +64,8 @@ export class Runner {
         this.error = error
         this.runState = FAIL
       }
+      // console.groupEnd()
+      // console.log('^^^ ran', this.name, this.type)
     })()
     return this.#runPromise
   }
@@ -74,11 +82,14 @@ export class Runner {
   }
 
   async runChildren () {
+    // console.group('vvv runChildren', this.name, this.type)
     const errors = []
     for (const child of this.#children) {
       await child.run()
       if (child.runState === FAIL) errors.push(child.error)
     }
+    // console.groupEnd()
+    // console.log('^^^ ranChildren', this.name, this.type)
     if (errors.length) {
       throw new Error(this.name, { cause: errors })
     }
@@ -95,8 +106,12 @@ export class Runner {
   }
 
   toString (indent = '') {
+    let header = `${indent}${this.runState} ${this.name} ${this.type}`
+    if (this.runState === FAIL) header = `${indent}${chalk.red(this.runState)} ${chalk.red(this.name)} ${this.type}`
+    else if (this.runState === PASS) header = `${indent}${chalk.green(this.runState)} ${this.name} ${this.type}`
+    else header = `${indent}${chalk.yellow(this.runState)} ${chalk.yellow(this.name)} ${this.type}`
     return [
-      `${indent}${this.runState} ${this.name} ${this.type}`,
+      header,
       ...this.children.map(child => child.toString(`${indent}  `))
     ].join('\n')
   }
@@ -157,63 +172,6 @@ export class Runner {
   async test (name, f) {
     return this.appendChild(name, f, 'Test')
   }
-
-  async equal (expected, actual, message = `expected === actual : ${JSON.stringify(expected)} === ${JSON.stringify(actual)}`, runImmediately = true) {
-    await this.appendChild(message, () => {
-      const equal = expected === actual
-      if (!equal) throw new Error(message)
-    }, 'equal')
-  }
 }
 
-const runner = new Runner()
-let _suite
-// runnerRecaller.watch('update status', () => {
-//   console.log(JSON.stringify(runner.status, undefined, 10))
-// })
-runner.describe('abc', suite => {
-  _suite = suite
-  suite.it('xy', async (assert) => {
-    await new Promise(resolve => setTimeout(resolve, 100))
-    assert.equal(1, 1)
-    await new Promise(resolve => setTimeout(resolve, 100))
-    assert.equal(2, 2)
-    await new Promise(resolve => setTimeout(resolve, 100))
-  })
-  suite.it('z', async (assert) => {
-    await new Promise(resolve => setTimeout(resolve, 100))
-    assert.assert.equal(3, 3)
-  })
-})
-
-console.log('---')
-console.log(runner.toString())
-console.log('---')
-console.log('--- start run')
-await runner.run()
-console.log('---')
-console.log(runner.toString())
-console.log('---')
-
-_suite.it('m', async (assert) => {
-  await new Promise(resolve => setTimeout(resolve, 100))
-  assert.assert.equal(4, 5)
-  await new Promise(resolve => setTimeout(resolve, 100))
-})
-
-runner.describe('n', async (assert) => {
-  await new Promise(resolve => setTimeout(resolve, 100))
-  assert.assert.equal(5, 5)
-  await new Promise(resolve => setTimeout(resolve, 100))
-})
-
-console.log('---')
-console.log(runner.toString())
-console.log('---')
-
-await _suite.rerunChildren()
-console.log('---')
-console.log(runner.toString())
-console.log('---')
-
-console.log(import.meta.url)
+export const globalRunner = new Runner('global')
