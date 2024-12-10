@@ -132,21 +132,21 @@ globalRunner.describe(urlToName(import.meta.url), suite => {
     shallowDense.push(shallowDense[0])
     const shallowDenseAddress = upserter.upsert(shallowDense, getCodecs(KIND.REFS_TOP))
     const editedDense = upserter.lookup(shallowDenseAddress)
-    assert.deepEqual(editedDense, [5, 4, 3, 2, 5])
+    assert.equal(editedDense, [5, 4, 3, 2, 5])
 
     const sparseAddress = upserter.upsert([,, 'a',, 'b',,])
     const shallowSparse = upserter.lookup(sparseAddress, getCodecs(KIND.REFS_TOP))
     shallowSparse[10] = shallowSparse[2]
     const shallowSparseAddress = upserter.upsert(shallowSparse, getCodecs(KIND.REFS_TOP))
     const editedSparse = upserter.lookup(shallowSparseAddress)
-    assert.deepEqual(editedSparse, [,, 'a',, 'b',,,,,, 'a'])
+    assert.equal(editedSparse, [,, 'a',, 'b',,,,,, 'a'])
 
     const setAddress = upserter.upsert(new Set([5, 6, msg, 7, 8]))
     const shallowSet = upserter.lookup(setAddress, getCodecs(KIND.REFS_TOP))
     shallowSet.delete(msgAddress)
     const shallowSetAddress = upserter.upsert(shallowSet, getCodecs(KIND.REFS_TOP))
     const editedSet = upserter.lookup(shallowSetAddress)
-    assert.deepEqual(editedSet, new Set([5, 6, 7, 8]))
+    assert.equal(editedSet, new Set([5, 6, 7, 8]))
 
     const mapAddress = upserter.upsert(new Map([[msg, 5], [5, msg], [9, 10]]))
     const shallowMap = upserter.lookup(mapAddress, getCodecs(KIND.REFS_TOP))
@@ -154,7 +154,7 @@ globalRunner.describe(urlToName(import.meta.url), suite => {
     shallowMap.set(msgAddress, msgAddress)
     const shallowMapAddress = upserter.upsert(shallowMap, getCodecs(KIND.REFS_TOP))
     const editedMap = upserter.lookup(shallowMapAddress)
-    assert.deepEqual(editedMap, new Map([[msg, msg], [9, 10]]))
+    assert.equal(editedMap, new Map([[msg, msg], [9, 10]]))
   })
   suite.it('notifies when uint8ArrayLayer changes', ({ assert }) => {
     const upserter = new Upserter()
@@ -181,22 +181,22 @@ globalRunner.describe(urlToName(import.meta.url), suite => {
     const upserterProxy = upserter.upserterProxy()
     upserterProxy[2] = false
     const newState = upserter.lookup(upserterProxy[FRESH_ADDRESS_GETTER]())
-    assert.deepEqual(newState, [0, 1, false, { name: 'three' }])
+    assert.equal(newState, [0, 1, false, { name: 'three' }])
     upserterProxy[3].name = 'trois'
     const newNewState = upserter.lookup(upserterProxy[FRESH_ADDRESS_GETTER]())
-    assert.deepEqual(newNewState, [0, 1, false, { name: 'trois' }])
+    assert.equal(newNewState, [0, 1, false, { name: 'trois' }])
     upserterProxy[0] = { value: { sourceObjects: {} } }
     upserter.upsert(upserterProxy)
-    assert.deepEqual(upserter.upserterProxy(), [{ value: { sourceObjects: {} } }, 1, false, { name: 'trois' }])
+    assert.equal(JSON.parse(JSON.stringify(upserter.upserterProxy())), [{ value: { sourceObjects: {} } }, 1, false, { name: 'trois' }], 'after 2nd upsert')
 
     const remote = new Upserter()
     for (let i = 0; i < 3; ++i) {
       const proxy = remote.upserterProxy() ?? [{ value: { sourceObjects: {} } }]
       proxy[0].value.sourceObjects[i] = { msg: 'asdf', i }
-      assert.deepEqual(proxy[0].value.sourceObjects[i], { msg: 'asdf', i })
+      assert.equal(proxy[0].value.sourceObjects[i], { msg: 'asdf', i })
       const remoteSourceObject = proxy[0].value.sourceObjects[i]
       remoteSourceObject.msg = 'updated from s3'
-      assert.deepEqual(proxy[0].value.sourceObjects[i], { msg: 'updated from s3', i })
+      assert.equal(proxy[0].value.sourceObjects[i], { msg: 'updated from s3', i })
       assert.equal(Object.keys(remote.lookup()?.[0]?.value?.sourceObjects ?? {}).length, i)
       remote.upsert(proxy)
       assert.equal(Object.keys(remote.lookup()[0].value.sourceObjects ?? {}).length, i + 1)

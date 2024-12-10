@@ -1,3 +1,5 @@
+import { RunnerError } from './Runner.js'
+
 export const ASSERTION = '→'
 
 export class Assert {
@@ -17,19 +19,32 @@ export class Assert {
       }, ASSERTION)
     } else {
       this.runner.appendChild(message, () => {
-        throw new Error(message, { cause })
+        throw new RunnerError(message, { cause })
       }, ASSERTION)
     }
   }
 
-  async notEqual (expected, actual, message) {
+  async isBelow (valueToCheck, valueToBeBelow, message) {
+    const cause = { valueToCheck, valueToBeBelow }
+    if (valueToCheck < valueToBeBelow) {
+      this.runner.appendChild(message, () => {
+        return cause
+      }, ASSERTION)
+    } else {
+      this.runner.appendChild(message, () => {
+        throw new RunnerError(message, { cause })
+      }, ASSERTION)
+    }
+  }
+
+  async notEqual (actual, expected, message) {
     const expectedAddress = this.runner.upserter.upsert(expected)
     const actualAddress = this.runner.upserter.upsert(actual)
     const cause = { expectedAddress, actualAddress }
     if (expectedAddress === actualAddress) {
       message ??= 'expected === actual'
       this.runner.appendChild(message, () => {
-        throw new Error(message, { cause })
+        throw new RunnerError(message, { cause })
       }, ASSERTION)
     } else {
       message ??= 'expected !== actual'
@@ -39,7 +54,7 @@ export class Assert {
     }
   }
 
-  async equal (expected, actual, message, debug = true) {
+  async equal (actual, expected, message, debug = true) {
     const expectedAddress = this.runner.upserter.upsert(expected)
     const actualAddress = this.runner.upserter.upsert(actual)
     const cause = { expectedAddress, actualAddress }
@@ -55,7 +70,7 @@ export class Assert {
           console.log(message)
           printDiff(this.runner.upserter, expectedAddress, actualAddress, '  ')
         }
-        throw new Error(message, { cause })
+        throw new RunnerError(message, { cause })
       }, ASSERTION)
     }
   }

@@ -20,7 +20,7 @@ export function urlToName (url) {
 export const runnerRecaller = new Recaller('Runner.js')
 // runnerRecaller.debug = true
 
-class RunnerError extends Error {
+export class RunnerError extends Error {
   constructor (message, options) {
     super(message, options)
     this.name = this.constructor.name

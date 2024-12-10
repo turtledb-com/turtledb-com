@@ -29,7 +29,7 @@ globalRunner.describe(urlToName(import.meta.url), suite => {
       assert.equal(await Committer.verifySignedCommit(signedCommitB, lastSignedCommitB, publicKeyA), undefined)
       lastSignedCommitB = signedCommitB
     }
-  }).timeout(5000)
+  })
   suite.it('converts Uint8Arrays to and from base64', ({ assert }) => {
     const ui8 = new Uint8Array(0x201).map((_, i) => i % 0x100)
     const b64 = ui8ToB64(ui8)
