@@ -1,5 +1,5 @@
 export const PASS = '✓'
-export const FAIL = '✖'
+export const FAIL = '✗'
 export const WAIT = '⧖'
 export const RUNNING = '…'
 export const SKIP = '-'

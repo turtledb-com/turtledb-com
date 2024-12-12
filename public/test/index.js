@@ -55,6 +55,12 @@ window.customElements.define(elementName, class extends window.HTMLElement {
           font-family: -apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans",Helvetica,Arial,sans-serif,"Apple Color Emoji","Segoe UI Emoji";
         }
 
+        @media (prefers-color-scheme: dark) {
+          .runner-card {
+            background: black;
+            color: white;
+          }
+        }
         .runner-card {
           outline: 1px solid gray;
           padding: 0 1rem;
