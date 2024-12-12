@@ -1,5 +1,5 @@
-import { ASSERTION } from './Assert.js'
-import { globalRunner, RUNNER, Runner, SUITE, TEST, urlToName } from './Runner.js'
+import { ASSERTION, RUNNER, SUITE, TEST } from './constants.js'
+import { globalRunner, Runner, urlToName } from './Runner.js'
 
 globalRunner.describe(urlToName(import.meta.url), suite => {
   suite.it('waits for tests to complete', async test => {

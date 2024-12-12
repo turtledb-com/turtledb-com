@@ -1,6 +1,5 @@
+import { ASSERTION } from './constants.js'
 import { RunnerError } from './Runner.js'
-
-export const ASSERTION = '→'
 
 export class Assert {
   /**

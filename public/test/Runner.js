@@ -1,20 +1,16 @@
-import chalk from 'chalk'
 import { Upserter } from '../js/dataModel/Upserter.js'
 import { Recaller } from '../js/utils/Recaller.js'
 import { Assert } from './Assert.js'
-
-export const PASS = '✓'
-export const FAIL = '✖'
-export const WAIT = '⧖'
-export const RUNNING = '…'
-export const SKIP = '-'
-
-export const RUNNER = '߷'
-export const SUITE = '●'
-export const TEST = '⇶'
+import { FAIL, PASS, RUNNER, RUNNING, SUITE, TEST, WAIT } from './constants.js'
 
 export function urlToName (url) {
-  return /(?<=\/public\/).*/.exec(url)?.[0] ?? url
+  if (window?.location?.origin && url.startsWith(window.location.origin)) {
+    url = url.slice(window.location.origin.length)
+  }
+  url = /(?<=\/public\/).*/.exec(url)?.[0] ?? url
+  const parsed = /(?<path>[^?]*)\.test\.js?.*address=(?<address>[^&]*)/.exec(url)
+  if (parsed) url = `${parsed.groups.path} [&${parsed.groups.address}]`
+  return url
 }
 
 export const runnerRecaller = new Recaller('Runner.js')
@@ -41,7 +37,7 @@ export class Runner {
    * @param {Runner} parent
    * @param {() => void} f
    * @param {Recaller} [recaller=runnerRecaller]
-   * @param {number} [verbose=1]
+   * @param {number} [verbose=0]
    * @param {Upserter} [upserter=new Upserter(name, recaller)]
    */
   constructor (
@@ -50,7 +46,7 @@ export class Runner {
     parent,
     f,
     recaller = runnerRecaller,
-    verbose = 1,
+    verbose = 0,
     upserter = new Upserter(name, recaller)
   ) {
     this.parent = parent
@@ -73,7 +69,7 @@ export class Runner {
         await this.runChildren()
       } catch (error) {
         this.error = error
-        console.error(error)
+        if (this.verbose) console.error(error)
         if (!(error instanceof RunnerError)) {
           this.it(`run error: ${error.message}`, () => { throw new RunnerError(`${this.name}.run`, { cause: error }) })
         }
@@ -118,65 +114,6 @@ export class Runner {
       runState: this.runState,
       children: this.children.map(child => child.status)
     }
-  }
-
-  toString (indent = '', isLastChild = true) {
-    const collapsed = this.type === TEST && this.runState === PASS
-    const hasChildren = !collapsed && this.children.length
-    const pipes = `${isLastChild ? '╰' : '├'}─${hasChildren ? '┬' : '─'}─╴`
-    const childIndent = `${indent}${isLastChild ? ' ' : '│'} `
-    let runState = this.runState
-    let name = this.name
-    let type = this.type
-
-    if (this.type === RUNNER) {
-      name = chalk.underline(name)
-    } else if (this.type === SUITE) {
-      // name = chalk.bold(name)
-    } else if (this.type !== TEST) {
-      name = chalk.italic(name)
-    }
-    switch (this.runState) {
-      case FAIL:
-        runState = chalk.red(runState)
-        name = chalk.red(name)
-        type = chalk.red(type)
-        break
-      case PASS:
-        runState = chalk.green(runState)
-        name = chalk.black(name)
-        type = chalk.green(type)
-        break
-      case RUNNING:
-        runState = chalk.green(runState)
-        name = chalk.green(name)
-        type = chalk.dim(type)
-        break
-      case WAIT:
-        runState = chalk.green(runState)
-        name = chalk.dim(name)
-        type = chalk.dim(type)
-        break
-      default:
-        runState = chalk.magenta(runState)
-        name = chalk.dim(name)
-        type = chalk.magenta(type)
-    }
-
-    const header = `${indent}${pipes}${type} ${runState} ${name}`
-    let lines
-    let children = []
-    if (hasChildren) {
-      children = this.children.map((child, index) => child.toString(childIndent, index === this.children.length - 1))
-    }
-    if (this.type === RUNNER) {
-      lines = [`${indent}╷`, header, ...children]
-    } else if (this.type === SUITE) {
-      lines = [`${indent}╷`, header, ...children]
-    } else {
-      lines = [header, ...children]
-    }
-    return lines.join('\n')
   }
 
   get children () {
@@ -237,4 +174,4 @@ export class Runner {
   }
 }
 
-export const globalRunner = new Runner('global')
+export const globalRunner = new Runner('globalRunner')

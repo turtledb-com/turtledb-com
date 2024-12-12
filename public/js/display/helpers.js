@@ -76,4 +76,3 @@ export function objToDeclarations (obj = {}) {
 export function handle (handler, ...args) {
   return el => e => handler(e, el, ...args)
 }
-

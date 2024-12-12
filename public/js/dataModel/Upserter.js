@@ -4,6 +4,7 @@ import { Uint8ArrayLayer, collapseUint8Arrays } from './Uint8ArrayLayer.js'
 import { Uint8ArrayLayerPointer } from './Uint8ArrayLayerPointer.js'
 
 export const FRESH_ADDRESS_GETTER = Symbol('update if stale and return fresh address')
+export const PROXIED_UPSERTER = Symbol('proxied upserter')
 
 export const ADD_STALE_WATCHER = Symbol('add stale watcher')
 export const DELETE_STALE_WATCHER = Symbol('delete stale watcher')
@@ -53,7 +54,11 @@ export class Upserter extends Uint8ArrayLayerPointer {
    * @returns {number}
    */
   upsert (value, codec = getCodecs()) {
-    if (value && value[FRESH_ADDRESS_GETTER] !== undefined) return value[FRESH_ADDRESS_GETTER]()
+    if (value && value[FRESH_ADDRESS_GETTER]) {
+      const address = value[FRESH_ADDRESS_GETTER]()
+      if (value[PROXIED_UPSERTER] === this) return address
+      else value = value[PROXIED_UPSERTER].getValue(address)
+    }
     if (Array.isArray(codec)) codec = (codec.length === 1) ? codec[0] : codec.find(codec => codec.test(value))
     if (!codec) throw new Error(`no matching codec for ${value}`)
     const code = codec.encode(this, value)
@@ -105,6 +110,7 @@ export class Upserter extends Uint8ArrayLayerPointer {
     }
     return new Proxy(target, {
       get: (target, propertyKey) => {
+        if (propertyKey === PROXIED_UPSERTER) return this
         if (propertyKey === FRESH_ADDRESS_GETTER) return updatedAddress
         if (propertyKey === 'length' && Array.isArray(target)) return target.length
         if (propertyKey === ADD_STALE_WATCHER) return addStaleWatcher

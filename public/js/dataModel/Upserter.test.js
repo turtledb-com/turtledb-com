@@ -3,8 +3,6 @@ import { handleNextTick } from '../utils/nextTick.js'
 import { KIND, getCodecs } from './CODECS.js'
 import { FRESH_ADDRESS_GETTER, Upserter } from './Upserter.js'
 
-const { default: chai } = await import('../utils/chaiPromise.js')
-
 function upsertAndLookupEach (assert, values, codec, isOpaque = false) {
   const upserter = new Upserter()
   const addresses = []
@@ -188,6 +186,7 @@ globalRunner.describe(urlToName(import.meta.url), suite => {
     upserterProxy[0] = { value: { sourceObjects: {} } }
     upserter.upsert(upserterProxy)
     assert.equal(JSON.parse(JSON.stringify(upserter.upserterProxy())), [{ value: { sourceObjects: {} } }, 1, false, { name: 'trois' }], 'after 2nd upsert')
+    assert.equal(upserter.upserterProxy(), [{ value: { sourceObjects: {} } }, 1, false, { name: 'trois' }], 'after 2nd upsert (as proxy)')
 
     const remote = new Upserter()
     for (let i = 0; i < 3; ++i) {
