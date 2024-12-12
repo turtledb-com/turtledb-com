@@ -6,8 +6,7 @@ import { Committer } from '../public/js/dataModel/Committer.js'
 import { watchfs } from '../src/watchfs.js'
 import { hashNameAndPassword } from '../public/js/utils/crypto.js'
 import { globalRunner, runnerRecaller, urlToName } from '../public/test/Runner.js'
-import { TEST , SUITE , RUNNER , RUNNING , WAIT } from '../public/test/constants.js'
-import { FAIL, PASS } from '../public/js/constants.js'
+import { TEST, SUITE, RUNNER, RUNNING, WAIT, PASS, FAIL } from '../public/test/constants.js'
 import { program } from 'commander'
 
 program
@@ -43,7 +42,7 @@ const runnerToString = (runner = globalRunner, indent = '', isLastChild = true) 
       break
     case PASS:
       runState = chalk.green(runState)
-      name = chalk.black(name)
+      // name = chalk.black(name)
       type = chalk.green(type)
       break
     case RUNNING:

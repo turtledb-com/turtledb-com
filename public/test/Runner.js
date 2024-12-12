@@ -4,7 +4,7 @@ import { Assert } from './Assert.js'
 import { FAIL, PASS, RUNNER, RUNNING, SUITE, TEST, WAIT } from './constants.js'
 
 export function urlToName (url) {
-  if (window?.location?.origin && url.startsWith(window.location.origin)) {
+  if (typeof window !== 'undefined' && window?.location?.origin && url.startsWith(window.location.origin)) {
     url = url.slice(window.location.origin.length)
   }
   url = /(?<=\/public\/).*/.exec(url)?.[0] ?? url
