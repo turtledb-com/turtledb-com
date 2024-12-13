@@ -68,6 +68,9 @@ const runnerToString = (runner = globalRunner, indent = '', isLastChild = true) 
   if (hasChildren) {
     children = runner.children.map((child, index) => runnerToString(child, childIndent, index === runner.children.length - 1))
   }
+  if (runner._only) {
+    children.unshift(runnerToString(runner._only, childIndent, children.length))
+  }
   if (runner.type === RUNNER) {
     lines = [`${indent}╷`, header, ...children]
   } else if (runner.type === SUITE) {

@@ -1,7 +1,7 @@
 import { Upserter } from '../js/dataModel/Upserter.js'
 import { Recaller } from '../js/utils/Recaller.js'
 import { Assert } from './Assert.js'
-import { FAIL, PASS, RUNNER, RUNNING, SUITE, TEST, WAIT } from './constants.js'
+import { FAIL, ONLY, PASS, RUNNER, RUNNING, SUITE, TEST, WAIT } from './constants.js'
 
 export function urlToName (url) {
   if (typeof window !== 'undefined' && window?.location?.origin && url.startsWith(window.location.origin)) {
@@ -26,6 +26,8 @@ export class RunnerError extends Error {
 export class Runner {
   /** @type {Array.<Runner>} */
   #children = []
+  /** @type {Runner} */
+  #only
   /** @type {Promise} */
   #runPromise
   #runChildrenPromise
@@ -98,9 +100,14 @@ export class Runner {
       ++this.runIndex
       // console.group('vvv runChildren', this.name, this.type)
       const errors = []
-      for (const child of this.#children) {
-        await child.run()
-        if (child.runState === FAIL) errors.push(child.error)
+      if (this._only) {
+        await this._only.run()
+        if (this._only.runState === FAIL) errors.push(this._only.error)
+      } else {
+        for (const child of this.#children) {
+          await child.run()
+          if (child.runState === FAIL) errors.push(child.error)
+        }
       }
       // console.groupEnd()
       // console.log('^^^ ranChildren', this.name, this.type)
@@ -113,12 +120,14 @@ export class Runner {
   }
 
   get status () {
-    return {
+    const status = {
       name: this.name,
       type: this.type,
       runState: this.runState,
       children: this.children.map(child => child.status)
     }
+    if (this._only) status.only = this._only.status
+    return status
   }
 
   get children () {
@@ -134,6 +143,22 @@ export class Runner {
   set runState (runState) {
     this.recaller.reportKeyMutation(this, 'runState', 'get', this.name)
     this.#runState = runState
+  }
+
+  get only () {
+    if (!this.#only) {
+      this.recaller.reportKeyMutation(this, 'only', 'init', this.name)
+      this.#only = new Runner('only', ONLY, this, this.#f, this.recaller, this.verbose)
+      if (this.runState === RUNNING) {
+        this.#only.#runState = RUNNING
+      }
+    }
+    return this._only
+  }
+
+  get _only () {
+    this.recaller.reportKeyAccess(this, 'only', 'get', this.name)
+    return this.#only
   }
 
   /**
@@ -154,6 +179,7 @@ export class Runner {
 
   clearChildren () {
     this.#children = []
+    this.#only = undefined
     this.#runChildrenPromise = undefined
     this.recaller.reportKeyMutation(this, 'children', 'clearChildren', this.name)
   }

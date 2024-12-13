@@ -14,7 +14,7 @@ globalRunner.describe(urlToName(import.meta.url), suite => {
     for (let i = 0; i < expectedResults.length; ++i) {
       const expected = expectedResults[i]
       const actual = zabacaba(i)
-      assert.equal(actual, expected, `zabacaba(${i})`)
+      assert.equal(actual, expected, `zabacaba(${i}) expected: ${expected}, actual: ${actual}`)
     }
   })
 })
