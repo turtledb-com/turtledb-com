@@ -155,6 +155,7 @@ globalRunner.describe(urlToName(import.meta.url), suite => {
     }, runner.status, 'after 2nd describe')
 
     await _suite.rerunChildren()
+    await runner.rerunChildren()
     test.assert.equal({
       name: 'unnamed-test-runner',
       type: RUNNER,

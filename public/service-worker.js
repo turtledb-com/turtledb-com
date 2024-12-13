@@ -116,7 +116,7 @@ recaller.watch('populate cache', () => {
         }
       })
     } catch (error) {
-      console.error(error)
+      // console.error(error)
     }
   }
 })

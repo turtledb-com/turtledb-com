@@ -63,7 +63,8 @@ globalRunner.describe(urlToName(import.meta.url), suite => {
     }
     whatsUp('should all be empty', { asw: [], arw: [], bsw: [], brw: [] }, false)
 
-    const hashwordA = await hashNameAndPassword('userA', 'passwordA', 10)
+    console.log('\n\nrunIndex:', globalRunner.runIndex)
+    const hashwordA = await hashNameAndPassword('userA', `password${Date.now()}.${globalRunner.runIndex}`, 10)
     const committerA = new Committer('a', hashwordA, recallerA)
 
     getPointerByPublicKey(committerA.compactPublicKey, recallerA, committerA)

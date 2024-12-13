@@ -19,18 +19,21 @@ pointer.recaller.watch('load-tests', async () => {
   const fsRefs = pointer.getRefs('value', 'fs')
   if (fsRefs) {
     const paths = Object.keys(fsRefs).filter(path => /\.test\.js$/.test(path))
-    await Promise.all(paths.map(async path => {
-      const importPath = `/${path}?address=${fsRefs[path]}&cpk=${defaultCPK}`
+    globalRunner.clearChildren()
+    for (const path of paths) {
+      // await Promise.all(paths.map(async path => {
+      const importPath = `/${path}?address=${fsRefs[path]}&cpk=${defaultCPK}&head=${pointer.length - 1}`
       try {
         await import(importPath)
-        console.log('imported', importPath)
+        console.log({ importPath })
       } catch (error) {
         globalRunner.describe(urlToName(importPath), suite => {
           suite.it(`import error: ${error.message}`, () => { throw error })
         })
         console.error(error)
       }
-    }))
+    // }))
+    }
     await globalRunner.rerunChildren()
     console.log(globalRunner.status)
   }
@@ -56,8 +59,13 @@ window.customElements.define(elementName, class extends window.HTMLElement {
         <span class="name">${() => this.runner.name}</span>
       </summary>
     `
-    const runnerCardClass = ['runner-card', this.runner.type, this.runner.runState].join(' ')
-    render(this.shadowRoot, () => h`
+    const getRunnerCardClass = () => ['runner-card', this.runner.type, this.runner.runState].join(' ')
+    const getDetailsAttributes = () => {
+      const detailsAttributes = { class: getRunnerCardClass() }
+      if (this.runner.type !== '⇶' || this.runner.runState !== '✓') detailsAttributes.open = 'open'
+      return detailsAttributes
+    }
+    render(this.shadowRoot, h`
       <style>
         :host {
           font-family: -apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans",Helvetica,Arial,sans-serif,"Apple Color Emoji","Segoe UI Emoji";
@@ -130,14 +138,14 @@ window.customElements.define(elementName, class extends window.HTMLElement {
         }
       </style>
       ${showIfElse(() => this.runner.children.length, h`
-        <details ${(this.runner.type === '⇶' && this.runner.runState === '✓') ? [] : 'open'} class=${runnerCardClass}>
+        <details ${getDetailsAttributes}>
           ${summary}
           <div class="children">
             ${mapEntries(() => this.runner.children, (child, index) => h`<${elementName} runner=${child} key=${index}/>`)}
           </div>
         </details>
       `, h`
-        <div class=${runnerCardClass}>
+        <div class=${getRunnerCardClass}>
           ${summary}
         <div>
       `)}
@@ -147,6 +155,6 @@ window.customElements.define(elementName, class extends window.HTMLElement {
 
 console.log('\n\n89890890890')
 // runnerRecaller.debug = true
-render(document.body, () => h`
+render(document.body, h`
   <${elementName} runner=${globalRunner} key="global"/>
 `, runnerRecaller, 'test/index.js-render')

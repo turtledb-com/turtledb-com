@@ -90,8 +90,8 @@ await globalRunner.run()
 const frameStatus = () => {
   console.log('testing results:', new Date())
   console.log(`
-    ${chalk.gray('╭───────────────────────────────────────────────────────────────╮')}\n${runnerToString(globalRunner, chalk.gray('    │  '))}
-    ${chalk.gray('╰───────────────────────────────────────────────────────────────╯')}
+    ${chalk.gray(`╭${'─'.repeat(70)}╮`)}\n${runnerToString(globalRunner, chalk.gray('    │  '))}
+    ${chalk.gray(`╰${'─'.repeat(70)}╯`)}
   `)
 }
 

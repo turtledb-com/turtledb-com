@@ -28,6 +28,7 @@ export class Runner {
   #children = []
   /** @type {Promise} */
   #runPromise
+  #runChildrenPromise
   #runState
   #f
 
@@ -58,6 +59,7 @@ export class Runner {
     this.upserter = upserter
     this.#runState = WAIT
     this.assert = new Assert(this)
+    this.runIndex = 0
   }
 
   async run () {
@@ -89,22 +91,25 @@ export class Runner {
       this.error = error
       this.runState = FAIL
     }
-    await this.parent?.rerunChildren?.()
   }
 
   async runChildren () {
-    // console.group('vvv runChildren', this.name, this.type)
-    const errors = []
-    for (const child of this.#children) {
-      await child.run()
-      if (child.runState === FAIL) errors.push(child.error)
-    }
-    // console.groupEnd()
-    // console.log('^^^ ranChildren', this.name, this.type)
-    if (errors.length) {
-      throw new RunnerError(`${this.name}.runChildren`, { cause: errors })
-    }
-    this.runState = PASS
+    this.#runChildrenPromise ??= (async () => {
+      ++this.runIndex
+      // console.group('vvv runChildren', this.name, this.type)
+      const errors = []
+      for (const child of this.#children) {
+        await child.run()
+        if (child.runState === FAIL) errors.push(child.error)
+      }
+      // console.groupEnd()
+      // console.log('^^^ ranChildren', this.name, this.type)
+      if (errors.length) {
+        throw new RunnerError(`${this.name}.runChildren`, { cause: errors })
+      }
+      this.runState = PASS
+    })()
+    return this.#runChildrenPromise
   }
 
   get status () {
@@ -140,10 +145,17 @@ export class Runner {
   async appendChild (name, f, type) {
     const child = new Runner(name, type, this, f, this.recaller, this.verbose)
     this.#children.push(child)
+    this.#runChildrenPromise = undefined
     this.recaller.reportKeyMutation(this, 'children', 'appendChild', this.name)
     if (this.runState === RUNNING) {
       await child.run()
     }
+  }
+
+  clearChildren () {
+    this.#children = []
+    this.#runChildrenPromise = undefined
+    this.recaller.reportKeyMutation(this, 'children', 'clearChildren', this.name)
   }
 
   /**
