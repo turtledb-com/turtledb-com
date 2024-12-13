@@ -8,6 +8,7 @@ import { hashNameAndPassword } from '../public/js/utils/crypto.js'
 import { globalRunner, runnerRecaller, urlToName } from '../public/test/Runner.js'
 import { TEST, SUITE, RUNNER, RUNNING, WAIT, PASS, FAIL } from '../public/test/constants.js'
 import { program } from 'commander'
+import { defaultCPK } from '../public/js/constants.js'
 
 program
   .name('test')
@@ -103,8 +104,9 @@ runnerRecaller.watch('test runner', async () => {
   const fsRefs = committer.getRefs('value', 'fs')
   if (fsRefs) {
     const paths = Object.keys(fsRefs).filter(path => /\.test\.js$/.test(path))
+    globalRunner.clearChildren()
     await Promise.all(paths.map(async path => {
-      const importPath = `${join('../public', path)}?address=${fsRefs[path]}`
+      const importPath = `${join('../public', path)}?address=${fsRefs[path]}&cpk=${defaultCPK}&head=${committer.length - 1}`
       try {
         await import(importPath)
       } catch (error) {
