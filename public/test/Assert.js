@@ -1,4 +1,4 @@
-import { ASSERTION } from './constants.js'
+import { ASSERTION, FAIL } from './constants.js'
 import { RunnerError } from './Runner.js'
 
 export class Assert {
@@ -10,75 +10,62 @@ export class Assert {
     this.runner = runner
   }
 
-  async isAbove (valueToCheck, valueToBeAbove, message) {
-    const cause = { valueToCheck, valueToBeAbove }
-    if (valueToCheck > valueToBeAbove) {
-      this.runner.appendChild(message, () => {
-        return cause
-      }, ASSERTION)
+  async isTruthy (valueToCheck, passMessage = 'true', failMessage = `NOT ${passMessage}`, cause) {
+    if (valueToCheck) {
+      return this.runner.appendChild(passMessage, () => cause, ASSERTION)
     } else {
-      this.runner.appendChild(message, () => {
-        throw new RunnerError(message, { cause })
-      }, ASSERTION)
-    }
-  }
-
-  async isBelow (valueToCheck, valueToBeBelow, message) {
-    const cause = { valueToCheck, valueToBeBelow }
-    if (valueToCheck < valueToBeBelow) {
-      this.runner.appendChild(message, () => {
-        return cause
-      }, ASSERTION)
-    } else {
-      this.runner.appendChild(message, () => {
-        throw new RunnerError(message, { cause })
-      }, ASSERTION)
-    }
-  }
-
-  async notEqual (actual, expected, message) {
-    const expectedAddress = this.runner.upserter.upsert(expected)
-    const actualAddress = this.runner.upserter.upsert(actual)
-    const cause = { expectedAddress, actualAddress }
-    if (expectedAddress === actualAddress) {
-      message ??= 'expected === actual'
-      this.runner.appendChild(message, () => {
-        throw new RunnerError(message, { cause })
-      }, ASSERTION)
-    } else {
-      message ??= 'expected !== actual'
-      this.runner.appendChild(message, () => {
-        return cause
-      }, ASSERTION)
+      return this.runner.appendChild(failMessage, () => { throw new RunnerError(failMessage, { cause }) }, ASSERTION)
     }
   }
 
   async equal (actual, expected, message, debug = true) {
-    if (actual === expected) {
-      message ??= 'expected === actual'
-      this.runner.appendChild(message, () => {
-        return { actual, expected }
-      }, ASSERTION)
-      return
-    }
+    const passMessage = message ?? 'expected === actual'
+    const failMessage = message ?? 'expected !== actual'
+    if (actual === expected) return this.isTruthy(true, passMessage)
     const expectedAddress = this.runner.upserter.upsert(expected)
     const actualAddress = this.runner.upserter.upsert(actual)
-    const cause = { expectedAddress, actualAddress }
-    if (expectedAddress === actualAddress) {
-      message ??= 'expected === actual'
-      this.runner.appendChild(message, () => {
-        return cause
-      }, ASSERTION)
-      return
+    const isEqual = await this.isTruthy(
+      expectedAddress === actualAddress,
+      passMessage,
+      failMessage,
+      { expectedAddress, actualAddress }
+    )
+    if (isEqual.runState === FAIL) {
+      printDiff(this.runner.upserter, expectedAddress, actualAddress)
     }
-    message ??= 'expected !== actual'
-    this.runner.appendChild(message, () => {
-      if (debug) {
-        console.log(message)
-        printDiff(this.runner.upserter, expectedAddress, actualAddress, '  ')
-      }
-      throw new RunnerError(message, { cause })
-    }, ASSERTION)
+    return isEqual
+  }
+
+  async notEqual (actual, expected, message) {
+    const passMessage = message ?? 'expected !== actual'
+    const failMessage = message ?? 'expected === actual'
+    if (expected === actual) this.isTruthy(false, null, failMessage)
+    const expectedAddress = this.runner.upserter.upsert(expected)
+    const actualAddress = this.runner.upserter.upsert(actual)
+    return this.isTruthy(
+      expectedAddress !== actualAddress,
+      passMessage,
+      failMessage,
+      { expectedAddress, actualAddress }
+    )
+  }
+
+  async isAbove (valueToCheck, valueToBeAbove, message) {
+    return this.isTruthy(valueToCheck > valueToBeAbove, message)
+  }
+
+  async isBelow (valueToCheck, valueToBeBelow, message) {
+    return this.isTruthy(valueToCheck < valueToBeBelow, message)
+  }
+
+  async throw (f, message) {
+    let threw = false
+    try {
+      f()
+    } catch (error) {
+      threw = true
+    }
+    return this.isTruthy(threw, message)
   }
 }
 
@@ -89,7 +76,7 @@ export class Assert {
  * @param {number} b
  * @param {string} prefix
  */
-function printDiff (uint8ArrayLayer, a, b, indent = '') {
+export function printDiff (uint8ArrayLayer, a, b, indent = '') {
   if (a === undefined || b === undefined) {
     if (a) {
       console.log(`${indent}${JSON.stringify(uint8ArrayLayer.getValue(a))} !== undefined`)

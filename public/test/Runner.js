@@ -175,6 +175,7 @@ export class Runner {
     if (this.runState === RUNNING) {
       await child.run()
     }
+    return child
   }
 
   clearChildren () {
