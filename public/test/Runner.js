@@ -180,6 +180,7 @@ export class Runner {
   clearChildren () {
     this.#children = []
     this.#only = undefined
+    this.recaller.reportKeyMutation(this, 'only', 'clearChildren', this.name)
     this.#runChildrenPromise = undefined
     this.recaller.reportKeyMutation(this, 'children', 'clearChildren', this.name)
   }

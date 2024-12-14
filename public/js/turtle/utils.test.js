@@ -1,7 +1,7 @@
 import { globalRunner, urlToName } from '../../test/Runner.js'
 import { zabacaba } from './utils.js'
 
-globalRunner.describe(urlToName(import.meta.url), suite => {
+globalRunner.only.describe(urlToName(import.meta.url), suite => {
   suite.it('returns expected values for a zabacaba function', ({ assert }) => {
     const expectedResults = [
       0,

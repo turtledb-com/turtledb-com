@@ -15,11 +15,14 @@ connectPeer(peerRecaller).catch(err => {
   console.log(err)
 })
 
+let alreadyRan
 pointer.recaller.watch('load-tests', async () => {
   const fsRefs = pointer.getRefs('value', 'fs')
   if (fsRefs) {
+    if (alreadyRan) window.location.reload()
+    alreadyRan = true
     const paths = Object.keys(fsRefs).filter(path => /\.test\.js$/.test(path))
-    globalRunner.clearChildren()
+    // globalRunner.clearChildren()
     for (const path of paths) {
       // await Promise.all(paths.map(async path => {
       const importPath = `/${path}?address=${fsRefs[path]}&cpk=${defaultCPK}&head=${pointer.length - 1}`

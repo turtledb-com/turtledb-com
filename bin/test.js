@@ -52,7 +52,7 @@ const runnerToString = (runner = globalRunner, indent = '', isLastChild = true) 
       type = chalk.dim(type)
       break
     case WAIT:
-      runState = chalk.green(runState)
+      runState = chalk.dim(runState)
       name = chalk.dim(name)
       type = chalk.dim(type)
       break
@@ -87,8 +87,6 @@ const root = join(import.meta.dirname, '../public')
 
 await watchfs(committer, runnerRecaller, root, '', true)
 
-console.log('begin testing!')
-
 await globalRunner.run()
 
 const frameStatus = () => {
@@ -103,9 +101,12 @@ if (watch) {
   runnerRecaller.watch('test progress', frameStatus)
 }
 
+let alreadyRan
 runnerRecaller.watch('test runner', async () => {
   const fsRefs = committer.getRefs('value', 'fs')
   if (fsRefs) {
+    if (alreadyRan) process.exit(1)
+    alreadyRan = true
     const paths = Object.keys(fsRefs).filter(path => /\.test\.js$/.test(path))
     globalRunner.clearChildren()
     await Promise.all(paths.map(async path => {

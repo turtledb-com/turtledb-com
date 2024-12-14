@@ -48,6 +48,7 @@
     "postinstall": "pwd; ls; cp ./node_modules/@noble/secp256k1/index.js ./public/js/utils/noble-secp256k1.js",
     "test.old": "mocha './public/js/**/*.test.js'",
     "test": "./bin/test.js",
+    "test.watch": "concurrently -c yellow -p \"{time} {pid} │\" --restart-tries -1 \"./bin/test.js -w\"",
     "coverage": "c8 -r html -r text -r json-summary -x '**/*.test.js' $npm_execpath run test",
     "docker.build": "docker build -t turtledb-com/turtledb-com .",
     "docker.run": "docker run -e SPACES_ROOT_ACCESS -e SPACES_ROOT_SECRET -d -p 8080:8080 -p 1024:1024 turtledb-com/turtledb-com"

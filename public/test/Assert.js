@@ -54,6 +54,13 @@ export class Assert {
   }
 
   async equal (actual, expected, message, debug = true) {
+    if (actual === expected) {
+      message ??= 'expected === actual'
+      this.runner.appendChild(message, () => {
+        return { actual, expected }
+      }, ASSERTION)
+      return
+    }
     const expectedAddress = this.runner.upserter.upsert(expected)
     const actualAddress = this.runner.upserter.upsert(actual)
     const cause = { expectedAddress, actualAddress }
@@ -62,16 +69,16 @@ export class Assert {
       this.runner.appendChild(message, () => {
         return cause
       }, ASSERTION)
-    } else {
-      message ??= 'expected !== actual'
-      this.runner.appendChild(message, () => {
-        if (debug) {
-          console.log(message)
-          printDiff(this.runner.upserter, expectedAddress, actualAddress, '  ')
-        }
-        throw new RunnerError(message, { cause })
-      }, ASSERTION)
+      return
     }
+    message ??= 'expected !== actual'
+    this.runner.appendChild(message, () => {
+      if (debug) {
+        console.log(message)
+        printDiff(this.runner.upserter, expectedAddress, actualAddress, '  ')
+      }
+      throw new RunnerError(message, { cause })
+    }, ASSERTION)
   }
 }
 
