@@ -20,14 +20,15 @@ globalRunner.only.describe(urlToName(import.meta.url), suite => {
       [1],
       [[[1]]],
       [[[]]],
-      [1, 2, 3, 4, 5]
+      [1, 2, 3, 4, 5],
+      new Uint16Array([1, 2, 3])
     ]
     for (const value of values) {
-      console.log('value', value)
+      // console.log('value', value)
       const address = dictionaryTurtle.upsert(value)
-      console.log('address', address)
+      // console.log('address', address)
       const recovered = dictionaryTurtle.lookup(address)
-      console.log('recovered', recovered)
+      // console.log('recovered', recovered)
       assert.equal(recovered, value, `decoded value (${recovered}) should equal original value (${value})`)
     }
   })

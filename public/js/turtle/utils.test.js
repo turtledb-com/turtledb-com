@@ -73,7 +73,6 @@ globalRunner.only.describe(urlToName(import.meta.url), suite => {
     assert.equal(u8aZero.length, 2, 'zero should have minimum length')
     assert.equal(decodeNumberFromU8a(u8aZero), 0)
     const u8aFFFFFF = encodeNumberToU8a(0xFFFFFF, 2)
-    console.log(u8aFFFFFF)
     assert.equal(u8aFFFFFF.length, 3)
     assert.equal(decodeNumberFromU8a(u8aFFFFFF), 0xFFFFFF)
   })

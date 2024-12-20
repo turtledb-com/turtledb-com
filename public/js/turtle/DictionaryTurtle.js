@@ -107,6 +107,9 @@ class Codec {
   }
 }
 
+const minAddressBytes = 2
+const maxAddressBytes = 4
+const addressVersions = maxAddressBytes - minAddressBytes + 1
 /** @type {Object.<string, Codec>} */
 const codecs = {}
 
@@ -166,99 +169,106 @@ codecs[EMPTY_ARRAY] = new Codec({
   subVersionCounts: [1]
 })
 
-export const SINGLETON_ARRAY = 'array(length==1)'
-codecs[SINGLETON_ARRAY] = new Codec({
-  name: SINGLETON_ARRAY,
-  test: value => Array.isArray(value) && value.length === 1,
-  decode: (uint8Array, _codecVersion, dictionaryTurtle) => [dictionaryTurtle.lookup(decodeNumberFromU8a(uint8Array))],
-  encode: (value, codec, dictionaryTurtle) => {
-    const address = encodeNumberToU8a(dictionaryTurtle.upsert(value[0]))
-    return combineUint8ArrayLikes([address, codec.footerByVersion[address.length - 2]])
-  },
-  getWidth: codecVersion => codecVersion.combinedVersion + 2,
-  subVersionCounts: [4]
-})
-
-export const LONG_ARRAY = 'array(length>1)'
-codecs[LONG_ARRAY] = new Codec({
-  name: LONG_ARRAY,
+export const ARRAY = 'array(length>1)'
+codecs[ARRAY] = new Codec({
+  name: ARRAY,
   test: value => Array.isArray(value),
   decode: (uint8Array, _codecVersion, dictionaryTurtle) => {
-    return [...dictionaryTurtle.lookup(decodeNumberFromU8a(uint8Array)).generator()]
+    const treeNode = dictionaryTurtle.lookup(decodeNumberFromU8a(uint8Array))
+    if (treeNode instanceof TreeNode) return [...treeNode.inOrder()]
+    return [treeNode]
   },
   encode: (value, codec, dictionaryTurtle) => {
-    const address = encodeNumberToU8a(dictionaryTurtle.upsert(value, [codecs[PARTIAL_ARRAY]]))
-    return combineUint8ArrayLikes([address, codec.footerByVersion[address.length - 2]])
+    let address
+    if (value.length === 1) address = encodeNumberToU8a(dictionaryTurtle.upsert(value[0]), minAddressBytes)
+    else address = encodeNumberToU8a(dictionaryTurtle.upsert(value, [codecs[TREE_NODE]]), minAddressBytes)
+    return combineUint8ArrayLikes([address, codec.footerByVersion[address.length - minAddressBytes]])
   },
-  getWidth: codecVersion => codecVersion.combinedVersion + 2,
-  subVersionCounts: [4]
+  getWidth: codecVersion => codecVersion.combinedVersion + minAddressBytes,
+  subVersionCounts: [addressVersions]
 })
 
-class PartialArray {
+class TreeNode {
   constructor (left, right) {
     this.left = left
     this.right = right
   }
 
-  * generator () {
-    if (this.left instanceof PartialArray) yield * this.left.generator()
+  * inOrder () {
+    if (this.left instanceof TreeNode) yield * this.left.inOrder()
     else yield this.left
-    if (this.right instanceof PartialArray) yield * this.right.generator()
+    if (this.right instanceof TreeNode) yield * this.right.inOrder()
     else yield this.right
   }
 }
-export const PARTIAL_ARRAY = 'non-empty partial array'
-codecs[PARTIAL_ARRAY] = new Codec({
-  name: PARTIAL_ARRAY,
-  test: value => Array.isArray(value),
+export const TREE_NODE = 'tree-node'
+codecs[TREE_NODE] = new Codec({
+  name: TREE_NODE,
+  test: value => Array.isArray(value) && value.length > 1,
   decode: (uint8Array, codecVersion, dictionaryTurtle) => {
     const [leftAddressLength] = codecVersion.subVersions
     const leftAddress = decodeNumberFromU8a(uint8Array.slice(0, leftAddressLength + 2))
     const rightAddress = decodeNumberFromU8a(uint8Array.slice(leftAddressLength + 2))
-    return new PartialArray(dictionaryTurtle.lookup(leftAddress), dictionaryTurtle.lookup(rightAddress))
+    return new TreeNode(dictionaryTurtle.lookup(leftAddress), dictionaryTurtle.lookup(rightAddress))
   },
   encode: (value, codec, dictionaryTurtle) => {
     const leftLength = 2 ** (31 - Math.clz32(value.length - 1))
     let leftAddress
-    if (leftLength === 1) leftAddress = encodeNumberToU8a(dictionaryTurtle.upsert(value[0]))
-    else leftAddress = encodeNumberToU8a(dictionaryTurtle.upsert(value.slice(0, leftLength), [codecs[PARTIAL_ARRAY]]))
+    if (leftLength === 1) leftAddress = encodeNumberToU8a(dictionaryTurtle.upsert(value[0]), minAddressBytes)
+    else leftAddress = encodeNumberToU8a(dictionaryTurtle.upsert(value.slice(0, leftLength), [codecs[TREE_NODE]]), minAddressBytes)
     let rightAddress
-    if (value.length === leftLength + 1) rightAddress = encodeNumberToU8a(dictionaryTurtle.upsert(value[value.length - 1]))
-    else rightAddress = encodeNumberToU8a(dictionaryTurtle.upsert(value.slice(leftLength), [codecs[PARTIAL_ARRAY]]))
-    const footer = codec.footerByVersion[toCombinedVersion([leftAddress.length - 2, rightAddress.length - 2], [2, 2])]
+    if (value.length === leftLength + 1) rightAddress = encodeNumberToU8a(dictionaryTurtle.upsert(value[value.length - 1]), minAddressBytes)
+    else rightAddress = encodeNumberToU8a(dictionaryTurtle.upsert(value.slice(leftLength), [codecs[TREE_NODE]]), minAddressBytes)
+    const footer = codec.footerByVersion[toCombinedVersion([leftAddress.length - minAddressBytes, rightAddress.length - minAddressBytes], [addressVersions, addressVersions])]
     return combineUint8ArrayLikes([leftAddress, rightAddress, footer])
   },
-  getWidth: codecVersion => codecVersion.combinedVersion + 4,
-  subVersionCounts: [1]
+  getWidth: codecVersion => codecVersion.combinedVersion + 2 * (minAddressBytes),
+  subVersionCounts: [addressVersions, addressVersions]
 })
 
-export const U8A_SHORT = 'Uint8Array(length<=4)'
-codecs[U8A_SHORT] = new Codec({
-  name: U8A_SHORT,
-  test: value => value instanceof Uint8Array && value.length <= 4,
+export const maxWordLength = 4
+export const wordLengthVersions = maxWordLength + 1
+export const WORD = 'word (<= 4-bytes)'
+codecs[WORD] = new Codec({
+  name: WORD,
+  test: value => value instanceof Uint8Array && value.length < wordLengthVersions,
   decode: (uint8Array, _codecVersion, _dictionaryTurtle) => uint8Array,
   encode: (value, codec, _dictionaryTurtle) => combineUint8ArrayLikes([value, codec.footerByVersion[value.length]]),
   getWidth: codecVersion => codecVersion.combinedVersion,
-  subVersionCounts: [5]
+  subVersionCounts: [wordLengthVersions]
 })
-export const U8A_LONG = 'Uint8Array(length>4)'
-codecs[U8A_LONG] = new Codec({
-  name: U8A_LONG,
-  test: value => value instanceof Uint8Array && value.length > 4,
+
+const TypedArrays = [Uint8Array, Int8Array, Uint8ClampedArray, Int16Array, Uint16Array, Int32Array, Uint32Array, Float32Array, Float64Array, BigInt64Array, BigUint64Array]
+export const TYPED_ARRAY = 'typed array'
+codecs[TYPED_ARRAY] = new Codec({
+  name: TYPED_ARRAY,
+  test: value => (value instanceof Object.getPrototypeOf(Uint8Array)),
   decode: (uint8Array, codecVersion, dictionaryTurtle) => {
-    const [leftAddressLength] = codecVersion.subVersions
-    const leftAddress = decodeNumberFromU8a(uint8Array.slice(0, leftAddressLength + 2))
-    const rightAddress = decodeNumberFromU8a(uint8Array.slice(leftAddressLength + 2))
-    return combineUint8Arrays([dictionaryTurtle.lookup(leftAddress), dictionaryTurtle.lookup(rightAddress)])
+    let value = dictionaryTurtle.lookup(decodeNumberFromU8a(uint8Array))
+    if (value instanceof TreeNode) value = combineUint8Arrays([...value.inOrder()])
+    else if (value.length === 0) value = new Uint8Array()
+    const TypedArray = TypedArrays[codecVersion.subVersions[1]]
+    return new TypedArray(value.buffer)
   },
   encode: (value, codec, dictionaryTurtle) => {
-    const leftLength = 2 ** (31 - Math.clz32(value.length - 1))
-    const leftAddress = encodeNumberToU8a(dictionaryTurtle.upsert(value.slice(0, leftLength), [codecs[U8A_SHORT], codecs[U8A_LONG]]))
-    const rightAddress = encodeNumberToU8a(dictionaryTurtle.upsert(value.slice(leftLength), [codecs[U8A_SHORT], codecs[U8A_LONG]]))
-    const footer = codec.footerByVersion[toCombinedVersion([leftAddress.length - 2, rightAddress.length - 2], [2, 2])]
-    return combineUint8ArrayLikes([leftAddress, rightAddress, footer])
+    const typedArrayVersion = TypedArrays.findIndex(TypedArray => value instanceof TypedArray)
+    if (!(value instanceof Uint8Array)) value = new Uint8Array(value.buffer)
+    let address
+    if (value.length === 0) address = encodeNumberToU8a(dictionaryTurtle.upsert([], [codecs[EMPTY_ARRAY]]), minAddressBytes)
+    if (codecs[WORD].test(value)) address = encodeNumberToU8a(dictionaryTurtle.upsert(value, [codecs[WORD]]), minAddressBytes)
+    else {
+      const wordsLength = Math.ceil(value.length / maxWordLength)
+      const words = new Array(wordsLength)
+      for (let i = 0; i < wordsLength; ++i) {
+        words[i] = value.slice(i * maxWordLength, (i + 1) * maxWordLength)
+      }
+      address = encodeNumberToU8a(dictionaryTurtle.upsert(words, [codecs[TREE_NODE]]), minAddressBytes)
+    }
+    const combinedVersion = toCombinedVersion([address.length - minAddressBytes, typedArrayVersion], [addressVersions, TypedArrays.length])
+    return combineUint8ArrayLikes([address, codec.footerByVersion[combinedVersion]])
   },
-  getWidth: codecVersion => codecVersion.combinedVersion + 4,
-
-  subVersionCounts: [4, 4]
+  getWidth: codecVersion => codecVersion.subVersions[0] + minAddressBytes,
+  subVersionCounts: [addressVersions, TypedArrays.length]
 })
+
+console.log(codecVersionByFooter.map((codecVersion, index) => `${index}: { name: "${codecVersion.codec.name}", width: ${codecVersion.width}, subVersions: ${JSON.stringify(codecVersion.subVersions)} }`).join('\n'))

@@ -345,8 +345,7 @@ export const CODEC = {
       ]
     },
     blocksToValue: (uint8ArrayLayer, encodedBlocks) => setPartial(encodedBlocks.map(value => {
-      const partialArray = uint8ArrayLayer.lookup(decodeVariable(value), getCodecs(KIND.PARTIAL_ARRAY, KIND.TOP)
-      )
+      const partialArray = uint8ArrayLayer.lookup(decodeVariable(value), getCodecs(KIND.PARTIAL_ARRAY, KIND.TOP))
       return partialArray?.[IS_PARTIAL] ? partialArray : [partialArray]
     }).flat())
   }),
@@ -573,4 +572,4 @@ export function getCodecs (kind = KIND.TOP, ...kinds) {
   return codecsByKind[kind].concat(...kinds.map(kind => codecsByKind[kind]))
 }
 
-// for (let i = 0; i <= 0b11111111; ++i) console.log(`0000000${i.toString(2)}`.slice(-8), CODECS.filter(codec => codec.prefixMatch(i)).map(codec => codec.name))
+// for (let i = 0; i <= 0b11111111; ++i) console.log(`0000000${i.toString(2)}`.slice(-8), ALL_CODECS.filter(codec => codec.prefixMatch(i)).map(codec => codec.name))
