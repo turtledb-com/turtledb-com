@@ -33,7 +33,7 @@ class Codec {
    * @param {{
    *  name: string,
    *  test: (value:any) => boolean,
-   *  decode: (uint8Array: Uint8Array, codecVersion: CodecVersion, dictionaryTurtle: DictionaryTurtle) => any,
+   *  decode: (uint8Array: Uint8Array, codecVersion: CodecVersion, u8aTurtle: import('./U8aTurtle.js').U8aTurtle) => any,
    *  encode: (value: any, codec: Codec, dictionaryTurtle: DictionaryTurtle) => Uint8Array,
    *  getWidth: (codecVersion: CodecVersion) => number,
    *  subVersionCounts: Array.<number>,
@@ -130,8 +130,8 @@ export const STRING = 'string'
 codecs[STRING] = new Codec({
   name: STRING,
   test: value => typeof value === 'string',
-  decode: (uint8Array, _codecVersion, dictionaryTurtle) => {
-    const stringAsU8a = dictionaryTurtle.lookup(decodeNumberFromU8a(uint8Array))
+  decode: (uint8Array, _codecVersion, u8aTurtle) => {
+    const stringAsU8a = u8aTurtle.lookup(decodeNumberFromU8a(uint8Array))
     return new TextDecoder().decode(stringAsU8a)
   },
   encode: (value, codec, dictionaryTurtle) => {
@@ -157,9 +157,9 @@ export const BIGINT = 'bigint'
 codecs[BIGINT] = new Codec({
   name: BIGINT,
   test: value => typeof value === 'bigint',
-  decode: (uint8Array, codecVersion, dictionaryTurtle) => {
+  decode: (uint8Array, codecVersion, u8aTurtle) => {
     const sign = codecVersion.subVersions[1] ? -1n : 1n
-    const hex = dictionaryTurtle.lookup(decodeNumberFromU8a(uint8Array))
+    const hex = u8aTurtle.lookup(decodeNumberFromU8a(uint8Array))
     return sign * BigInt(`0x${[...hex].map(byte => `0${byte.toString(16)}`.slice(-2)).join('')}`)
   },
   encode: (value, codec, dictionaryTurtle) => {
@@ -190,8 +190,8 @@ export const TYPED_ARRAY = 'typed array'
 codecs[TYPED_ARRAY] = new Codec({
   name: TYPED_ARRAY,
   test: value => (value instanceof Object.getPrototypeOf(Uint8Array)),
-  decode: (uint8Array, codecVersion, dictionaryTurtle) => {
-    let value = dictionaryTurtle.lookup(decodeNumberFromU8a(uint8Array))
+  decode: (uint8Array, codecVersion, u8aTurtle) => {
+    let value = u8aTurtle.lookup(decodeNumberFromU8a(uint8Array))
     if (value instanceof TreeNode) value = combineUint8Arrays([...value.inOrder()])
     else if (value.length === 0) value = new Uint8Array()
     const TypedArray = TypedArrays[codecVersion.subVersions[1]]
@@ -231,8 +231,8 @@ export const NONEMPTY_ARRAY = 'array(length>1)'
 codecs[NONEMPTY_ARRAY] = new Codec({
   name: NONEMPTY_ARRAY,
   test: value => Array.isArray(value),
-  decode: (uint8Array, codecVersion, dictionaryTurtle) => {
-    const treeNode = dictionaryTurtle.lookup(decodeNumberFromU8a(uint8Array))
+  decode: (uint8Array, codecVersion, u8aTurtle) => {
+    const treeNode = u8aTurtle.lookup(decodeNumberFromU8a(uint8Array))
     if (codecVersion.subVersions[1]) return Object.assign([], treeNode)
     if (treeNode instanceof TreeNode) return [...treeNode.inOrder()]
     return [treeNode]
@@ -255,8 +255,8 @@ export const OBJECT = 'object'
 codecs[OBJECT] = new Codec({
   name: OBJECT,
   test: value => typeof value === 'object',
-  decode: (uint8Array, _codecVersion, dictionaryTurtle) => {
-    return Object.fromEntries(ksVsToPairs(dictionaryTurtle.lookup(decodeNumberFromU8a(uint8Array))))
+  decode: (uint8Array, _codecVersion, u8aTurtle) => {
+    return Object.fromEntries(ksVsToPairs(u8aTurtle.lookup(decodeNumberFromU8a(uint8Array))))
   },
   encode: (value, codec, dictionaryTurtle) => {
     const objectAsArray = [...Object.keys(value), ...Object.values(value)]
@@ -271,11 +271,11 @@ export const TREE_NODE = 'tree-node'
 codecs[TREE_NODE] = new Codec({
   name: TREE_NODE,
   test: value => Array.isArray(value) && value.length > 1,
-  decode: (uint8Array, codecVersion, dictionaryTurtle) => {
+  decode: (uint8Array, codecVersion, u8aTurtle) => {
     const [leftAddressLength] = codecVersion.subVersions
     const leftAddress = decodeNumberFromU8a(uint8Array.slice(0, leftAddressLength + minAddressBytes))
     const rightAddress = decodeNumberFromU8a(uint8Array.slice(leftAddressLength + minAddressBytes))
-    return new TreeNode(dictionaryTurtle.lookup(leftAddress), dictionaryTurtle.lookup(rightAddress))
+    return new TreeNode(u8aTurtle.lookup(leftAddress), u8aTurtle.lookup(rightAddress))
   },
   encode: (value, codec, dictionaryTurtle) => {
     const leftLength = 2 ** (31 - Math.clz32(value.length - 1))

@@ -53,13 +53,4 @@ export class DictionaryTurtle extends U8aTurtleBranch {
     }
     return address
   }
-
-  lookup (address) {
-    const footer = this.getByte(address)
-    const codecVersion = codecVersionByFooter[footer]
-    const width = codecVersion.width
-    const uint8Array = this.slice(address - width, address)
-    const value = codecVersion.codec.decode(uint8Array, codecVersion, this)
-    return value
-  }
 }

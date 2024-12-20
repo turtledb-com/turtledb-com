@@ -9,43 +9,25 @@ globalRunner.only.describe(urlToName(import.meta.url), suite => {
     const values = [
       undefined,
       null,
-      true,
-      false,
-      12.4,
-      Number.NEGATIVE_INFINITY,
-      Number.POSITIVE_INFINITY,
-      new Uint8Array([1, 2]),
-      new Uint8Array([9, 8, 7]),
-      new Uint8Array([]),
-      new Uint8Array([100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111]),
-      [],
-      [1],
-      [[[1]]],
-      [[[]]],
-      [1, 2, 3, 4, 5],
+      true, false,
+      12.4, Number.NEGATIVE_INFINITY, Number.POSITIVE_INFINITY,
+      new Uint8Array([1, 2]), new Uint8Array([9, 8, 7]), new Uint8Array([]), new Uint8Array([100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111]),
+      [], [1], [[[1]]], [[[]]], [1, 2, 3, 4, 5],
       /* eslint no-sparse-arrays: "off" */
       [,, 5,,], [,, [,, [,,],, [,,], []]], arrayWithX,
       new Uint16Array([1, 2, 3]),
-      '',
-      'asdf',
-      'Hello World!👋🌎🎉',
-      new Date(),
-      new Date(0),
-      new Date(2000000000000),
-      0n,
-      -0n,
-      0xfffffffffffffffffffffffffffffffn,
-      -0xfffffffffffffffffffffffffffffffn,
-      {},
-      { a: 1, b: 2 }
-      // lipsum
+      '', 'asdf', 'Hello World!👋🌎🎉',
+      new Date(), new Date(0), new Date(2000000000000),
+      0n, -0n, 0xfffffffffffffffffffffffffffffffn, -0xfffffffffffffffffffffffffffffffn,
+      {}, { a: 1, b: 2 },
+      lipsum
     ]
     for (const value of values) {
-      console.log('value', value)
+      // console.log('value', value)
       const address = dictionaryTurtle.upsert(value)
-      console.log('address', address)
+      // console.log('address', address)
       const recovered = dictionaryTurtle.lookup(address)
-      console.log('recovered', recovered)
+      // console.log('recovered', recovered)
       assert.equal(recovered, value, `decoded value (${recovered}) should equal original value (${value})`)
     }
   })

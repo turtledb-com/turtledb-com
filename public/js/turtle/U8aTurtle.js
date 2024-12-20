@@ -1,3 +1,4 @@
+import { codecVersionByFooter } from './codecs.js'
 import { combineUint8Arrays, zabacaba } from './utils.js'
 
 export class U8aTurtle {
@@ -70,6 +71,16 @@ export class U8aTurtle {
 
   slice (start = this.offset, end = this.length) {
     return this.uint8Array.slice(this.remapAddress(start), this.remapAddress(end, true))
+  }
+
+  lookup (address) {
+    const u8aTurtle = this.findParentByAddress(address)
+    const footer = u8aTurtle.getByte(address)
+    const codecVersion = codecVersionByFooter[footer]
+    const width = codecVersion.width
+    const uint8Array = u8aTurtle.slice(address - width, address)
+    const value = codecVersion.codec.decode(uint8Array, codecVersion, u8aTurtle)
+    return value
   }
 }
 
