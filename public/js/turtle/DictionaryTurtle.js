@@ -54,7 +54,6 @@ export class DictionaryTurtle extends U8aTurtleBranch {
   }
 
   lookup (address) {
-    console.log('looking up', address)
     const footer = this.getByte(address)
     const codecVersion = codecVersionByFooter[footer]
     const width = codecVersion.width
@@ -157,13 +156,89 @@ codecs[NUMBER] = new Codec({
   subVersionCounts: [1]
 })
 
+export const EMPTY_ARRAY = 'array(length==0)'
+codecs[EMPTY_ARRAY] = new Codec({
+  name: EMPTY_ARRAY,
+  test: value => Array.isArray(value) && value.length === 0,
+  decode: (_uint8Array, _codecVersion, _dictionaryTurtle) => [],
+  encode: (_value, codec, _dictionaryTurtle) => new Uint8Array([codec.footerByVersion[0]]),
+  getWidth: () => 0,
+  subVersionCounts: [1]
+})
+
+export const SINGLETON_ARRAY = 'array(length==1)'
+codecs[SINGLETON_ARRAY] = new Codec({
+  name: SINGLETON_ARRAY,
+  test: value => Array.isArray(value) && value.length === 1,
+  decode: (uint8Array, _codecVersion, dictionaryTurtle) => [dictionaryTurtle.lookup(decodeNumberFromU8a(uint8Array))],
+  encode: (value, codec, dictionaryTurtle) => {
+    const address = encodeNumberToU8a(dictionaryTurtle.upsert(value[0]))
+    return combineUint8ArrayLikes([address, codec.footerByVersion[address.length - 2]])
+  },
+  getWidth: codecVersion => codecVersion.combinedVersion + 2,
+  subVersionCounts: [4]
+})
+
+export const LONG_ARRAY = 'array(length>1)'
+codecs[LONG_ARRAY] = new Codec({
+  name: LONG_ARRAY,
+  test: value => Array.isArray(value),
+  decode: (uint8Array, _codecVersion, dictionaryTurtle) => {
+    return [...dictionaryTurtle.lookup(decodeNumberFromU8a(uint8Array)).generator()]
+  },
+  encode: (value, codec, dictionaryTurtle) => {
+    const address = encodeNumberToU8a(dictionaryTurtle.upsert(value, [codecs[PARTIAL_ARRAY]]))
+    return combineUint8ArrayLikes([address, codec.footerByVersion[address.length - 2]])
+  },
+  getWidth: codecVersion => codecVersion.combinedVersion + 2,
+  subVersionCounts: [4]
+})
+
+class PartialArray {
+  constructor (left, right) {
+    this.left = left
+    this.right = right
+  }
+
+  * generator () {
+    if (this.left instanceof PartialArray) yield * this.left.generator()
+    else yield this.left
+    if (this.right instanceof PartialArray) yield * this.right.generator()
+    else yield this.right
+  }
+}
+export const PARTIAL_ARRAY = 'non-empty partial array'
+codecs[PARTIAL_ARRAY] = new Codec({
+  name: PARTIAL_ARRAY,
+  test: value => Array.isArray(value),
+  decode: (uint8Array, codecVersion, dictionaryTurtle) => {
+    const [leftAddressLength] = codecVersion.subVersions
+    const leftAddress = decodeNumberFromU8a(uint8Array.slice(0, leftAddressLength + 2))
+    const rightAddress = decodeNumberFromU8a(uint8Array.slice(leftAddressLength + 2))
+    return new PartialArray(dictionaryTurtle.lookup(leftAddress), dictionaryTurtle.lookup(rightAddress))
+  },
+  encode: (value, codec, dictionaryTurtle) => {
+    const leftLength = 2 ** (31 - Math.clz32(value.length - 1))
+    let leftAddress
+    if (leftLength === 1) leftAddress = encodeNumberToU8a(dictionaryTurtle.upsert(value[0]))
+    else leftAddress = encodeNumberToU8a(dictionaryTurtle.upsert(value.slice(0, leftLength), [codecs[PARTIAL_ARRAY]]))
+    let rightAddress
+    if (value.length === leftLength + 1) rightAddress = encodeNumberToU8a(dictionaryTurtle.upsert(value[value.length - 1]))
+    else rightAddress = encodeNumberToU8a(dictionaryTurtle.upsert(value.slice(leftLength), [codecs[PARTIAL_ARRAY]]))
+    const footer = codec.footerByVersion[toCombinedVersion([leftAddress.length - 2, rightAddress.length - 2], [2, 2])]
+    return combineUint8ArrayLikes([leftAddress, rightAddress, footer])
+  },
+  getWidth: codecVersion => codecVersion.combinedVersion + 4,
+  subVersionCounts: [1]
+})
+
 export const U8A_SHORT = 'Uint8Array(length<=4)'
 codecs[U8A_SHORT] = new Codec({
   name: U8A_SHORT,
   test: value => value instanceof Uint8Array && value.length <= 4,
   decode: (uint8Array, _codecVersion, _dictionaryTurtle) => uint8Array,
   encode: (value, codec, _dictionaryTurtle) => combineUint8ArrayLikes([value, codec.footerByVersion[value.length]]),
-  getWidth: (codecVersion) => codecVersion.combinedVersion,
+  getWidth: codecVersion => codecVersion.combinedVersion,
   subVersionCounts: [5]
 })
 export const U8A_LONG = 'Uint8Array(length>4)'
@@ -183,7 +258,7 @@ codecs[U8A_LONG] = new Codec({
     const footer = codec.footerByVersion[toCombinedVersion([leftAddress.length - 2, rightAddress.length - 2], [2, 2])]
     return combineUint8ArrayLikes([leftAddress, rightAddress, footer])
   },
-  getWidth: (codecVersion) => codecVersion.combinedVersion + 4,
+  getWidth: codecVersion => codecVersion.combinedVersion + 4,
 
   subVersionCounts: [4, 4]
 })

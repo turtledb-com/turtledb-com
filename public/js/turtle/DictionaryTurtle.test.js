@@ -15,7 +15,12 @@ globalRunner.only.describe(urlToName(import.meta.url), suite => {
       new Uint8Array([1, 2]),
       new Uint8Array([9, 8, 7]),
       new Uint8Array([]),
-      new Uint8Array([100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111])
+      new Uint8Array([100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111]),
+      [],
+      [1],
+      [[[1]]],
+      [[[]]],
+      [1, 2, 3, 4, 5]
     ]
     for (const value of values) {
       console.log('value', value)
