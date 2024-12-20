@@ -47,6 +47,7 @@ export class Recaller {
   }
 
   watch (name, f) {
+    if (!name || typeof name !== 'string') throw new Error('please name watches')
     if (typeof f !== 'function') { throw new Error(`can only watch functions (${name})`) }
     this.#disassociateF(f)
     if (!name) throw new Error('must name function watchers')

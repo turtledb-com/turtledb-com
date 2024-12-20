@@ -75,6 +75,7 @@ export class Runner {
         this.error = error
         if (this.verbose) console.error(error)
         if (!(error instanceof RunnerError)) {
+          console.error(error)
           this.it(`run error: ${error.message}`, () => { throw new RunnerError(`${this.name}.run`, { cause: error }) })
         }
         this.runState = FAIL

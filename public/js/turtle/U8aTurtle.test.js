@@ -1,7 +1,7 @@
 import { globalRunner, urlToName } from '../../test/Runner.js'
-import { combineTurtles, U8aTurtle } from './U8aTurtle.js'
+import { squashTurtle, U8aTurtle } from './U8aTurtle.js'
 
-globalRunner.only.describe(urlToName(import.meta.url), suite => {
+globalRunner.describe(urlToName(import.meta.url), suite => {
   suite.it('constructs correctly', ({ assert }) => {
     console.log('running suite')
     const a = new U8aTurtle(new Uint8Array([0, 1, 2, 3]))
@@ -33,7 +33,7 @@ globalRunner.only.describe(urlToName(import.meta.url), suite => {
       head = new U8aTurtle(new Uint8Array(), head)
     }
 
-    assert.equal(combineTurtles(head).uint8Array, new Uint8Array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9]))
-    assert.equal(combineTurtles(head, 1).uint8Array, new Uint8Array([4, 5, 6, 7, 8, 9]))
+    assert.equal(squashTurtle(head).uint8Array, new Uint8Array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9]))
+    assert.equal(squashTurtle(head, 1).uint8Array, new Uint8Array([4, 5, 6, 7, 8, 9]))
   })
 })

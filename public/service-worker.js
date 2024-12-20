@@ -138,7 +138,7 @@ self.addEventListener('fetch', event => {
       const pointer = getPointerByPublicKey(cpk)
       const extension = url.pathname.split(/\./).pop()
       let file = pointer.lookup(address)
-      console.log(' @@@ trying to add cache for', { address, cpk, extension, fileLength: file?.length })
+      // console.log(' @@@ trying to add cache for', { address, cpk, extension, fileLength: file?.length })
       if (file !== undefined) {
         try {
           if (extension === 'json') {

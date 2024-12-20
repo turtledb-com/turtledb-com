@@ -22,7 +22,6 @@ export class U8aTurtle {
         this.seekLayers.unshift(seekLayer)
         seekLayer = seekLayer.seekLayers[0]
       }
-      console.log(this.height, this.seekLayers.map(layer => layer.height))
     } else {
       this.offset = 0
       this.height = 0
@@ -74,7 +73,7 @@ export class U8aTurtle {
   }
 }
 
-export function combineTurtles (u8aTurtle, downToHeight = 0) {
+export function squashTurtle (u8aTurtle, downToHeight = 0) {
   if (downToHeight > u8aTurtle.height || downToHeight < 0) throw new Error('downToHeight out of range')
   const uint8Arrays = new Array(1 + u8aTurtle.height - downToHeight)
   let index = u8aTurtle

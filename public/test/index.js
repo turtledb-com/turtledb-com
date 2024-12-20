@@ -28,7 +28,7 @@ pointer.recaller.watch('load-tests', async () => {
       const importPath = `/${path}?address=${fsRefs[path]}&cpk=${defaultCPK}&head=${pointer.length - 1}`
       try {
         await import(importPath)
-        console.log({ importPath })
+        // console.log({ importPath })
       } catch (error) {
         globalRunner.describe(urlToName(importPath), suite => {
           suite.it(`import error: ${error.message}`, () => { throw error })
