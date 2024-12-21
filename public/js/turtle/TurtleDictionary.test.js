@@ -1,10 +1,10 @@
 import { globalRunner, urlToName } from '../../test/Runner.js'
 import { Commit } from './codecs.js'
-import { DictionaryTurtle } from './DictionaryTurtle.js'
+import { TurtleDictionary } from './TurtleDictionary.js'
 
 globalRunner.describe(urlToName(import.meta.url), suite => {
   suite.it('encodes and decodes', ({ assert }) => {
-    const dictionaryTurtle = new DictionaryTurtle('codec test')
+    const dictionary = new TurtleDictionary('codec test')
     const arrayWithX = ['a', 'b', 'c']
     arrayWithX.x = 'def'
     const values = [
@@ -27,32 +27,32 @@ globalRunner.describe(urlToName(import.meta.url), suite => {
     ]
     for (const value of values) {
       // console.log('value', value)
-      const address = dictionaryTurtle.upsert(value)
+      const address = dictionary.upsert(value)
       // console.log('address', address)
-      const recovered = dictionaryTurtle.lookup(address)
+      const recovered = dictionary.lookup(address)
       // console.log('recovered', recovered)
       assert.equal(recovered, value, `decoded value (${recovered}) should equal original value (${value})`)
     }
   })
   suite.it('handles decoding as ref', ({ assert }) => {
-    const dictionaryTurtle = new DictionaryTurtle('asRef test')
-    const aAddress = dictionaryTurtle.upsert(123)
-    const ab123Address = dictionaryTurtle.upsert({ a: 123, b: 456 })
-    const ab123Refs = dictionaryTurtle.lookup(ab123Address, { asRef: true })
+    const dictionary = new TurtleDictionary('asRef test')
+    const aAddress = dictionary.upsert(123)
+    const ab123Address = dictionary.upsert({ a: 123, b: 456 })
+    const ab123Refs = dictionary.lookup(ab123Address, { asRef: true })
     assert.equal(ab123Refs.a, aAddress)
-    const setAddress = dictionaryTurtle.upsert(new Set([123]))
-    const setRef = dictionaryTurtle.lookup(setAddress, { asRef: true })
+    const setAddress = dictionary.upsert(new Set([123]))
+    const setRef = dictionary.lookup(setAddress, { asRef: true })
     assert.equal(setRef, new Set([aAddress]))
   })
   suite.it('handles commit objects and does not hash opaque data', ({ assert }) => {
-    const dictionaryTurtle = new DictionaryTurtle('signature test')
+    const dictionary = new TurtleDictionary('signature test')
     const signature = new Uint8Array([...new Array(64)].map((_, i) => i))
-    const a = dictionaryTurtle.upsert(new Commit({ a: 1 }, signature))
-    const b = dictionaryTurtle.upsert(new Commit({ a: 1 }, signature))
-    assert.equal(dictionaryTurtle.lookup(a), dictionaryTurtle.lookup(b))
-    assert.equal(dictionaryTurtle.lookup(a, 'signature'), signature)
-    assert.equal(dictionaryTurtle.lookup(a, 'value'), { a: 1 })
-    assert.equal(dictionaryTurtle.lookup(a, 'value', 'a'), 1)
+    const a = dictionary.upsert(new Commit({ a: 1 }, signature))
+    const b = dictionary.upsert(new Commit({ a: 1 }, signature))
+    assert.equal(dictionary.lookup(a), dictionary.lookup(b))
+    assert.equal(dictionary.lookup(a, 'signature'), signature)
+    assert.equal(dictionary.lookup(a, 'value'), { a: 1 })
+    assert.equal(dictionary.lookup(a, 'value', 'a'), 1)
     assert.notEqual(a, b)
   })
 })

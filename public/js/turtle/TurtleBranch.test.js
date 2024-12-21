@@ -1,10 +1,10 @@
 import { globalRunner, urlToName } from '../../test/Runner.js'
 import { handleNextTick } from '../utils/nextTick.js'
-import { U8aTurtleBranch } from './U8aTurtleBranch.js'
+import { TurtleBranch } from './TurtleBranch.js'
 
 globalRunner.describe(urlToName(import.meta.url), suite => {
   suite.it('passes through U8aTurtle changes', ({ assert }) => {
-    const branch = new U8aTurtleBranch('branch')
+    const branch = new TurtleBranch('branch')
     const heights = []
     branch.recaller.watch('heights', () => {
       heights.push(branch.height)

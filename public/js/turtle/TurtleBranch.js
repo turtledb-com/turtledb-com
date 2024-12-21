@@ -1,7 +1,7 @@
 import { Recaller } from '../utils/Recaller.js'
 import { squashTurtle, U8aTurtle } from './U8aTurtle.js'
 
-export class U8aTurtleBranch {
+export class TurtleBranch {
   #u8aTurtle
   /**
    *

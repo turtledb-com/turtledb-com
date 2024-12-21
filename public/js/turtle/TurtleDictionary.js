@@ -1,8 +1,8 @@
 import { codecs, codecVersionByFooter } from './codecs.js'
-import { U8aTurtleBranch } from './U8aTurtleBranch.js'
+import { TurtleBranch } from './TurtleBranch.js'
 import { ValueByUint8Array } from './utils.js'
 
-export class DictionaryTurtle extends U8aTurtleBranch {
+export class TurtleDictionary extends TurtleBranch {
   #valueByUint8Array = new ValueByUint8Array()
   constructor (name, recaller, u8aTurtle) {
     super(name, recaller, u8aTurtle)
