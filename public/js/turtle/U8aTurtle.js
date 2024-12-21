@@ -73,14 +73,27 @@ export class U8aTurtle {
     return this.uint8Array.slice(this.remapAddress(start), this.remapAddress(end, true))
   }
 
-  lookup (address) {
-    const u8aTurtle = this.findParentByAddress(address)
-    const footer = u8aTurtle.getByte(address)
-    const codecVersion = codecVersionByFooter[footer]
-    const width = codecVersion.width
-    const uint8Array = u8aTurtle.slice(address - width, address)
-    const value = codecVersion.codec.decode(uint8Array, codecVersion, u8aTurtle)
-    return value
+  /**
+   * @param  {[optional_address:number, ...path:Array.<string>, optional_options:import('./codecs.js').DecodeOptions]} path
+   * @returns {any}
+   */
+  lookup (...path) {
+    let address = this.length - 1
+    if (typeof path[0] === 'number') address = path.shift()
+    /** @type {import('./codecs.js').DecodeOptions} */
+    let options
+    if (/object|undefined/.test(typeof path[path.length - 1])) options = path.pop()
+    let u8aTurtle = this
+    while (path.length) {
+      u8aTurtle = u8aTurtle.findParentByAddress(address)
+      const codecVersion = codecVersionByFooter[u8aTurtle.getByte(address)]
+      const ref = codecVersion.decode(u8aTurtle, address, { asRef: true })
+      if (!Object.hasOwn(ref, path[0])) return
+      address = ref[path.shift()]
+    }
+    u8aTurtle = u8aTurtle.findParentByAddress(address)
+    const codecVersion = codecVersionByFooter[u8aTurtle.getByte(address)]
+    return codecVersion.decode(u8aTurtle, address, options)
   }
 }
 

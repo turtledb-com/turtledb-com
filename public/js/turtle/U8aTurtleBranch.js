@@ -32,5 +32,9 @@ export class U8aTurtleBranch {
   slice (start, end) { return this.u8aTurtle?.findParentByAddress?.(start)?.slice?.(start, end) }
   squash (downToHeight) { this.u8aTurtle = squashTurtle(this.u8aTurtle, downToHeight) }
   append (uint8Array) { this.u8aTurtle = new U8aTurtle(uint8Array, this.u8aTurtle) }
-  lookup (address) { return this.u8aTurtle?.lookup?.(address) }
+  /**
+   * @param  {[optional_address:number, ...path:Array.<string>, optional_options:import('./codecs.js').DecodeOptions]} path
+   * @returns {any}
+   */
+  lookup (...path) { return this.u8aTurtle?.lookup?.(...path) }
 }

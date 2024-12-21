@@ -20,6 +20,8 @@ globalRunner.only.describe(urlToName(import.meta.url), suite => {
       new Date(), new Date(0), new Date(2000000000000),
       0n, -0n, 0xfffffffffffffffffffffffffffffffn, -0xfffffffffffffffffffffffffffffffn,
       {}, { a: 1, b: 2 },
+      new Map(), new Map([[1, 2], ['a', 'b'], [null, undefined]]),
+      new Set(), new Set([2, 3, 4]),
       lipsum
     ]
     for (const value of values) {
@@ -30,6 +32,16 @@ globalRunner.only.describe(urlToName(import.meta.url), suite => {
       // console.log('recovered', recovered)
       assert.equal(recovered, value, `decoded value (${recovered}) should equal original value (${value})`)
     }
+  })
+  suite.it('handles decoding as ref', ({ assert }) => {
+    const dictionaryTurtle = new DictionaryTurtle('asRef test')
+    const aAddress = dictionaryTurtle.upsert(123)
+    const ab123Address = dictionaryTurtle.upsert({ a: 123, b: 456 })
+    const ab123Refs = dictionaryTurtle.lookup(ab123Address, { asRef: true })
+    assert.equal(ab123Refs.a, aAddress)
+    const setAddress = dictionaryTurtle.upsert(new Set([123]))
+    const setRef = dictionaryTurtle.lookup(setAddress, { asRef: true })
+    assert.equal(setRef, new Set([aAddress]))
   })
 })
 

@@ -6,14 +6,33 @@ const addressVersions = maxAddressBytes - minAddressBytes + 1
 const maxWordLength = 4
 const wordLengthVersions = maxWordLength + 1
 
-const ksVsToPairs = ksVs => {
+/** @type {Array.<CodecVersion>} */
+export const codecVersionByFooter = []
+
+/** @type {Object.<string, Codec>} */
+export const codecs = {}
+
+/**
+ * @typedef DecodeOptions
+ * @property {boolean} asRef
+ */
+
+/**
+ * @param {Array} ksVs
+ * @param {import('./U8aTurtle.js').U8aTurtle} u8aTurtle
+ * @param {DecodeOptions} options
+ * @returns
+ */
+const ksVsToEntries = (ksVs, u8aTurtle, options) => {
   const length = ksVs.length / 2
+  if (options?.asRef) {
+    return ksVs.slice(0, length).map((k, i) => [u8aTurtle.lookup(k), ksVs[length + i]])
+  }
   return ksVs.slice(0, length).map((k, i) => [k, ksVs[length + i]])
 }
 
 class CodecVersion {
   /**
-   *
    * @param {Codec} codec
    * @param {number} combinedVersion
    */
@@ -23,17 +42,26 @@ class CodecVersion {
     this.subVersions = toSubVersions(combinedVersion, codec.subVersionCounts)
     this.width = codec.getWidth(this)
   }
-}
 
-/** @type {Array.<CodecVersion>} */
-export const codecVersionByFooter = []
+  /**
+   * @param {import('./U8aTurtle.js').U8aTurtle} u8aTurtle
+   * @param {number} address
+   * @param {DecodeOptions} options
+   */
+  decode (u8aTurtle, address, options) {
+    const width = this.width
+    const uint8Array = u8aTurtle.slice(address - width, address)
+    const value = this.codec.decode(uint8Array, this, u8aTurtle, options)
+    return value
+  }
+}
 
 class Codec {
   /**
    * @param {{
    *  name: string,
    *  test: (value:any) => boolean,
-   *  decode: (uint8Array: Uint8Array, codecVersion: CodecVersion, u8aTurtle: import('./U8aTurtle.js').U8aTurtle) => any,
+   *  decode: (uint8Array: Uint8Array, codecVersion: CodecVersion, u8aTurtle: import('./U8aTurtle.js').U8aTurtle, options: DecodeOptions) => any,
    *  encode: (value: any, codec: Codec, dictionaryTurtle: DictionaryTurtle) => Uint8Array,
    *  getWidth: (codecVersion: CodecVersion) => number,
    *  subVersionCounts: Array.<number>,
@@ -54,27 +82,40 @@ class Codec {
     }
   }
 
+  /**
+   * @param {Array.<number>} subVersions
+   * @returns number
+   */
   footerFromSubVersions (subVersions) {
     return this.footerByVersion[toCombinedVersion(subVersions, this.subVersionCounts)]
   }
 }
 
 class TreeNode {
-  constructor (left, right) {
-    this.left = left
-    this.right = right
+  /**
+   * @param {number} leftAddress
+   * @param {number} rightAddress
+   * @param {import('./U8aTurtle.js').U8aTurtle;} u8aTurtle
+   * @param {DecodeOptions} options
+   */
+  constructor (leftAddress, rightAddress, u8aTurtle, options) {
+    this.leftAddress = leftAddress
+    this.rightAddress = rightAddress
+    this.u8aTurtle = u8aTurtle
+    this.options = options
   }
 
   * inOrder () {
-    if (this.left instanceof TreeNode) yield * this.left.inOrder()
-    else yield this.left
-    if (this.right instanceof TreeNode) yield * this.right.inOrder()
-    else yield this.right
+    const left = this.u8aTurtle.lookup(this.leftAddress, this.options)
+    if (left instanceof TreeNode) yield * left.inOrder()
+    else if (this.options?.asRef) yield this.leftAddress
+    else yield left
+    const right = this.u8aTurtle.lookup(this.rightAddress, this.options)
+    if (right instanceof TreeNode) yield * right.inOrder()
+    else if (this.options?.asRef) yield this.rightAddress
+    else yield right
   }
 }
-
-/** @type {Object.<string, Codec>} */
-export const codecs = {}
 
 export const UNDEFINED = 'undefined'
 codecs[UNDEFINED] = new Codec({
@@ -231,11 +272,12 @@ export const NONEMPTY_ARRAY = 'array(length>1)'
 codecs[NONEMPTY_ARRAY] = new Codec({
   name: NONEMPTY_ARRAY,
   test: value => Array.isArray(value),
-  decode: (uint8Array, codecVersion, u8aTurtle) => {
-    const treeNode = u8aTurtle.lookup(decodeNumberFromU8a(uint8Array))
+  decode: (uint8Array, codecVersion, u8aTurtle, options) => {
+    const address = decodeNumberFromU8a(uint8Array)
+    const treeNode = u8aTurtle.lookup(address, options)
     if (codecVersion.subVersions[1]) return Object.assign([], treeNode)
     if (treeNode instanceof TreeNode) return [...treeNode.inOrder()]
-    return [treeNode]
+    return options?.asRef ? [address] : [treeNode]
   },
   encode: (value, codec, dictionaryTurtle) => {
     let address
@@ -251,12 +293,52 @@ codecs[NONEMPTY_ARRAY] = new Codec({
   subVersionCounts: [addressVersions, 2]
 })
 
+export const SET = 'set'
+codecs[SET] = new Codec({
+  name: SET,
+  test: value => value instanceof Set,
+  decode: (uint8Array, _codecVersion, u8aTurtle, options) => {
+    return new Set(u8aTurtle.lookup(decodeNumberFromU8a(uint8Array), options))
+  },
+  encode: (value, codec, dictionaryTurtle) => {
+    const objectAsArray = [...value.values()]
+    const address = encodeNumberToU8a(dictionaryTurtle.upsert(objectAsArray), minAddressBytes)
+    return combineUint8ArrayLikes([address, codec.footerFromSubVersions([address.length - minAddressBytes])])
+  },
+  getWidth: codecVersion => codecVersion.subVersions[0] + minAddressBytes,
+  subVersionCounts: [addressVersions]
+})
+
+export const MAP = 'map'
+codecs[MAP] = new Codec({
+  name: MAP,
+  test: value => value instanceof Map,
+  decode: (uint8Array, _codecVersion, u8aTurtle, options) => {
+    return new Map(ksVsToEntries(
+      u8aTurtle.lookup(decodeNumberFromU8a(uint8Array), options),
+      u8aTurtle,
+      options
+    ))
+  },
+  encode: (value, codec, dictionaryTurtle) => {
+    const objectAsArray = [...value.keys(), ...value.values()]
+    const address = encodeNumberToU8a(dictionaryTurtle.upsert(objectAsArray), minAddressBytes)
+    return combineUint8ArrayLikes([address, codec.footerFromSubVersions([address.length - minAddressBytes])])
+  },
+  getWidth: codecVersion => codecVersion.subVersions[0] + minAddressBytes,
+  subVersionCounts: [addressVersions]
+})
+
 export const OBJECT = 'object'
 codecs[OBJECT] = new Codec({
   name: OBJECT,
   test: value => typeof value === 'object',
-  decode: (uint8Array, _codecVersion, u8aTurtle) => {
-    return Object.fromEntries(ksVsToPairs(u8aTurtle.lookup(decodeNumberFromU8a(uint8Array))))
+  decode: (uint8Array, _codecVersion, u8aTurtle, options) => {
+    return Object.fromEntries(ksVsToEntries(
+      u8aTurtle.lookup(decodeNumberFromU8a(uint8Array), options),
+      u8aTurtle,
+      options
+    ))
   },
   encode: (value, codec, dictionaryTurtle) => {
     const objectAsArray = [...Object.keys(value), ...Object.values(value)]
@@ -271,11 +353,11 @@ export const TREE_NODE = 'tree-node'
 codecs[TREE_NODE] = new Codec({
   name: TREE_NODE,
   test: value => Array.isArray(value) && value.length > 1,
-  decode: (uint8Array, codecVersion, u8aTurtle) => {
+  decode: (uint8Array, codecVersion, u8aTurtle, options) => {
     const [leftAddressLength] = codecVersion.subVersions
     const leftAddress = decodeNumberFromU8a(uint8Array.slice(0, leftAddressLength + minAddressBytes))
     const rightAddress = decodeNumberFromU8a(uint8Array.slice(leftAddressLength + minAddressBytes))
-    return new TreeNode(u8aTurtle.lookup(leftAddress), u8aTurtle.lookup(rightAddress))
+    return new TreeNode(leftAddress, rightAddress, u8aTurtle, options)
   },
   encode: (value, codec, dictionaryTurtle) => {
     const leftLength = 2 ** (31 - Math.clz32(value.length - 1))
