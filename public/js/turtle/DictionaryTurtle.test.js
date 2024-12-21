@@ -1,4 +1,5 @@
 import { globalRunner, urlToName } from '../../test/Runner.js'
+import { Commit } from './codecs.js'
 import { DictionaryTurtle } from './DictionaryTurtle.js'
 
 globalRunner.only.describe(urlToName(import.meta.url), suite => {
@@ -42,6 +43,25 @@ globalRunner.only.describe(urlToName(import.meta.url), suite => {
     const setAddress = dictionaryTurtle.upsert(new Set([123]))
     const setRef = dictionaryTurtle.lookup(setAddress, { asRef: true })
     assert.equal(setRef, new Set([aAddress]))
+  })
+  suite.it('handles commit objects', ({ assert }) => {
+    assert.equal(2 + 2, 5)
+  })
+  suite.it('does not hash opaque data', ({ assert }) => {
+    const dictionaryTurtle = new DictionaryTurtle('signature test')
+    const signature = new Uint8Array([...new Array(64)].map((_, i) => i))
+    const a = dictionaryTurtle.upsert(new Commit({ a: 1 }, signature))
+    const b = dictionaryTurtle.upsert(new Commit({ a: 1 }, signature))
+    console.log(a, b)
+    console.log(dictionaryTurtle.lookup(a))
+    console.log(dictionaryTurtle.lookup(a, 'signature'))
+    console.log(dictionaryTurtle.lookup(a, 'value'))
+    console.log(dictionaryTurtle.lookup(a, 'value', 'a'))
+    console.log('---')
+    console.log(dictionaryTurtle.lookup(a, { asRef: true }))
+    console.log(dictionaryTurtle.lookup(a, 'value', { asRef: true }))
+    assert.notEqual(a, b)
+    console.log(dictionaryTurtle.lookup(17))
   })
 })
 

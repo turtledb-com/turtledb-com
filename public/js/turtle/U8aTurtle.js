@@ -91,6 +91,7 @@ export class U8aTurtle {
       if (!Object.hasOwn(ref, path[0])) return
       address = ref[path.shift()]
     }
+    if (address instanceof Uint8Array) return address
     u8aTurtle = u8aTurtle.findParentByAddress(address)
     const codecVersion = codecVersionByFooter[u8aTurtle.getByte(address)]
     return codecVersion.decode(u8aTurtle, address, options)

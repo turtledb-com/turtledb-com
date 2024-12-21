@@ -15,23 +15,29 @@ export class DictionaryTurtle extends U8aTurtleBranch {
     this.lexicograph(start)
   }
 
+  #cache = (uint8Array, address, codec) => {
+    if (codec.isOpaque) return console.log(codec)
+    this.#valueByUint8Array.set(uint8Array, address)
+  }
+
   lexicograph (start = 0, end = this.length - 1) {
     let address = end
     let u8aTurtle = this.u8aTurtle
     while (u8aTurtle) {
       while (address > start && address > u8aTurtle.offset) {
         const footer = this.getByte(address)
-        if (!codecVersionByFooter[footer]) {
+        const codecVersion = codecVersionByFooter[footer]
+        if (!codecVersion) {
           console.error({ address, footer })
           throw new Error('no decoder for footer')
         }
-        const width = codecVersionByFooter[footer].width
+        const width = codecVersion.width
         const uint8Array = this.slice(address - width, address)
         if (this.#valueByUint8Array.get(uint8Array) !== undefined) {
           console.error({ address, footer, uint8Array, width })
           throw new Error('uint8Array already stored')
         }
-        this.#valueByUint8Array.set(uint8Array, address)
+        this.#cache(uint8Array, address, codecVersion.codec)
         address -= width
       }
       u8aTurtle = u8aTurtle.parent
@@ -49,7 +55,7 @@ export class DictionaryTurtle extends U8aTurtleBranch {
     if (address === undefined) {
       super.append(uint8Array)
       address = this.length - 1
-      this.#valueByUint8Array.set(uint8Array, address)
+      this.#cache(uint8Array, address, codec)
     }
     return address
   }

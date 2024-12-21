@@ -12,6 +12,17 @@ export const codecVersionByFooter = []
 /** @type {Object.<string, Codec>} */
 export const codecs = {}
 
+export class Commit {
+  /**
+   * @param {Object} value
+   * @param {Uint8Array} signature
+   */
+  constructor (value, signature) {
+    this.value = value
+    this.signature = signature
+  }
+}
+
 /**
  * @typedef DecodeOptions
  * @property {boolean} asRef
@@ -65,15 +76,17 @@ class Codec {
    *  encode: (value: any, codec: Codec, dictionaryTurtle: DictionaryTurtle) => Uint8Array,
    *  getWidth: (codecVersion: CodecVersion) => number,
    *  subVersionCounts: Array.<number>,
+   *  isOpaque: boolean
    * }}
    */
-  constructor ({ name, test, decode, encode, getWidth, subVersionCounts }) {
+  constructor ({ name, test, decode, encode, getWidth, subVersionCounts, isOpaque }) {
     this.name = name
     this.test = test
     this.decode = decode
     this.encode = encode
     this.getWidth = getWidth
     this.subVersionCounts = subVersionCounts
+    this.isOpaque = isOpaque
     this.versionCount = toVersionCount(subVersionCounts)
     this.footerByVersion = new Array(this.versionCount)
     for (let combinedVersion = 0; combinedVersion < this.versionCount; ++combinedVersion) {
@@ -327,6 +340,28 @@ codecs[MAP] = new Codec({
   },
   getWidth: codecVersion => codecVersion.subVersions[0] + minAddressBytes,
   subVersionCounts: [addressVersions]
+})
+
+export const COMMIT = 'COMMIT'
+codecs[COMMIT] = new Codec({
+  name: COMMIT,
+  test: value => value instanceof Commit,
+  decode: (uint8Array, _codecVersion, u8aTurtle, options) => {
+    const address = decodeNumberFromU8a(uint8Array.slice(0, -64))
+    let value
+    if (options?.asRef) value = address
+    else value = u8aTurtle.lookup(address, options)
+    console.log(value)
+    const signature = uint8Array.slice(-64)
+    return new Commit(value, signature)
+  },
+  encode: (value, codec, dictionaryTurtle) => {
+    const address = encodeNumberToU8a(dictionaryTurtle.upsert(value.value), minAddressBytes)
+    return combineUint8ArrayLikes([address, value.signature, codec.footerFromSubVersions([address.length - minAddressBytes])])
+  },
+  getWidth: codecVersion => codecVersion.subVersions[0] + minAddressBytes + 64,
+  subVersionCounts: [addressVersions],
+  isOpaque: true
 })
 
 export const OBJECT = 'object'
