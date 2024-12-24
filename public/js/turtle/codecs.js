@@ -26,21 +26,40 @@ export class Commit {
 
 /**
  * @typedef CodecOptions
- * @property {boolean} asRef
+ * @property {boolean} keysAsRefs
+ * @property {boolean} valuesAsRefs
  */
 
 /**
- * @param {Array} ksVs
+ * @param {Array} keysValues
  * @param {import('./U8aTurtle.js').U8aTurtle} u8aTurtle
  * @param {CodecOptions} options
  * @returns
  */
-const ksVsToEntries = (ksVs, u8aTurtle, options) => {
-  const length = ksVs.length / 2
-  if (options?.asRef) {
-    return ksVs.slice(0, length).map((k, i) => [u8aTurtle.lookup(k), ksVs[length + i]])
+const keysValuesToEntries = (keysValues, u8aTurtle, options) => {
+  let keys = keysValues.slice(0, keysValues.length / 2)
+  const values = keysValues.slice(keys.length)
+  if (options?.valuesAsRefs) keys = keys.map(key => u8aTurtle.lookup(key))
+  return keys.map((key, index) => [key, values[index]])
+  const length = keysValues.length / 2
+  if (options?.valuesAsRefs) {
+    return keysValues.slice(0, length).map((k, i) => [u8aTurtle.lookup(k), keysValues[length + i]])
   }
-  return ksVs.slice(0, length).map((k, i) => [k, ksVs[length + i]])
+  return keysValues.slice(0, length).map((k, i) => [k, keysValues[length + i]])
+}
+
+/**
+ * @param {Array.<[any,any]>} entries
+ * @param {CodecOptions} options
+ */
+const entriesToKeysValues = (entries, options) => {
+  const keys = []
+  const values = []
+  entries.forEach(([key, value]) => {
+    keys.push(key)
+    values.push(value)
+  })
+  return [...keys, ...values]
 }
 
 class CodecVersion {
@@ -122,11 +141,11 @@ export class TreeNode {
   * inOrder () {
     const left = this.u8aTurtle.lookup(this.leftAddress, this.options)
     if (left instanceof TreeNode) yield * left.inOrder()
-    else if (this.options?.asRef) yield this.leftAddress
+    else if (this.options?.valuesAsRefs) yield this.leftAddress
     else yield left
     const right = this.u8aTurtle.lookup(this.rightAddress, this.options)
     if (right instanceof TreeNode) yield * right.inOrder()
-    else if (this.options?.asRef) yield this.rightAddress
+    else if (this.options?.valuesAsRefs) yield this.rightAddress
     else yield right
   }
 }
@@ -288,21 +307,22 @@ codecs[NONEMPTY_ARRAY] = new Codec({
   decode: (uint8Array, codecVersion, u8aTurtle, options) => {
     const address = decodeNumberFromU8a(uint8Array)
     const treeNode = u8aTurtle.lookup(address, options)
-    if (codecVersion.subVersions[1]) return Object.assign([], treeNode)
+    const isSparse = codecVersion.subVersions[1]
+    if (isSparse) return Object.assign([], treeNode)
     if (treeNode instanceof TreeNode) return [...treeNode.inOrder().map(address => u8aTurtle.lookup(address, options))]
-    return options?.asRef ? [address] : [treeNode]
+    return options?.valuesAsRefs ? [address] : [treeNode]
   },
   encode: (value, codec, dictionary, options) => {
     let address
-    let sparse = 0
+    let isSparse = 0
     if (JSON.stringify(Object.keys(value)) !== JSON.stringify(Object.keys([...value]))) {
       address = encodeNumberToU8a(dictionary.upsert(Object.assign({}, value, { length: value.length }), [codecs[OBJECT]], options))
-      sparse = 1
+      isSparse = 1
     } else if (value.length === 1) {
-      if (options?.asRef) address = value[0]
+      if (options?.valuesAsRefs) address = value[0]
       else address = encodeNumberToU8a(dictionary.upsert(value[0], undefined, options), minAddressBytes)
     } else address = encodeNumberToU8a(dictionary.upsert(value.map(v => dictionary.upsert(v)), [codecs[TREE_NODE]], options), minAddressBytes)
-    return combineUint8ArrayLikes([address, codec.footerFromSubVersions([address.length - minAddressBytes, sparse])])
+    return combineUint8ArrayLikes([address, codec.footerFromSubVersions([address.length - minAddressBytes, isSparse])])
   },
   getWidth: codecVersion => codecVersion.subVersions[0] + minAddressBytes,
   subVersionCounts: [addressVersions, 2]
@@ -329,14 +349,15 @@ codecs[MAP] = new Codec({
   name: MAP,
   test: value => value instanceof Map,
   decode: (uint8Array, _codecVersion, u8aTurtle, options) => {
-    return new Map(ksVsToEntries(
+    return new Map(keysValuesToEntries(
       u8aTurtle.lookup(decodeNumberFromU8a(uint8Array), options),
       u8aTurtle,
       options
     ))
   },
   encode: (value, codec, dictionary, options) => {
-    const objectAsArray = [...value.keys(), ...value.values()]
+    const objectAsArray = entriesToKeysValues(value.entries(), options)
+    // const objectAsArray = [...value.keys(), ...value.values()]
     const address = encodeNumberToU8a(dictionary.upsert(objectAsArray, undefined, options), minAddressBytes)
     return combineUint8ArrayLikes([address, codec.footerFromSubVersions([address.length - minAddressBytes])])
   },
@@ -351,13 +372,13 @@ codecs[COMMIT] = new Codec({
   decode: (uint8Array, _codecVersion, u8aTurtle, options) => {
     const address = decodeNumberFromU8a(uint8Array.slice(0, -64))
     let value
-    if (options?.asRef) value = address
+    if (options?.valuesAsRefs) value = address
     else value = u8aTurtle.lookup(address, options)
     const signature = uint8Array.slice(-64)
     return new Commit(value, signature)
   },
   encode: (value, codec, dictionary, options) => {
-    const address = options?.asRef ? value.value : encodeNumberToU8a(dictionary.upsert(value.value), minAddressBytes)
+    const address = options?.valuesAsRefs ? value.value : encodeNumberToU8a(dictionary.upsert(value.value), minAddressBytes)
     return combineUint8ArrayLikes([address, value.signature, codec.footerFromSubVersions([address.length - minAddressBytes])])
   },
   getWidth: codecVersion => codecVersion.subVersions[0] + minAddressBytes + 64,
@@ -370,7 +391,7 @@ codecs[OBJECT] = new Codec({
   name: OBJECT,
   test: value => typeof value === 'object',
   decode: (uint8Array, _codecVersion, u8aTurtle, options) => {
-    return Object.fromEntries(ksVsToEntries(
+    return Object.fromEntries(keysValuesToEntries(
       u8aTurtle.lookup(decodeNumberFromU8a(uint8Array), options),
       u8aTurtle,
       options

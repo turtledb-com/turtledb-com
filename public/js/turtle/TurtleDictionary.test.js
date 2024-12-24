@@ -35,29 +35,29 @@ globalRunner.only.describe(urlToName(import.meta.url), suite => {
     }
   })
   suite.it('handles decoding as ref', ({ assert }) => {
-    const dictionary = new TurtleDictionary('asRef test')
+    const dictionary = new TurtleDictionary('valuesAsRefs test')
     const aAddress = dictionary.upsert(123)
     const ab123Address = dictionary.upsert({ a: 123, b: 456 })
-    const ab123Refs = dictionary.lookup(ab123Address, { asRef: true })
+    const ab123Refs = dictionary.lookup(ab123Address, { valuesAsRefs: true })
     assert.equal(ab123Refs.a, aAddress)
     const setAddress = dictionary.upsert(new Set([123]))
-    const setRef = dictionary.lookup(setAddress, { asRef: true })
+    const setRef = dictionary.lookup(setAddress, { valuesAsRefs: true })
     assert.equal(setRef, new Set([aAddress]))
   })
   suite.it('handles encoding as ref', ({ assert }) => {
-    const dictionary = new TurtleDictionary('asRef test')
+    const dictionary = new TurtleDictionary('valuesAsRefs test')
     const a = 123
     const b = 456
     const aAddress = dictionary.upsert(a)
     const bAddress = dictionary.upsert(b)
-    const abAddressFromRef = dictionary.upsert({ a: aAddress, b: bAddress }, [codecs[OBJECT]], { asRef: true })
+    const abAddressFromRef = dictionary.upsert({ a: aAddress, b: bAddress }, [codecs[OBJECT]], { valuesAsRefs: true })
     console.log(abAddressFromRef)
     const abAddress = dictionary.upsert({ a, b })
     assert.equal(abAddress, abAddressFromRef)
-    const abRefs = dictionary.lookup(abAddress, { asRef: true })
+    const abRefs = dictionary.lookup(abAddress, { valuesAsRefs: true })
     assert.equal(abRefs, { a: aAddress, b: bAddress })
     const setAddress = dictionary.upsert(new Set([123]))
-    const setRef = dictionary.lookup(setAddress, { asRef: true })
+    const setRef = dictionary.lookup(setAddress, { valuesAsRefs: true })
     assert.equal(setRef, new Set([aAddress]))
   })
   suite.it('handles commit objects and does not hash opaque data', ({ assert }) => {
