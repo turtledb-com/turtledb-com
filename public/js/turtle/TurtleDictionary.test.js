@@ -1,8 +1,8 @@
 import { globalRunner, urlToName } from '../../test/Runner.js'
-import { Commit } from './codecs.js'
+import { codecs, Commit, OBJECT } from './codecs.js'
 import { TurtleDictionary } from './TurtleDictionary.js'
 
-globalRunner.describe(urlToName(import.meta.url), suite => {
+globalRunner.only.describe(urlToName(import.meta.url), suite => {
   suite.it('encodes and decodes', ({ assert }) => {
     const dictionary = new TurtleDictionary('codec test')
     const arrayWithX = ['a', 'b', 'c']
@@ -44,16 +44,32 @@ globalRunner.describe(urlToName(import.meta.url), suite => {
     const setRef = dictionary.lookup(setAddress, { asRef: true })
     assert.equal(setRef, new Set([aAddress]))
   })
+  suite.it('handles encoding as ref', ({ assert }) => {
+    const dictionary = new TurtleDictionary('asRef test')
+    const a = 123
+    const b = 456
+    const aAddress = dictionary.upsert(a)
+    const bAddress = dictionary.upsert(b)
+    const abAddressFromRef = dictionary.upsert({ a: aAddress, b: bAddress }, [codecs[OBJECT]], { asRef: true })
+    console.log(abAddressFromRef)
+    const abAddress = dictionary.upsert({ a, b })
+    assert.equal(abAddress, abAddressFromRef)
+    const abRefs = dictionary.lookup(abAddress, { asRef: true })
+    assert.equal(abRefs, { a: aAddress, b: bAddress })
+    const setAddress = dictionary.upsert(new Set([123]))
+    const setRef = dictionary.lookup(setAddress, { asRef: true })
+    assert.equal(setRef, new Set([aAddress]))
+  })
   suite.it('handles commit objects and does not hash opaque data', ({ assert }) => {
     const dictionary = new TurtleDictionary('signature test')
     const signature = new Uint8Array([...new Array(64)].map((_, i) => i))
     const a = dictionary.upsert(new Commit({ a: 1 }, signature))
-    const b = dictionary.upsert(new Commit({ a: 1 }, signature))
-    assert.equal(dictionary.lookup(a), dictionary.lookup(b))
     assert.equal(dictionary.lookup(a, 'signature'), signature)
     assert.equal(dictionary.lookup(a, 'value'), { a: 1 })
     assert.equal(dictionary.lookup(a, 'value', 'a'), 1)
+    const b = dictionary.upsert(new Commit({ a: 1 }, signature))
     assert.notEqual(a, b)
+    assert.equal(dictionary.lookup(a), dictionary.lookup(b))
   })
 })
 

@@ -44,13 +44,20 @@ export class TurtleDictionary extends TurtleBranch {
     }
   }
 
-  upsert (value, codecsArray = Object.values(codecs)) {
+  /**
+   *
+   * @param {any} value
+   * @param {Array.<import('./codecs.js').Codec} codecsArray
+   * @param {import('./codecs.js').CodecOptions} options
+   * @returns {number}
+   */
+  upsert (value, codecsArray = Object.values(codecs), options) {
     const codec = codecsArray.find(codec => codec.test(value)) // first match wins
     if (!codec) {
       console.error('no match', value)
       throw new Error('no encoder for value')
     }
-    const uint8Array = codec.encode(value, codec, this)
+    const uint8Array = codec.encode(value, codec, this, options)
     let address = this.#valueByUint8Array.get(uint8Array)
     if (address === undefined) {
       super.append(uint8Array)
