@@ -1,4 +1,4 @@
-import { codecs, codecVersionByFooter } from './codecs.js'
+import { codecs, codecVersionByFooter } from './codecs/codecs.js'
 import { TurtleBranch } from './TurtleBranch.js'
 import { ValueByUint8Array } from './utils.js'
 
@@ -47,8 +47,8 @@ export class TurtleDictionary extends TurtleBranch {
   /**
    *
    * @param {any} value
-   * @param {Array.<import('./codecs.js').Codec} codecsArray
-   * @param {import('./codecs.js').CodecOptions} options
+   * @param {Array.<import('./codecs/codecs.js').Codec} codecsArray
+   * @param {import('./codecs/codecs.js').CodecOptions} options
    * @returns {number}
    */
   upsert (value, codecsArray = Object.values(codecs), options) {

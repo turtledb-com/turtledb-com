@@ -1,5 +1,6 @@
 import { globalRunner, urlToName } from '../../test/Runner.js'
-import { codecs, Commit, OBJECT } from './codecs.js'
+import { codecs, OBJECT } from './codecs/codecs.js'
+import { Commit } from './codecs/Commit.js'
 import { TurtleDictionary } from './TurtleDictionary.js'
 
 globalRunner.only.describe(urlToName(import.meta.url), suite => {

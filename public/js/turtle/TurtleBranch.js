@@ -33,7 +33,7 @@ export class TurtleBranch {
   squash (downToHeight) { this.u8aTurtle = squashTurtle(this.u8aTurtle, downToHeight) }
   append (uint8Array) { this.u8aTurtle = new U8aTurtle(uint8Array, this.u8aTurtle) }
   /**
-   * @param  {[optional_address:number, ...path:Array.<string>, optional_options:import('./codecs.js').CodecOptions]} path
+   * @param  {[optional_address:number, ...path:Array.<string>, optional_options:import('./codecs/codecs.js').CodecOptions]} path
    * @returns {any}
    */
   lookup (...path) { return this.u8aTurtle?.lookup?.(...path) }
