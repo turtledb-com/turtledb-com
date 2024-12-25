@@ -175,16 +175,18 @@ codecs[NONEMPTY_ARRAY] = new Codec({
   test: value => Array.isArray(value),
   decode: (uint8Array, codecVersion, u8aTurtle, options) => {
     const address = decodeNumberFromU8a(uint8Array)
-    const treeNode = u8aTurtle.lookup(address, options)
-    const isSparse = codecVersion.subVersions[1]
-    if (isSparse) return Object.assign([], treeNode)
+    if (codecVersion.subVersions[1]) { // is sparse array
+      const arrayAsObject = u8aTurtle.lookup(address, options)
+      return Object.assign([], arrayAsObject)
+    }
+    const treeNode = u8aTurtle.lookup(address)
     if (treeNode instanceof TreeNode) return [...treeNode.inOrder(u8aTurtle).map(address => u8aTurtle.lookup(address, options))]
     return options?.valuesAsRefs ? [address] : [treeNode]
   },
   encode: (value, codec, dictionary, options) => {
     let address
     let isSparse = 0
-    if (JSON.stringify(Object.keys(value)) !== JSON.stringify(Object.keys([...value]))) {
+    if (JSON.stringify(Object.keys(value)) !== JSON.stringify(Object.keys([...value]))) { // is sparse array
       address = encodeNumberToU8a(dictionary.upsert(Object.assign({}, value, { length: value.length }), [codecs[OBJECT]], options))
       isSparse = 1
     } else if (value.length === 1) {
