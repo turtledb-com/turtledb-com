@@ -239,15 +239,14 @@ codecs[MAP] = new Codec({
   test: value => value instanceof Map,
   decode: (uint8Array, _codecVersion, u8aTurtle, options) => {
     return new Map(objectRefsToEntries(
-      u8aTurtle.lookup(decodeNumberFromU8a(uint8Array), options),
+      u8aTurtle.lookup(decodeNumberFromU8a(uint8Array)),
       u8aTurtle,
       options
     ))
   },
   encode: (value, codec, dictionary, options) => {
-    const objectAsArray = entriesToObjectRefs(value.entries(), options)
-    // const objectAsArray = [...value.keys(), ...value.values()]
-    const address = dictionary.upsert(objectAsArray, undefined, options)
+    const objectRefs = entriesToObjectRefs(value.entries(), dictionary, options)
+    const address = dictionary.upsert(objectRefs)
     return encodeAddress(codec, address, minAddressBytes)
   },
   getWidth: codecVersion => codecVersion.subVersions[0] + minAddressBytes,
@@ -281,14 +280,14 @@ codecs[OBJECT] = new Codec({
   test: value => typeof value === 'object',
   decode: (uint8Array, _codecVersion, u8aTurtle, options) => {
     return Object.fromEntries(objectRefsToEntries(
-      u8aTurtle.lookup(decodeNumberFromU8a(uint8Array), options),
+      u8aTurtle.lookup(decodeNumberFromU8a(uint8Array)),
       u8aTurtle,
       options
     ))
   },
   encode: (value, codec, dictionary, options) => {
-    const objectAsArray = [...Object.keys(value), ...Object.values(value)]
-    const address = dictionary.upsert(objectAsArray, undefined, options)
+    const objectRefs = entriesToObjectRefs(Object.entries(value), dictionary, options)
+    const address = dictionary.upsert(objectRefs)
     return encodeAddress(codec, address, minAddressBytes)
   },
   getWidth: codecVersion => codecVersion.subVersions[0] + minAddressBytes,

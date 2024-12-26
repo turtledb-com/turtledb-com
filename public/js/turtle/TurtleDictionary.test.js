@@ -1,7 +1,5 @@
 import { globalRunner, urlToName } from '../../test/Runner.js'
 import { AS_REFS } from './codecs/Codec.js'
-import { codecs, OBJECT } from './codecs/codecs.js'
-import { Commit } from './codecs/Commit.js'
 import { TurtleDictionary } from './TurtleDictionary.js'
 
 globalRunner.only.describe(urlToName(import.meta.url), suite => {
@@ -31,9 +29,7 @@ globalRunner.only.describe(urlToName(import.meta.url), suite => {
       lipsum
     ]
     for (const value of values) {
-      // console.log('value', value)
       const address = dictionary.upsert(value)
-      // console.log('address', address)
       // console.log({ value, address })
       const recovered = dictionary.lookup(address)
       // console.log('recovered', recovered)
@@ -54,6 +50,11 @@ globalRunner.only.describe(urlToName(import.meta.url), suite => {
     assert.equal(abSetAddress, dictionary.upsert(new Set(['a', 'b'])))
     assert.equal(dictionary.lookup(abSetAddress), new Set(['a', 'b']))
     assert.equal(dictionary.lookup(abSetAddress, AS_REFS), new Set([aAddress, bAddress]))
+  })
+  suite.it('handles refs for objects and maps', ({ assert }) => {
+    const dictionary = new TurtleDictionary('array ref test')
+    const aAddress = dictionary.upsert('a')
+    const bAddress = dictionary.upsert('b')
   })
 })
 

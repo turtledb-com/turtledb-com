@@ -79,22 +79,26 @@ export class CodecVersion {
  */
 export const objectRefsToEntries = (objectRefs, u8aTurtle, options) => {
   let keyRefs = objectRefs.slice(0, objectRefs.length / 2)
-  const valueRefs = objectRefs.slice(keyRefs.length)
-  if (options.valuesAsRefs) keyRefs = keyRefs.map(key => u8aTurtle.lookup(key))
+  let valueRefs = objectRefs.slice(keyRefs.length)
+  if (!options.keysAsRefs) keyRefs = keyRefs.map(key => u8aTurtle.lookup(key))
+  if (!options.valuesAsRefs) valueRefs = valueRefs.map(value => u8aTurtle.lookup(value))
   return keyRefs.map((key, index) => [key, valueRefs[index]])
 }
 
 /**
  * @param {Array.<[any,any]>} entries
+ * @param {import('../TurtleDictionary.js').TurtleDictionary} dictionary
  * @param {CodecOptions} options
  */
-export const entriesToObjectRefs = (entries, options) => {
-  const keyRefs = []
-  const valueRefs = []
+export const entriesToObjectRefs = (entries, dictionary, options) => {
+  let keyRefs = []
+  let valueRefs = []
   entries.forEach(([key, value]) => {
     keyRefs.push(key)
     valueRefs.push(value)
   })
+  if (!options.keysAsRefs) keyRefs = keyRefs.map(key => dictionary.upsert(key))
+  if (!options.valuesAsRefs) valueRefs = valueRefs.map(value => dictionary.upsert(value))
   return [...keyRefs, ...valueRefs]
 }
 
