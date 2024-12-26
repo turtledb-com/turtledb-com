@@ -226,7 +226,7 @@ codecs[SET] = new Codec({
   },
   encode: (value, codec, dictionary, options) => {
     const objectAsArray = [...value.values()]
-    const address = dictionary.upsert(objectAsArray, undefined, options)
+    const address = dictionary.upsert(objectAsArray, [codecs[EMPTY_ARRAY], codecs[NONEMPTY_ARRAY]], options)
     return encodeAddress(codec, address, minAddressBytes)
   },
   getWidth: codecVersion => codecVersion.subVersions[0] + minAddressBytes,

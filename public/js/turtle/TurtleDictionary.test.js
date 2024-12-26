@@ -49,6 +49,10 @@ globalRunner.only.describe(urlToName(import.meta.url), suite => {
     assert.equal(dictionary.lookup(abAddress), ['a', 'b'])
     const abRefs = dictionary.lookup(abAddress, { valuesAsRefs: true })
     assert.equal(abRefs, [aAddress, bAddress])
+    const abSetAddress = dictionary.upsert(new Set([aAddress, bAddress]), undefined, { valuesAsRefs: true })
+    assert.equal(abSetAddress, dictionary.upsert(new Set(['a', 'b'])))
+    assert.equal(dictionary.lookup(abSetAddress), new Set(['a', 'b']))
+    assert.equal(dictionary.lookup(abSetAddress, { valuesAsRefs: true }), new Set([aAddress, bAddress]))
   })
   // suite.it('handles decoding as ref', ({ assert }) => {
   //   const dictionary = new TurtleDictionary('valuesAsRefs test')
