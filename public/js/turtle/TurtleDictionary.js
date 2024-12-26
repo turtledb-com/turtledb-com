@@ -45,13 +45,12 @@ export class TurtleDictionary extends TurtleBranch {
   }
 
   /**
-   *
    * @param {any} value
    * @param {Array.<import('./codecs/codecs.js').Codec} codecsArray
-   * @param {import('./codecs/codecs.js').CodecOptions} options
+   * @param {import('./codecs/Codec.js').CodecOptions} options
    * @returns {number}
    */
-  upsert (value, codecsArray = Object.values(codecs), options) {
+  upsert (value, codecsArray = Object.values(codecs), options = { keysAsRefs: false, valuesAsRefs: false }) {
     const codec = codecsArray.find(codec => codec.test(value)) // first match wins
     if (!codec) {
       console.error('no match', value)

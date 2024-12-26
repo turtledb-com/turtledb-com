@@ -1,4 +1,4 @@
-import { toCombinedVersion, toSubVersions, toVersionCount } from '../utils.js'
+import { combineUint8ArrayLikes, encodeNumberToU8a, toCombinedVersion, toSubVersions, toVersionCount } from '../utils.js'
 import { codecVersionByFooter } from './codecs.js'
 
 /**
@@ -61,7 +61,7 @@ export class CodecVersion {
    * @param {number} address
    * @param {import('./Codec.js').CodecOptions} options
    */
-  decode (u8aTurtle, address, options) {
+  decode (u8aTurtle, address, options = { keysAsRefs: false, valuesAsRefs: false }) {
     const width = this.width
     const uint8Array = u8aTurtle.slice(address - width, address)
     const value = this.codec.decode(uint8Array, this, u8aTurtle, options)
@@ -94,4 +94,10 @@ export const entriesToObjectRefs = (entries, options) => {
     valueRefs.push(value)
   })
   return [...keyRefs, ...valueRefs]
+}
+
+export function encodeAddress (codec, address, minAddressBytes, ...subversions) {
+  const u8aAddress = encodeNumberToU8a(address, minAddressBytes)
+  const footer = codec.footerFromSubVersions([u8aAddress.length - minAddressBytes, ...subversions])
+  return combineUint8ArrayLikes([u8aAddress, footer])
 }

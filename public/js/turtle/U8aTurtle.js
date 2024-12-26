@@ -74,13 +74,13 @@ export class U8aTurtle {
   }
 
   /**
-   * @param  {[optional_address:number, ...path:Array.<string>, optional_options:import('./codecs/codecs.js').CodecOptions]} path
+   * @param  {[optional_address:number, ...path:Array.<string>, optional_options:import('./codecs/Codec.js').CodecOptions]} path
    * @returns {any}
    */
   lookup (...path) {
     let address = this.length - 1
     if (typeof path[0] === 'number') address = path.shift()
-    /** @type {import('./codecs/codecs.js').CodecOptions} */
+    /** @type {import('./codecs/Codec.js').CodecOptions} */
     let options
     if (/object|undefined/.test(typeof path[path.length - 1])) options = path.pop()
     let u8aTurtle = this
@@ -95,6 +95,11 @@ export class U8aTurtle {
     u8aTurtle = u8aTurtle.findParentByAddress(address)
     const codecVersion = codecVersionByFooter[u8aTurtle.getByte(address)]
     return codecVersion.decode(u8aTurtle, address, options)
+  }
+
+  getCodecName (address = this.length - 1) {
+    const footer = this.findParentByAddress(address).getByte(address)
+    return codecVersionByFooter[footer]?.codec?.name
   }
 }
 

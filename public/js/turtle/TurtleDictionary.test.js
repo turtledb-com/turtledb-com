@@ -39,6 +39,14 @@ globalRunner.only.describe(urlToName(import.meta.url), suite => {
       assert.equal(recovered, value, `decoded value (${recovered}) should equal original value (${value})`)
     }
   })
+  suite.it('handles refs for non-sparse arrays and sets', ({ assert }) => {
+    const dictionary = new TurtleDictionary('array ref test')
+    const aAddress = dictionary.lookup('a')
+    const bAddress = dictionary.lookup('b')
+    const abAddressByRefs = dictionary.lookup([aAddress, bAddress], { valuesAsRefs: true })
+    const abAddress = dictionary.lookup(['a', 'b'])
+    assert.equal(abAddressByRefs, abAddress)
+  })
   // suite.it('handles decoding as ref', ({ assert }) => {
   //   const dictionary = new TurtleDictionary('valuesAsRefs test')
   //   const aAddress = dictionary.upsert(123)
