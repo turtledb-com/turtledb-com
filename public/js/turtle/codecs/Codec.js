@@ -97,7 +97,8 @@ export const entriesToObjectRefs = (entries, dictionary, options) => {
     keyRefs.push(key)
     valueRefs.push(value)
   })
-  if (!options.keysAsRefs) keyRefs = keyRefs.map(key => dictionary.upsert(key))
+  if (options.keysAsRefs) keyRefs = keyRefs.map(key => +key)
+  else keyRefs = keyRefs.map(key => dictionary.upsert(key))
   if (!options.valuesAsRefs) valueRefs = valueRefs.map(value => dictionary.upsert(value))
   return [...keyRefs, ...valueRefs]
 }

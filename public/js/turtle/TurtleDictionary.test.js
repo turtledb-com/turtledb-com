@@ -55,6 +55,16 @@ globalRunner.only.describe(urlToName(import.meta.url), suite => {
     const dictionary = new TurtleDictionary('array ref test')
     const aAddress = dictionary.upsert('a')
     const bAddress = dictionary.upsert('b')
+    const cAddress = dictionary.upsert('c')
+    const abAllRefs = { [aAddress]: aAddress, [bAddress]: cAddress }
+    const abAllRefsAddress = dictionary.upsert(abAllRefs, undefined, { keysAsRefs: true, valuesAsRefs: true })
+    console.log({ abAllRefs, abAllRefsAddress })
+    const recoveredAb = dictionary.lookup(abAllRefsAddress)
+    assert.equal(recoveredAb, { a: 'a', b: 'c' })
+    const recoveredAbAllRefs = dictionary.lookup(abAllRefsAddress, { keysAsRefs: true, valuesAsRefs: true })
+    assert.equal(recoveredAbAllRefs, abAllRefs)
+    const recoveredAbRefs = dictionary.lookup(abAllRefsAddress, AS_REFS)
+    assert.equal(recoveredAbRefs, { a: aAddress, b: cAddress })
   })
 })
 
