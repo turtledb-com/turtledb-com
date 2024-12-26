@@ -6,6 +6,8 @@ import { codecVersionByFooter } from './codecs.js'
  * @property {boolean} keysAsRefs
  * @property {boolean} valuesAsRefs
  */
+export const AS_REFS = { keysAsRefs: false, valuesAsRefs: true }
+export const DEREFERENCE = { keysAsRefs: false, valuesAsRefs: false }
 
 export class Codec {
   /**
@@ -61,7 +63,7 @@ export class CodecVersion {
    * @param {number} address
    * @param {import('./Codec.js').CodecOptions} options
    */
-  decode (u8aTurtle, address, options = { keysAsRefs: false, valuesAsRefs: false }) {
+  decode (u8aTurtle, address, options = DEREFERENCE) {
     const width = this.width
     const uint8Array = u8aTurtle.slice(address - width, address)
     const value = this.codec.decode(uint8Array, this, u8aTurtle, options)
@@ -78,7 +80,7 @@ export class CodecVersion {
 export const objectRefsToEntries = (objectRefs, u8aTurtle, options) => {
   let keyRefs = objectRefs.slice(0, objectRefs.length / 2)
   const valueRefs = objectRefs.slice(keyRefs.length)
-  if (options?.valuesAsRefs) keyRefs = keyRefs.map(key => u8aTurtle.lookup(key))
+  if (options.valuesAsRefs) keyRefs = keyRefs.map(key => u8aTurtle.lookup(key))
   return keyRefs.map((key, index) => [key, valueRefs[index]])
 }
 

@@ -1,4 +1,5 @@
 import { globalRunner, urlToName } from '../../test/Runner.js'
+import { AS_REFS } from './codecs/Codec.js'
 import { codecs, OBJECT } from './codecs/codecs.js'
 import { Commit } from './codecs/Commit.js'
 import { TurtleDictionary } from './TurtleDictionary.js'
@@ -43,54 +44,17 @@ globalRunner.only.describe(urlToName(import.meta.url), suite => {
     const dictionary = new TurtleDictionary('array ref test')
     const aAddress = dictionary.upsert('a')
     const bAddress = dictionary.upsert('b')
-    const abAddressByRefs = dictionary.upsert([aAddress, bAddress], undefined, { valuesAsRefs: true })
+    const abAddressByRefs = dictionary.upsert([aAddress, bAddress], undefined, AS_REFS)
     const abAddress = dictionary.upsert(['a', 'b'])
     assert.equal(abAddressByRefs, abAddress)
     assert.equal(dictionary.lookup(abAddress), ['a', 'b'])
-    const abRefs = dictionary.lookup(abAddress, { valuesAsRefs: true })
+    const abRefs = dictionary.lookup(abAddress, AS_REFS)
     assert.equal(abRefs, [aAddress, bAddress])
-    const abSetAddress = dictionary.upsert(new Set([aAddress, bAddress]), undefined, { valuesAsRefs: true })
+    const abSetAddress = dictionary.upsert(new Set([aAddress, bAddress]), undefined, AS_REFS)
     assert.equal(abSetAddress, dictionary.upsert(new Set(['a', 'b'])))
     assert.equal(dictionary.lookup(abSetAddress), new Set(['a', 'b']))
-    assert.equal(dictionary.lookup(abSetAddress, { valuesAsRefs: true }), new Set([aAddress, bAddress]))
+    assert.equal(dictionary.lookup(abSetAddress, AS_REFS), new Set([aAddress, bAddress]))
   })
-  // suite.it('handles decoding as ref', ({ assert }) => {
-  //   const dictionary = new TurtleDictionary('valuesAsRefs test')
-  //   const aAddress = dictionary.upsert(123)
-  //   const ab123Address = dictionary.upsert({ a: 123, b: 456 })
-  //   const ab123Refs = dictionary.lookup(ab123Address, { valuesAsRefs: true })
-  //   assert.equal(ab123Refs.a, aAddress)
-  //   const setAddress = dictionary.upsert(new Set([123]))
-  //   const setRef = dictionary.lookup(setAddress, { valuesAsRefs: true })
-  //   assert.equal(setRef, new Set([aAddress]))
-  // })
-  // suite.it('handles encoding as ref', ({ assert }) => {
-  //   const dictionary = new TurtleDictionary('valuesAsRefs test')
-  //   const a = 123
-  //   const b = 456
-  //   const aAddress = dictionary.upsert(a)
-  //   const bAddress = dictionary.upsert(b)
-  //   const abAddressFromRef = dictionary.upsert({ a: aAddress, b: bAddress }, [codecs[OBJECT]], { valuesAsRefs: true })
-  //   console.log(abAddressFromRef)
-  //   const abAddress = dictionary.upsert({ a, b })
-  //   assert.equal(abAddress, abAddressFromRef)
-  //   const abRefs = dictionary.lookup(abAddress, { valuesAsRefs: true })
-  //   assert.equal(abRefs, { a: aAddress, b: bAddress })
-  //   const setAddress = dictionary.upsert(new Set([123]))
-  //   const setRef = dictionary.lookup(setAddress, { valuesAsRefs: true })
-  //   assert.equal(setRef, new Set([aAddress]))
-  // })
-  // suite.it('handles commit objects and does not hash opaque data', ({ assert }) => {
-  //   const dictionary = new TurtleDictionary('signature test')
-  //   const signature = new Uint8Array([...new Array(64)].map((_, i) => i))
-  //   const a = dictionary.upsert(new Commit({ a: 1 }, signature))
-  //   assert.equal(dictionary.lookup(a, 'signature'), signature)
-  //   assert.equal(dictionary.lookup(a, 'value'), { a: 1 })
-  //   assert.equal(dictionary.lookup(a, 'value', 'a'), 1)
-  //   const b = dictionary.upsert(new Commit({ a: 1 }, signature))
-  //   assert.notEqual(a, b)
-  //   assert.equal(dictionary.lookup(a), dictionary.lookup(b))
-  // })
 })
 
 const lipsum = `Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent non sodales felis. Phasellus hendrerit, erat in congue iaculis, quam diam rhoncus ipsum, sit amet iaculis dui neque sed leo. Nullam aliquam, risus sed efficitur convallis, enim odio rutrum sem, eu sagittis velit ex vitae massa. Nulla efficitur, erat sed accumsan hendrerit, nisi eros placerat est, sed porta nisl ipsum ut lorem. Vivamus nec velit sed arcu euismod pretium. Donec porta consequat ipsum, non pretium eros porttitor id. Donec eu turpis tristique, efficitur arcu sit amet, commodo ante. Quisque maximus justo id felis rhoncus bibendum.

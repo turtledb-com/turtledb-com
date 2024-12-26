@@ -261,13 +261,13 @@ codecs[COMMIT] = new Codec({
   decode: (uint8Array, _codecVersion, u8aTurtle, options) => {
     const address = decodeNumberFromU8a(uint8Array.slice(0, -64))
     let value
-    if (options?.valuesAsRefs) value = address
+    if (options.valuesAsRefs) value = address
     else value = u8aTurtle.lookup(address, options)
     const signature = uint8Array.slice(-64)
     return new Commit(value, signature)
   },
   encode: (value, codec, dictionary, options) => {
-    const address = options?.valuesAsRefs ? value.value : encodeNumberToU8a(dictionary.upsert(value.value), minAddressBytes)
+    const address = options.valuesAsRefs ? value.value : encodeNumberToU8a(dictionary.upsert(value.value), minAddressBytes)
     return combineUint8ArrayLikes([address, value.signature, codec.footerFromSubVersions([address.length - minAddressBytes])])
   },
   getWidth: codecVersion => codecVersion.subVersions[0] + minAddressBytes + 64,
