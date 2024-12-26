@@ -41,11 +41,14 @@ globalRunner.only.describe(urlToName(import.meta.url), suite => {
   })
   suite.it('handles refs for non-sparse arrays and sets', ({ assert }) => {
     const dictionary = new TurtleDictionary('array ref test')
-    const aAddress = dictionary.lookup('a')
-    const bAddress = dictionary.lookup('b')
-    const abAddressByRefs = dictionary.lookup([aAddress, bAddress], { valuesAsRefs: true })
-    const abAddress = dictionary.lookup(['a', 'b'])
+    const aAddress = dictionary.upsert('a')
+    const bAddress = dictionary.upsert('b')
+    const abAddressByRefs = dictionary.upsert([aAddress, bAddress], undefined, { valuesAsRefs: true })
+    const abAddress = dictionary.upsert(['a', 'b'])
     assert.equal(abAddressByRefs, abAddress)
+    assert.equal(dictionary.lookup(abAddress), ['a', 'b'])
+    const abRefs = dictionary.lookup(abAddress, { valuesAsRefs: true })
+    assert.equal(abRefs, [aAddress, bAddress])
   })
   // suite.it('handles decoding as ref', ({ assert }) => {
   //   const dictionary = new TurtleDictionary('valuesAsRefs test')
