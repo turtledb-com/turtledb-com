@@ -1,5 +1,6 @@
 import { globalRunner, urlToName } from '../../test/Runner.js'
 import { AS_REFS } from './codecs/Codec.js'
+import { Commit } from './codecs/Commit.js'
 import { TurtleDictionary } from './TurtleDictionary.js'
 
 globalRunner.only.describe(urlToName(import.meta.url), suite => {
@@ -65,6 +66,25 @@ globalRunner.only.describe(urlToName(import.meta.url), suite => {
     assert.equal(recoveredAbAllRefs, abAllRefs)
     const recoveredAbRefs = dictionary.lookup(abAllRefsAddress, AS_REFS)
     assert.equal(recoveredAbRefs, { a: aAddress, b: cAddress })
+  })
+  suite.it('handles commits', ({ assert }) => {
+    const dictionary = new TurtleDictionary('array ref test')
+    const aAddress = dictionary.upsert('a')
+    const commit = new Commit('a')
+    const commitAddressA = dictionary.upsert(commit)
+    const commitAddressB = dictionary.upsert(commit)
+    assert.notEqual(commitAddressA, commitAddressB)
+    assert.equal(dictionary.lookup(commitAddressA), dictionary.lookup(commitAddressB))
+    const commitRefs = dictionary.lookup(commitAddressA, AS_REFS)
+    assert.equal(commitRefs.value, aAddress)
+    const signature = new Uint8Array([...new Array(64)].map((_, i) => i))
+    const bAddress = dictionary.upsert('b')
+    commit.value = bAddress
+    commit.signature = signature
+    const signedAddress = dictionary.upsert(commit, undefined, AS_REFS)
+    const recoveredSigned = dictionary.lookup(signedAddress)
+    assert.equal(recoveredSigned.signature, signature)
+    assert.equal(recoveredSigned.value, 'b')
   })
 })
 

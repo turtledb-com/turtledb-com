@@ -103,6 +103,13 @@ export const entriesToObjectRefs = (entries, dictionary, options) => {
   return [...keyRefs, ...valueRefs]
 }
 
+/**
+ * @param {Codec} codec
+ * @param {number} address
+ * @param {number} minAddressBytes
+ * @param  {...number} subversions
+ * @returns {Uint8Array}
+ */
 export function encodeAddress (codec, address, minAddressBytes, ...subversions) {
   const u8aAddress = encodeNumberToU8a(address, minAddressBytes)
   const footer = codec.footerFromSubVersions([u8aAddress.length - minAddressBytes, ...subversions])

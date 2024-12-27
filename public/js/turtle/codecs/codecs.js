@@ -257,20 +257,25 @@ export const COMMIT = 'commit'
 codecs[COMMIT] = new Codec({
   name: COMMIT,
   test: value => value instanceof Commit,
-  decode: (uint8Array, _codecVersion, u8aTurtle, options) => {
-    const address = decodeNumberFromU8a(uint8Array.slice(0, -64))
-    let value
-    if (options.valuesAsRefs) value = address
-    else value = u8aTurtle.lookup(address, options)
-    const signature = uint8Array.slice(-64)
+  decode: (uint8Array, codecVersion, u8aTurtle, options) => {
+    const address = decodeNumberFromU8a(uint8Array.slice(0, codecVersion.subVersions[0] + minAddressBytes))
+    let signature
+    if (codecVersion.subVersions[1]) {
+      signature = uint8Array.slice(-64)
+    }
+    const value = options.valuesAsRefs ? address : u8aTurtle.lookup(address)
     return new Commit(value, signature)
   },
   encode: (value, codec, dictionary, options) => {
-    const address = options.valuesAsRefs ? value.value : encodeNumberToU8a(dictionary.upsert(value.value), minAddressBytes)
-    return combineUint8ArrayLikes([address, value.signature, codec.footerFromSubVersions([address.length - minAddressBytes])])
+    const address = options.valuesAsRefs ? value.value : dictionary.upsert(value.value)
+    if (value.signature) {
+      const u8aAddress = encodeNumberToU8a(address, minAddressBytes)
+      return combineUint8ArrayLikes([u8aAddress, value.signature, codec.footerFromSubVersions([u8aAddress.length - minAddressBytes, 1])])
+    }
+    return encodeAddress(codec, address, minAddressBytes, 0)
   },
-  getWidth: codecVersion => codecVersion.subVersions[0] + minAddressBytes + 64,
-  subVersionCounts: [addressVersions],
+  getWidth: codecVersion => codecVersion.subVersions[0] + minAddressBytes + codecVersion.subVersions[1] * 64,
+  subVersionCounts: [addressVersions, 2],
   isOpaque: true
 })
 

@@ -17,7 +17,7 @@ export class TurtleDictionary extends TurtleBranch {
   }
 
   #cache = (uint8Array, address, codec) => {
-    if (codec.isOpaque) return console.log(codec)
+    if (codec.isOpaque) return
     this.#valueByUint8Array.set(uint8Array, address)
   }
 
