@@ -3,7 +3,7 @@ import { AS_REFS } from './codecs/Codec.js'
 import { Commit } from './codecs/Commit.js'
 import { TurtleDictionary } from './TurtleDictionary.js'
 
-globalRunner.only.describe(urlToName(import.meta.url), suite => {
+globalRunner.describe(urlToName(import.meta.url), suite => {
   suite.it('encodes and decodes', ({ assert }) => {
     const dictionary = new TurtleDictionary('codec test')
     const arrayWithX = ['a', 'b', 'c']
@@ -59,7 +59,6 @@ globalRunner.only.describe(urlToName(import.meta.url), suite => {
     const cAddress = dictionary.upsert('c')
     const abAllRefs = { [aAddress]: aAddress, [bAddress]: cAddress }
     const abAllRefsAddress = dictionary.upsert(abAllRefs, undefined, { keysAsRefs: true, valuesAsRefs: true })
-    console.log({ abAllRefs, abAllRefsAddress })
     const recoveredAb = dictionary.lookup(abAllRefsAddress)
     assert.equal(recoveredAb, { a: 'a', b: 'c' })
     const recoveredAbAllRefs = dictionary.lookup(abAllRefsAddress, { keysAsRefs: true, valuesAsRefs: true })

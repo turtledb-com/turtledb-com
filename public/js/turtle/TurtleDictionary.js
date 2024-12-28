@@ -5,6 +5,11 @@ import { ValueByUint8Array } from './utils.js'
 
 export class TurtleDictionary extends TurtleBranch {
   #valueByUint8Array = new ValueByUint8Array()
+  /**
+   * @param {string} name
+   * @param {import('../utils/Recaller.js').Recaller} recaller
+   * @param {import('./U8aTurtle.js').U8aTurtle} u8aTurtle
+   */
   constructor (name, recaller, u8aTurtle) {
     super(name, recaller, u8aTurtle)
     this.lexicograph()

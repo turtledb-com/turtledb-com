@@ -16,6 +16,7 @@ export class TurtleBranch {
     this.#u8aTurtle = u8aTurtle
   }
 
+  /** @type {U8aTurtle} */
   get u8aTurtle () {
     this.recaller.reportKeyAccess(this, 'u8aTurtle', 'get', this.name)
     return this.#u8aTurtle
@@ -26,12 +27,15 @@ export class TurtleBranch {
     this.#u8aTurtle = u8aTurtle
   }
 
+  append (uint8Array) {
+    this.u8aTurtle = new U8aTurtle(uint8Array, this.u8aTurtle)
+  }
+
   get length () { return this.u8aTurtle?.length }
   get height () { return this.u8aTurtle?.height }
   getByte (address) { return this.u8aTurtle?.findParentByAddress?.(address)?.getByte?.(address) }
   slice (start, end) { return this.u8aTurtle?.findParentByAddress?.(start)?.slice?.(start, end) }
   squash (downToHeight) { this.u8aTurtle = squashTurtle(this.u8aTurtle, downToHeight) }
-  append (uint8Array) { this.u8aTurtle = new U8aTurtle(uint8Array, this.u8aTurtle) }
   /**
    * @param  {[optional_address:number, ...path:Array.<string>, optional_options:import('./codecs/Codec.js').CodecOptions]} path
    * @returns {any}

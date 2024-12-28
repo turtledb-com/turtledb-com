@@ -102,15 +102,33 @@ export class U8aTurtle {
     const footer = this.findParentByAddress(address).getByte(address)
     return codecVersionByFooter[footer]?.codec?.name
   }
+
+  /**
+   * @param {number} start
+   * @param {number} end
+   * @returns {Array.<Uint8Array>}
+   */
+  exportUint8Arrays (start = 0, end = this.height) {
+    if (start > this.height || start < 0) throw new Error('start out of range')
+    if (end > this.height || end < 0) throw new Error('end out of range')
+    const uint8Arrays = new Array(1 + end - start)
+    let index = this.findParentByHeight(end)
+    while (index && index.height >= start) {
+      uint8Arrays[index.height - start] = index.uint8Array
+      index = index.parent
+    }
+    return uint8Arrays
+  }
 }
 
+/**
+ * @param {U8aTurtle} u8aTurtle
+ * @param {number} downToHeight
+ * @returns {U8aTurtle}
+ */
 export function squashTurtle (u8aTurtle, downToHeight = 0) {
-  if (downToHeight > u8aTurtle.height || downToHeight < 0) throw new Error('downToHeight out of range')
-  const uint8Arrays = new Array(1 + u8aTurtle.height - downToHeight)
-  let index = u8aTurtle
-  while (index && index.height >= downToHeight) {
-    uint8Arrays[index.height - downToHeight] = index.uint8Array
-    index = index.parent
-  }
-  return new U8aTurtle(combineUint8Arrays(uint8Arrays), index)
+  return new U8aTurtle(
+    combineUint8Arrays(u8aTurtle.exportUint8Arrays(downToHeight)),
+    u8aTurtle.findParentByHeight(downToHeight).parent
+  )
 }
