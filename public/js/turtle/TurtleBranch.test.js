@@ -2,7 +2,7 @@ import { globalRunner, urlToName } from '../../test/Runner.js'
 import { handleNextTick } from '../utils/nextTick.js'
 import { TurtleBranch } from './TurtleBranch.js'
 
-globalRunner.only.describe(urlToName(import.meta.url), suite => {
+globalRunner.describe(urlToName(import.meta.url), suite => {
   suite.it('passes through U8aTurtle changes', ({ assert }) => {
     const branch = new TurtleBranch('branch')
     const heights = []
