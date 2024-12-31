@@ -1,4 +1,4 @@
-import { codecs, codecVersionByFooter, TREE_NODE } from './codecs.js'
+import { codecs, codecVersionByFooter, TREE_NODE } from './internal.js'
 
 export class TreeNode {
   /**

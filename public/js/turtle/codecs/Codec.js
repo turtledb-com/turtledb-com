@@ -1,5 +1,4 @@
 import { combineUint8ArrayLikes, encodeNumberToU8a, toCombinedVersion, toSubVersions, toVersionCount } from '../utils.js'
-import { codecVersionByFooter } from './codecs.js'
 
 /**
  * @typedef CodecOptions
@@ -13,6 +12,7 @@ export class Codec {
   /**
    * @param {{
    *  name: string,
+   *  codecVersionByFooter: Array.<CodecVersion>,
    *  test: (value:any) => boolean,
    *  decode: (uint8Array: Uint8Array, codecVersion: CodecVersion, u8aTurtle: import('../U8aTurtle.js').U8aTurtle, options: CodecOptions) => any,
    *  encode: (value: any, codec: Codec, dictionary: import('../TurtleDictionary.js').TurtleDictionary, options: CodecOptions) => Uint8Array,
@@ -21,7 +21,7 @@ export class Codec {
    *  isOpaque: boolean
    * }}
    */
-  constructor ({ name, test, decode, encode, getWidth, subVersionCounts, isOpaque }) {
+  constructor ({ name, codecVersionByFooter, test, decode, encode, getWidth, subVersionCounts, isOpaque }) {
     this.name = name
     this.test = test
     this.decode = decode
