@@ -1,4 +1,4 @@
-import { codecs, codecVersionByFooter, TREE_NODE } from './internal.js'
+import { codecsByName, codecVersionByFooter, TREE_NODE } from './internal.js'
 
 export class TreeNode {
   /**
@@ -16,7 +16,7 @@ export class TreeNode {
   * inOrder (u8aTurtle) {
     const leftTurtle = u8aTurtle.findParentByAddress(this.leftAddress)
     const leftFooter = leftTurtle.getByte(this.leftAddress)
-    if (codecVersionByFooter[leftFooter].codec === codecs[TREE_NODE]) {
+    if (codecVersionByFooter[leftFooter].codec === codecsByName[TREE_NODE]) {
       const left = leftTurtle.lookup(this.leftAddress)
       yield * left.inOrder(leftTurtle)
     } else {
@@ -24,7 +24,7 @@ export class TreeNode {
     }
     const rightTurtle = u8aTurtle.findParentByAddress(this.rightAddress)
     const rightFooter = rightTurtle.getByte(this.rightAddress)
-    if (codecVersionByFooter[rightFooter].codec === codecs[TREE_NODE]) {
+    if (codecVersionByFooter[rightFooter].codec === codecsByName[TREE_NODE]) {
       const right = rightTurtle.lookup(this.rightAddress)
       yield * right.inOrder(rightTurtle)
     } else {

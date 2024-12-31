@@ -1,5 +1,5 @@
 import { DEREFERENCE } from './codecs/Codec.js'
-import { codecs, codecVersionByFooter } from './codecs/codecs.js'
+import { codecVersionByFooter, encodeValue } from './codecs/codecs.js'
 import { TurtleBranch } from './TurtleBranch.js'
 import { ValueByUint8Array } from './utils.js'
 
@@ -56,13 +56,8 @@ export class TurtleDictionary extends TurtleBranch {
    * @param {import('./codecs/Codec.js').CodecOptions} options
    * @returns {number}
    */
-  upsert (value, codecsArray = Object.values(codecs), options = DEREFERENCE) {
-    const codec = codecsArray.find(codec => codec.test(value)) // first match wins
-    if (!codec) {
-      console.error('no match', value)
-      throw new Error('no encoder for value')
-    }
-    const uint8Array = codec.encode(value, codec, this, options)
+  upsert (value, codecsArray, options = DEREFERENCE) {
+    const { uint8Array, codec } = encodeValue(value, codecsArray, this, options)
     let address = this.#valueByUint8Array.get(uint8Array)
     if (address === undefined) {
       super.append(uint8Array)
