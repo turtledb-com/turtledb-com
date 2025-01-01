@@ -1,5 +1,5 @@
 import { codecVersionByFooter } from './codecs/codecs.js'
-import { AS_REFS } from './codecs/Codec.js'
+import { AS_REFS } from './codecs/CodecType.js'
 import { combineUint8Arrays, zabacaba } from './utils.js'
 
 export class U8aTurtle {
@@ -75,13 +75,13 @@ export class U8aTurtle {
   }
 
   /**
-   * @param  {[optional_address:number, ...path:Array.<string>, optional_options:import('./codecs/Codec.js').CodecOptions]} path
+   * @param  {[optional_address:number, ...path:Array.<string>, optional_options:import('./codecs/CodecType.js').CodecOptions]} path
    * @returns {any}
    */
   lookup (...path) {
     let address = this.length - 1
     if (typeof path[0] === 'number') address = path.shift()
-    /** @type {import('./codecs/Codec.js').CodecOptions} */
+    /** @type {import('./codecs/CodecType.js').CodecOptions} */
     let options
     if (/object|undefined/.test(typeof path[path.length - 1])) options = path.pop()
     let u8aTurtle = this

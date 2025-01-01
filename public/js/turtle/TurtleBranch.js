@@ -85,7 +85,7 @@ export class TurtleBranch {
   slice (start, end) { return this.u8aTurtle?.findParentByAddress?.(start)?.slice?.(start, end) }
   squash (downToHeight) { this.u8aTurtle = squashTurtle(this.u8aTurtle, downToHeight) }
   /**
-   * @param  {[optional_address:number, ...path:Array.<string>, optional_options:import('./codecs/Codec.js').CodecOptions]} path
+   * @param  {[optional_address:number, ...path:Array.<string>, optional_options:import('./codecs/CodecType.js').CodecOptions]} path
    * @returns {any}
    */
   lookup (...path) { return this.u8aTurtle?.lookup?.(...path) }

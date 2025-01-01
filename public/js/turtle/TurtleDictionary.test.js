@@ -1,5 +1,5 @@
 import { globalRunner, urlToName } from '../../test/Runner.js'
-import { AS_REFS } from './codecs/Codec.js'
+import { AS_REFS } from './codecs/CodecType.js'
 import { Commit } from './codecs/Commit.js'
 import { TurtleDictionary } from './TurtleDictionary.js'
 

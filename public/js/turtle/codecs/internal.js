@@ -1,4 +1,5 @@
-export * from './Codec.js'
+export * from './CodecType.js'
+export * from './CodecTypeVersion.js'
 export * from './TreeNode.js'
 export * from './Commit.js'
 export * from './codecs.js'
