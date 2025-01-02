@@ -17,6 +17,13 @@ export class Peer extends TurtleDictionary {
   }
 
   /**
+   * @returns {Connection}
+   */
+  makeConnection () {
+    return { readableStream: this.makeReadableStream(), writableStream: this.remote.makeWritableStream() }
+  }
+
+  /**
    * @param {Connection} connection
    */
   connect (connection) {
