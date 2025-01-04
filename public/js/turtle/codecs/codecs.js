@@ -1,5 +1,8 @@
 import { combineUint8ArrayLikes, combineUint8Arrays, decodeNumberFromU8a, encodeNumberToU8a, toCombinedVersion, toVersionCount } from '../utils.js'
-import { CodecType, TreeNode, Commit, CodecTypeVersion, DEREFERENCE } from './internal.js'
+import { CodecType, DEREFERENCE } from './CodecType.js'
+import { CodecTypeVersion } from './CodecTypeVersion.js'
+import { Commit } from './Commit.js'
+import { TreeNode } from './TreeNode.js'
 
 const minAddressBytes = 1
 const maxAddressBytes = 4
@@ -411,4 +414,4 @@ export function encodeValue (value, codecsArray = allCodecsArray, dictionary, op
   return { uint8Array, codec }
 }
 
-console.log(codecVersionByFooter.map((codecVersion, index) => `${index}: { name: "${codecVersion.codec.name}", width: ${codecVersion.width}, subVersions: ${JSON.stringify(codecVersion.subVersions)} }`).join('\n'))
+console.log(codecVersionByFooter.map((codecVersion, index) => `${index}: { name: "${codecVersion.codecType.name}", width: ${codecVersion.width}, subVersions: ${JSON.stringify(codecVersion.subVersions)} }`).join('\n'))

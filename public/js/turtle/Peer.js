@@ -1,3 +1,4 @@
+import { Recaller } from '../utils/Recaller.js'
 import { TurtleBranch } from './TurtleBranch.js'
 import { TurtleDictionary } from './TurtleDictionary.js'
 
@@ -14,20 +15,41 @@ import { TurtleDictionary } from './TurtleDictionary.js'
  * @property {TurtleBranch} remoteBranch
  */
 
-export class Peer extends TurtleDictionary {
+export class Peer {
   /** @type {Array.<{localDictionary: TurtleBranch, remoteBranch: TurtleBranch, connection: Duplex>} */
   connections = []
 
-  constructor (name) {
-    super(name)
+  localBranches = {}
+  remoteBranches = {}
+
+  /**
+   * @param {string} name
+   * @param {Recaller} recaller
+   */
+  constructor (name, recaller = new Recaller(name)) {
+    this.name = name
+    this.recaller = recaller
+
     this.recaller.watch('handle remote updates', () => {
       this.recaller.reportKeyAccess(this, 'connection', 'update', this.name)
+      this.recaller.reportKeyAccess(this, 'localBranches', 'update', this.name)
       this.connections.forEach(connection => {
         const localState = connection.localDictionary.lookup()
         const remoteState = connection.remoteBranch.lookup()
         console.log({ localState, remoteState })
       })
     })
+  }
+
+  /**
+   *
+   * @param {TurtleBranch} turtleBranch
+   * @param {string} name
+   */
+  addBranch (turtleBranch, name = turtleBranch.name) {
+    if (this.localBranches[name]) throw new Error('branch name already exists')
+    this.recaller.reportKeyMutation(this, 'localBranches', 'addBranch', this.name)
+    this.localBranches[name] = turtleBranch
   }
 
   /**

@@ -43,7 +43,7 @@ export class TurtleDictionary extends TurtleBranch {
           console.error({ address, footer, uint8Array, width })
           throw new Error('uint8Array already stored')
         }
-        this.#cache(uint8Array, address, codecVersion.codec)
+        this.#cache(uint8Array, address, codecVersion.codecType)
         address -= width
       }
       u8aTurtle = u8aTurtle.parent

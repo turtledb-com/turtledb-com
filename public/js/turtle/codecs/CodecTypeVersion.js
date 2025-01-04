@@ -3,14 +3,14 @@ import { DEREFERENCE } from './CodecType.js'
 
 export class CodecTypeVersion {
   /**
-   * @param {CodecType} codec
+   * @param {CodecType} codecType
    * @param {number} combinedVersion
    */
-  constructor (codec, combinedVersion) {
-    this.codec = codec
+  constructor (codecType, combinedVersion) {
+    this.codecType = codecType
     this.combinedVersion = combinedVersion
-    this.subVersions = toSubVersions(combinedVersion, codec.subVersionCounts)
-    this.width = codec.getWidth(this)
+    this.subVersions = toSubVersions(combinedVersion, codecType.subVersionCounts)
+    this.width = codecType.getWidth(this)
   }
 
   /**
@@ -21,7 +21,7 @@ export class CodecTypeVersion {
   decode (u8aTurtle, address, options = DEREFERENCE) {
     const width = this.width
     const uint8Array = u8aTurtle.slice(address - width, address)
-    const value = this.codec.decode(uint8Array, this, u8aTurtle, options)
+    const value = this.codecType.decode(uint8Array, this, u8aTurtle, options)
     return value
   }
 }
