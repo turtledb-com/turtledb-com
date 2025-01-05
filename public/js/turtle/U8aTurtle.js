@@ -1,4 +1,4 @@
-import { codecVersionByFooter } from './codecs/codecs.js'
+import { codec } from './codecs/codec.js'
 import { AS_REFS } from './codecs/CodecType.js'
 import { combineUint8Arrays, zabacaba } from './utils.js'
 
@@ -87,20 +87,20 @@ export class U8aTurtle {
     let u8aTurtle = this
     while (path.length) {
       u8aTurtle = u8aTurtle.findParentByAddress(address)
-      const codecVersion = codecVersionByFooter[u8aTurtle.getByte(address)]
+      const codecVersion = codec.getCodecTypeVersion(u8aTurtle.getByte(address))
       const ref = codecVersion.decode(u8aTurtle, address, AS_REFS)
       if (!Object.hasOwn(ref, path[0])) return
       address = ref[path.shift()]
     }
     if (address instanceof Uint8Array) return address
     u8aTurtle = u8aTurtle.findParentByAddress(address)
-    const codecVersion = codecVersionByFooter[u8aTurtle.getByte(address)]
+    const codecVersion = codec.getCodecTypeVersion(u8aTurtle.getByte(address))
     return codecVersion.decode(u8aTurtle, address, options)
   }
 
   getCodecName (address = this.length - 1) {
     const footer = this.findParentByAddress(address).getByte(address)
-    return codecVersionByFooter[footer]?.codecType?.name
+    return codec.getCodecTypeVersion(footer)?.codecType?.name
   }
 
   /**

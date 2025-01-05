@@ -1,5 +1,5 @@
 import { DEREFERENCE } from './codecs/CodecType.js'
-import { codecVersionByFooter, encodeValue } from './codecs/codecs.js'
+import { codec } from './codecs/codec.js'
 import { TurtleBranch } from './TurtleBranch.js'
 import { ValueByUint8Array } from './utils.js'
 
@@ -32,7 +32,7 @@ export class TurtleDictionary extends TurtleBranch {
     while (u8aTurtle) {
       while (address > start && address > u8aTurtle.offset) {
         const footer = this.getByte(address)
-        const codecVersion = codecVersionByFooter[footer]
+        const codecVersion = codec.getCodecTypeVersion(footer)
         if (!codecVersion) {
           console.error({ address, footer })
           throw new Error('no decoder for footer')
@@ -57,12 +57,12 @@ export class TurtleDictionary extends TurtleBranch {
    * @returns {number}
    */
   upsert (value, codecsArray, options = DEREFERENCE) {
-    const { uint8Array, codec } = encodeValue(value, codecsArray, this, options)
+    const { uint8Array, codecType } = codec.encodeValue(value, codecsArray, this, options)
     let address = this.#valueByUint8Array.get(uint8Array)
     if (address === undefined) {
       super.append(uint8Array)
       address = this.length - 1
-      this.#cache(uint8Array, address, codec)
+      this.#cache(uint8Array, address, codecType)
     }
     return address
   }

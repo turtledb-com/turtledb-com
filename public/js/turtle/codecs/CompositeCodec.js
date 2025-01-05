@@ -1,20 +1,32 @@
 import { toCombinedVersion, toVersionCount } from '../utils.js'
-import { CodecType } from './CodecType.js'
+import { CodecType, DEREFERENCE } from './CodecType.js'
 import { CodecTypeVersion } from './CodecTypeVersion.js'
 
-export class CodecSwitch {
+export class CompositeCodec {
+  /** @type {Array.<CodecType>} */
+  codecTypes = []
   /** @type {Object.<string, CodecType>} */
   codecTypesByName = {}
   /** @type {Array.<CodecTypeVersion>} */
   codecTypeVersionsByFooter = []
   /** @type {Map.<CodecType, Array} */
-  footerByCodecAndCombinedVersions = new Map()
+  footerByCodecTypeAndCombinedVersions = new Map()
+
+  encodeValue (value, codecsArray = this.codecTypes, dictionary, options = DEREFERENCE) {
+    const codecType = codecsArray.find(codecType => codecType.test(value)) // first match wins
+    if (!codecType) {
+      console.error('no match', value)
+      throw new Error('no encoder for value')
+    }
+    const uint8Array = codecType.encode(value, codecType, dictionary, options)
+    return { uint8Array, codecType }
+  }
 
   getCodecTypeVersion (footer) { return this.codecTypeVersionsByFooter[footer] }
   getCodecType (name) { return this.codecTypesByName[name] }
-  getFooter (codec, subVersions) {
-    const footerByCombinedVersions = this.footerByCodecAndCombinedVersions.get(codec)
-    const combinedVersion = toCombinedVersion(subVersions, codec.subVersionCounts)
+  getFooter (codecType, subVersions) {
+    const footerByCombinedVersions = this.footerByCodecTypeAndCombinedVersions.get(codecType)
+    const combinedVersion = toCombinedVersion(subVersions, codecType.subVersionCounts)
     return footerByCombinedVersions[combinedVersion]
   }
 
@@ -31,15 +43,16 @@ export class CodecSwitch {
    * }} properties
    */
   addCodecType (properties) {
-    const codec = new CodecType(properties)
+    const codecType = new CodecType(properties)
     const versionCount = toVersionCount(properties.subVersionCounts)
     const footerByVersion = new Array(versionCount)
     for (let combinedVersion = 0; combinedVersion < versionCount; ++combinedVersion) {
       const footer = this.codecTypeVersionsByFooter.length
       footerByVersion[combinedVersion] = footer
-      this.codecTypeVersionsByFooter.push(new CodecTypeVersion(codec, combinedVersion))
+      this.codecTypeVersionsByFooter.push(new CodecTypeVersion(codecType, combinedVersion))
     }
-    this.footerByCodecAndCombinedVersions.set(codec, footerByVersion)
-    this.codecTypesByName[properties.name] = codec
+    this.footerByCodecTypeAndCombinedVersions.set(codecType, footerByVersion)
+    this.codecTypesByName[properties.name] = codecType
+    this.codecTypes.push(codecType)
   }
 }
