@@ -21,8 +21,8 @@ export class TurtleDictionary extends TurtleBranch {
     this.lexicograph(start)
   }
 
-  #cache = (uint8Array, address, codec) => {
-    if (codec.isOpaque) return
+  #cache = (uint8Array, address, codecType) => {
+    if (codecType.isOpaque) return
     this.#valueByUint8Array.set(uint8Array, address)
   }
 

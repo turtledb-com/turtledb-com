@@ -366,4 +366,4 @@ codec.addCodecType({
   subVersionCounts: [addressVersions, addressVersions]
 })
 
-console.log(codec.codecTypeVersionsByFooter.map((codecVersion, index) => `${index}: { name: "${codecVersion.codecType.name}", width: ${codecVersion.width}, subVersions: ${JSON.stringify(codecVersion.subVersions)} }`).join('\n'))
+console.log(codec.codecTypeVersionsByFooter.map((codecVersion, index) => `${index}: { name: "${codecVersion.codecType.name}", subVersions: ${JSON.stringify(codecVersion.subVersions)} }`).join('\n'))
