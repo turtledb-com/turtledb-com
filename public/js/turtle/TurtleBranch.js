@@ -33,8 +33,9 @@ export class TurtleBranch {
   append (uint8Array) {
     this.u8aTurtle = new U8aTurtle(uint8Array, this.u8aTurtle)
     const controllers = this.#readableByteStreamControllers
+    const encodedLength = new Uint32Array([uint8Array.length])
     controllers.forEach(controller => controller.enqueue(
-      combineUint8ArrayLikes([new Uint32Array([uint8Array.length]), uint8Array])
+      combineUint8ArrayLikes([encodedLength, uint8Array])
     ))
   }
 
@@ -68,7 +69,6 @@ export class TurtleBranch {
     const appender = this
     return new WritableStream({
       write (chunk) {
-        console.log(chunk)
         inProgress = combineUint8Arrays([inProgress, chunk])
         if (inProgress.length < 4) return
         totalLength = new Uint32Array(inProgress.slice(0, 4).buffer)[0]

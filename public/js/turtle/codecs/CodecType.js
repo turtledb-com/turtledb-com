@@ -11,9 +11,9 @@ export class CodecType {
    * @param {{
    *  name: string,
    *  test: (value:any) => boolean,
-   *  decode: (uint8Array: Uint8Array, codecVersion: import('./CodecTypeVersion.js').CodecTypeVersion, u8aTurtle: import('../U8aTurtle.js').U8aTurtle, options: CodecOptions) => any,
+   *  decode: (uint8Array: Uint8Array, codecTypeVersion: import('./CodecTypeVersion.js').CodecTypeVersion, u8aTurtle: import('../U8aTurtle.js').U8aTurtle, options: CodecOptions) => any,
    *  encode: (value: any, codec: CodecType, dictionary: import('../TurtleDictionary.js').TurtleDictionary, options: CodecOptions) => Uint8Array,
-   *  getWidth: (codecVersion: import('./CodecTypeVersion.js').CodecTypeVersion) => number,
+   *  getWidth: (codecTypeVersion: import('./CodecTypeVersion.js').CodecTypeVersion, u8aTurtle: import('../U8aTurtle.js').U8aTurtle, index: number) => number,
    *  subVersionCounts: Array.<number>,
    *  isOpaque: boolean
    * }}

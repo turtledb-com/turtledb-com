@@ -1,4 +1,5 @@
 import { combineUint8ArrayLikes, combineUint8Arrays, decodeNumberFromU8a, encodeNumberToU8a } from '../utils.js'
+import { CodecType } from './CodecType.js'
 import { Commit } from './Commit.js'
 import { CompositeCodec } from './CompositeCodec.js'
 import { TreeNode } from './TreeNode.js'
@@ -15,7 +16,7 @@ const TypedArrays = [Uint8Array, Int8Array, Uint8ClampedArray, Int16Array, Uint1
 /**
  * @param {Array} objectRefs
  * @param {import('../U8aTurtle.js').U8aTurtle} u8aTurtle
- * @param {CodecOptions} options
+ * @param {import('./CodecType.js').CodecOptions} options
  * @returns {Array.<[any, any]>}
  */
 const objectRefsToEntries = (objectRefs, u8aTurtle, options) => {
@@ -29,7 +30,7 @@ const objectRefsToEntries = (objectRefs, u8aTurtle, options) => {
 /**
  * @param {Array.<[any,any]>} entries
  * @param {import('../TurtleDictionary.js').TurtleDictionary} dictionary
- * @param {CodecOptions} options
+ * @param {import('./CodecType.js').CodecOptions} options
  * @returns {Array}
  */
 const entriesToObjectRefs = (entries, dictionary, options) => {
@@ -59,57 +60,57 @@ function encodeAddress (codecType, address, minAddressBytes, ...subversions) {
 }
 
 export const UNDEFINED = 'undefined'
-codec.addCodecType({
+codec.addCodecType(new CodecType({
   name: UNDEFINED,
   test: value => value === undefined,
   decode: (_uint8Array, _codecVersion, _dictionary) => undefined,
   encode: (_value, codecType, _dictionary) => new Uint8Array([codec.getFooter(codecType, [0])]),
   getWidth: () => 0,
   subVersionCounts: [1]
-})
+}))
 
 export const NULL = 'null'
-codec.addCodecType({
+codec.addCodecType(new CodecType({
   name: NULL,
   test: value => value === null,
   decode: (_uint8Array, _codecVersion, _dictionary) => null,
   encode: (_value, codecType, _dictionary) => new Uint8Array([codec.getFooter(codecType, [0])]),
   getWidth: () => 0,
   subVersionCounts: [1]
-})
+}))
 
 export const FALSE = 'boolean(false)'
-codec.addCodecType({
+codec.addCodecType(new CodecType({
   name: FALSE,
   test: value => value === false,
   decode: (_uint8Array, _codecVersion, _dictionary) => false,
   encode: (_value, codecType, _dictionary) => new Uint8Array([codec.getFooter(codecType, [0])]),
   getWidth: () => 0,
   subVersionCounts: [1]
-})
+}))
 
 export const TRUE = 'boolean(true)'
-codec.addCodecType({
+codec.addCodecType(new CodecType({
   name: TRUE,
   test: value => value === true,
   decode: (_uint8Array, _codecVersion, _dictionary) => true,
   encode: (_value, codecType, _dictionary) => new Uint8Array([codec.getFooter(codecType, [0])]),
   getWidth: () => 0,
   subVersionCounts: [1]
-})
+}))
 
 export const NUMBER = 'number'
-codec.addCodecType({
+codec.addCodecType(new CodecType({
   name: NUMBER,
   test: value => typeof value === 'number',
   decode: (uint8Array, _codecVersion, _dictionary) => new Float64Array(uint8Array.buffer)[0],
   encode: (value, codecType, _dictionary) => combineUint8ArrayLikes([new Float64Array([value]), codec.getFooter(codecType, [0])]),
   getWidth: () => 8,
   subVersionCounts: [1]
-})
+}))
 
 export const STRING = 'string'
-codec.addCodecType({
+codec.addCodecType(new CodecType({
   name: STRING,
   test: value => typeof value === 'string',
   decode: (uint8Array, _codecVersion, u8aTurtle) => {
@@ -123,20 +124,20 @@ codec.addCodecType({
   },
   getWidth: codecVersion => codecVersion.subVersions[0] + minAddressBytes,
   subVersionCounts: [addressVersions]
-})
+}))
 
 export const DATE = 'date'
-codec.addCodecType({
+codec.addCodecType(new CodecType({
   name: DATE,
   test: value => value instanceof Date,
   decode: (uint8Array, _codecVersion, _dictionary) => new Date(new Float64Array(uint8Array.buffer)[0]),
   encode: (value, codecType, _dictionary) => combineUint8ArrayLikes([new Float64Array([value.getTime()]), codec.getFooter(codecType, [0])]),
   getWidth: () => 8,
   subVersionCounts: [1]
-})
+}))
 
 export const BIGINT = 'bigint'
-codec.addCodecType({
+codec.addCodecType(new CodecType({
   name: BIGINT,
   test: value => typeof value === 'bigint',
   decode: (uint8Array, codecVersion, u8aTurtle) => {
@@ -155,20 +156,20 @@ codec.addCodecType({
   },
   getWidth: codecVersion => codecVersion.subVersions[0] + minAddressBytes,
   subVersionCounts: [addressVersions, 2]
-})
+}))
 
 export const WORD = 'word (<= 4-bytes)'
-codec.addCodecType({
+codec.addCodecType(new CodecType({
   name: WORD,
   test: value => value instanceof Uint8Array && value.length < wordLengthVersions,
   decode: (uint8Array, _codecVersion, _dictionary) => uint8Array,
   encode: (value, codecType, _dictionary) => combineUint8ArrayLikes([value, codec.getFooter(codecType, [value.length])]),
   getWidth: codecVersion => codecVersion.subVersions[0],
   subVersionCounts: [wordLengthVersions]
-})
+}))
 
 export const TYPED_ARRAY = 'typed array'
-codec.addCodecType({
+codec.addCodecType(new CodecType({
   name: TYPED_ARRAY,
   test: value => (value instanceof Object.getPrototypeOf(Uint8Array)),
   decode: (uint8Array, codecVersion, u8aTurtle) => {
@@ -204,20 +205,20 @@ codec.addCodecType({
   },
   getWidth: codecVersion => codecVersion.subVersions[0] + minAddressBytes,
   subVersionCounts: [addressVersions, TypedArrays.length]
-})
+}))
 
 export const EMPTY_ARRAY = 'array(length==0)'
-codec.addCodecType({
+codec.addCodecType(new CodecType({
   name: EMPTY_ARRAY,
   test: value => Array.isArray(value) && value.length === 0,
   decode: (_uint8Array, _codecVersion, _dictionary) => [],
   encode: (_value, codecType, _dictionary) => new Uint8Array([codec.getFooter(codecType, [0])]),
   getWidth: () => 0,
   subVersionCounts: [1]
-})
+}))
 
 export const NONEMPTY_ARRAY = 'array(length>1)'
-codec.addCodecType({
+codec.addCodecType(new CodecType({
   name: NONEMPTY_ARRAY,
   test: value => Array.isArray(value),
   decode: (uint8Array, codecVersion, u8aTurtle, options) => {
@@ -257,10 +258,10 @@ codec.addCodecType({
   },
   getWidth: codecVersion => codecVersion.subVersions[0] + minAddressBytes,
   subVersionCounts: [addressVersions, 2]
-})
+}))
 
 export const SET = 'set'
-codec.addCodecType({
+codec.addCodecType(new CodecType({
   name: SET,
   test: value => value instanceof Set,
   decode: (uint8Array, _codecVersion, u8aTurtle, options) => {
@@ -273,10 +274,10 @@ codec.addCodecType({
   },
   getWidth: codecVersion => codecVersion.subVersions[0] + minAddressBytes,
   subVersionCounts: [addressVersions]
-})
+}))
 
 export const MAP = 'map'
-codec.addCodecType({
+codec.addCodecType(new CodecType({
   name: MAP,
   test: value => value instanceof Map,
   decode: (uint8Array, _codecVersion, u8aTurtle, options) => {
@@ -293,10 +294,10 @@ codec.addCodecType({
   },
   getWidth: codecVersion => codecVersion.subVersions[0] + minAddressBytes,
   subVersionCounts: [addressVersions]
-})
+}))
 
 export const COMMIT = 'commit'
-codec.addCodecType({
+codec.addCodecType(new CodecType({
   name: COMMIT,
   test: value => value instanceof Commit,
   decode: (uint8Array, codecVersion, u8aTurtle, options) => {
@@ -319,10 +320,10 @@ codec.addCodecType({
   getWidth: codecVersion => codecVersion.subVersions[0] + minAddressBytes + codecVersion.subVersions[1] * 64,
   subVersionCounts: [addressVersions, 2],
   isOpaque: true
-})
+}))
 
 export const OBJECT = 'object'
-codec.addCodecType({
+codec.addCodecType(new CodecType({
   name: OBJECT,
   test: value => typeof value === 'object',
   decode: (uint8Array, _codecVersion, u8aTurtle, options) => {
@@ -339,10 +340,10 @@ codec.addCodecType({
   },
   getWidth: codecVersion => codecVersion.subVersions[0] + minAddressBytes,
   subVersionCounts: [addressVersions]
-})
+}))
 
 export const TREE_NODE = 'tree-node'
-codec.addCodecType({
+codec.addCodecType(new CodecType({
   name: TREE_NODE,
   test: value => Array.isArray(value) && value.length > 1,
   decode: (uint8Array, codecVersion) => {
@@ -364,6 +365,29 @@ codec.addCodecType({
   },
   getWidth: codecVersion => codecVersion.subVersions[0] + codecVersion.subVersions[1] + 2 * (minAddressBytes),
   subVersionCounts: [addressVersions, addressVersions]
-})
+}))
+
+export const OPAQUE_UINT8ARRAY = 'opaque-uint8array'
+codec.addCodecType(new CodecType({
+  name: OPAQUE_UINT8ARRAY,
+  test: value => value instanceof Uint8Array,
+  decode: (uint8Array, codecTypeVersion, u8aTurtle) => {
+    const valueLengthLength = codecTypeVersion.subVersions[0] + 1
+    return uint8Array.slice(0, -valueLengthLength)
+  },
+  encode: (value, codecType, dictionary) => {
+    const encodedValueLength = encodeNumberToU8a(value.length, 1)
+    const footer = codec.getFooter(codecType, [encodedValueLength.length - 1])
+    return combineUint8ArrayLikes([value, encodedValueLength, footer])
+  },
+  getWidth: (codecVersion, u8aTurtle, index) => {
+    const valueLengthLength = codecVersion.subVersions[0] + 1
+    const encodedValueLength = u8aTurtle.slice(index - valueLengthLength, index)
+    const valueLength = decodeNumberFromU8a(encodedValueLength)
+    return valueLength + valueLengthLength
+  },
+  subVersionCounts: [3],
+  isOpaque: true
+}))
 
 console.log(codec.codecTypeVersionsByFooter.map((codecVersion, index) => `${index}: { name: "${codecVersion.codecType.name}", subVersions: ${JSON.stringify(codecVersion.subVersions)} }`).join('\n'))

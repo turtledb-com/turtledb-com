@@ -37,7 +37,7 @@ export class TurtleDictionary extends TurtleBranch {
           console.error({ address, footer })
           throw new Error('no decoder for footer')
         }
-        const width = codecVersion.width
+        const width = codecVersion.getWidth(u8aTurtle, address)
         const uint8Array = this.slice(address - width, address)
         if (this.#valueByUint8Array.get(uint8Array) !== undefined) {
           console.error({ address, footer, uint8Array, width })
@@ -52,7 +52,7 @@ export class TurtleDictionary extends TurtleBranch {
 
   /**
    * @param {any} value
-   * @param {Array.<import('./codecs/CodecType.js').CodecType} codecsArray
+   * @param {Array.<import('./codecs/CodecType.js').CodecType>} codecsArray
    * @param {import('./codecs/CodecType.js').CodecOptions} options
    * @returns {number}
    */

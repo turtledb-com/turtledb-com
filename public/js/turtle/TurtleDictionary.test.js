@@ -1,4 +1,5 @@
 import { globalRunner, urlToName } from '../../test/Runner.js'
+import { codec, OPAQUE_UINT8ARRAY } from './codecs/codec.js'
 import { AS_REFS } from './codecs/CodecType.js'
 import { Commit } from './codecs/Commit.js'
 import { TurtleDictionary } from './TurtleDictionary.js'
@@ -84,6 +85,22 @@ globalRunner.describe(urlToName(import.meta.url), suite => {
     const recoveredSigned = dictionary.lookup(signedAddress)
     assert.equal(recoveredSigned.signature, signature)
     assert.equal(recoveredSigned.value, 'b')
+  })
+  suite.it('handles opaque uint8arrays', ({ assert }) => {
+    const dictionary = new TurtleDictionary('opaque uint8arrays')
+    const u8a = new Uint8Array([1, 2, 3, 4, 5])
+    const addressA = dictionary.upsert(u8a)
+    const address1 = dictionary.upsert(u8a, [codec.getCodecType(OPAQUE_UINT8ARRAY)])
+    const address2 = dictionary.upsert(u8a, [codec.getCodecType(OPAQUE_UINT8ARRAY)])
+    const addressB = dictionary.upsert(u8a)
+    const u8a1 = dictionary.lookup(address1)
+    const u8a2 = dictionary.lookup(address2)
+    assert.equal(addressA, addressB)
+    assert.notEqual(addressA, address1)
+    assert.notEqual(addressA, address2)
+    assert.notEqual(address1, address2)
+    assert.equal(u8a, u8a1)
+    assert.equal(u8a, u8a2)
   })
 })
 
