@@ -97,10 +97,10 @@ export class Peer {
               const branch = branches[name]
               /** @type {BranchUpdate} */
               const outgoingBranchUpdate = lastOutgoingUpdate?.[branchType]?.[name] ?? {}
-              outgoingBranchUpdate.height = branch.height
+              outgoingBranchUpdate.height = branch.height ?? -1
               outgoingBranchUpdate.uint8Arrays ??= []
               if (incomingBranchUpdate) {
-                for (let height = incomingBranchUpdate.height ?? 0; height <= branch.height; ++height) {
+                for (let height = (incomingBranchUpdate.height ?? -1) + 1; height <= branch.height; ++height) {
                   recaller.call(() => {
                     const uint8Array = branch.u8aTurtle.findParentByHeight(height).uint8Array
                     outgoingBranchUpdate.uint8Arrays[height] ??= connection.outgoingUpdateDictionary.upsert(uint8Array)

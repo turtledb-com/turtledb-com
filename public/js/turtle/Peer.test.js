@@ -2,60 +2,23 @@ import { globalRunner, urlToName } from '../../test/Runner.js'
 import { Peer } from './Peer.js'
 import { TurtleDictionary } from './TurtleDictionary.js'
 
-globalRunner.only.describe(urlToName(import.meta.url), suite => {
-  /*
-  suite.it('pipes changes', async ({ assert }) => {
-    const peerA = new Peer('a')
-    const peerB = new Peer('b')
-    peerB.connect(peerA.makeConnection())
-    peerA.connections[0].localDictionary.upsert({ a: 1, b: 2 })
-    await new Promise(resolve => setTimeout(resolve))
-    assert.equal(peerB.connections[0].remoteBranch.lookup(), { a: 1, b: 2 })
-    peerB.connections[0].localDictionary.upsert('asdf1234')
-    await new Promise(resolve => setTimeout(resolve))
-    assert.equal(peerA.connections[0].remoteBranch.lookup(), 'asdf1234')
-  })
-    */
+globalRunner.describe(urlToName(import.meta.url), suite => {
   suite.it('handles moving branches', async ({ assert }) => {
     const peerA = new Peer('a')
     const peerB = new Peer('b')
     peerB.connect(peerA.makeConnection())
     const dictionaryA = new TurtleDictionary('aaa', peerA.recaller)
     peerA.addLocalDictionary(dictionaryA)
-
-    console.groupCollapsed('after adding dictionary to a')
-    console.log(peerA.summary())
-    console.log(peerB.summary())
-    console.groupEnd()
-    await new Promise(resolve => setTimeout(resolve))
-    console.groupCollapsed('after tick')
-    console.log(peerA.summary())
-    console.log(peerB.summary())
-    console.groupEnd()
-    await new Promise(resolve => setTimeout(resolve))
-    console.groupCollapsed('after tick')
-    console.log(peerA.summary())
-    console.log(peerB.summary())
-    console.groupEnd()
-    await new Promise(resolve => setTimeout(resolve))
-    console.groupCollapsed('after tick')
-    console.log(peerA.summary())
-    console.log(peerB.summary())
-    console.groupEnd()
-
     dictionaryA.upsert('abcd')
-    console.group('after upserting')
-    console.log(peerA.summary())
-    console.log(peerB.summary())
-    console.groupEnd()
-    await new Promise(resolve => setTimeout(resolve))
-    await new Promise(resolve => setTimeout(resolve))
-    await new Promise(resolve => setTimeout(resolve))
-    console.group('after varioius tics')
-    console.log(peerA.summary())
-    console.log(peerB.summary())
-    console.groupEnd()
+    // why 4 tics... recaller, stream, recaller, ???
+    for (let i = 0; i < 4; ++i) {
+      await new Promise(resolve => setTimeout(resolve))
+      console.group('after tick')
+      console.log(JSON.stringify(peerA.summary(), null, 2))
+      console.log(JSON.stringify(peerB.summary(), null, 2))
+      console.groupEnd()
+    }
     const peerBSubAValue = peerB.getRemoteBranch('aaa').lookup()
-    console.log(peerBSubAValue)
+    assert.equal(peerBSubAValue, 'abcd')
   })
 })
