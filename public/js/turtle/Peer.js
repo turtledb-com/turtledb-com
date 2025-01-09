@@ -47,7 +47,6 @@ export class Peer {
     this.recaller = recaller
 
     this.recaller.watch('handle remote updates', () => {
-      console.log(this.name, 'updating')
       this.recaller.reportKeyAccess(this, 'connections', 'update', this.name)
       this.recaller.reportKeyAccess(this, 'publicationBranches', 'update', this.name)
 
@@ -69,10 +68,9 @@ export class Peer {
             const branch = branches[name]
             const branchUpdates = [pubsUpdate[name], subsUpdate[name]]
             for (const branchUpdate of branchUpdates) {
-              while (branchUpdate?.uint8Arrays?.[branch.height === undefined ? 0 : branch.height + 1]) {
-                const address = branchUpdate.uint8Arrays[branch.height === undefined ? 0 : branch.height + 1]
+              while (branchUpdate?.uint8Arrays?.[(branch.height ?? -1) + 1]) {
+                const address = branchUpdate.uint8Arrays[(branch.height ?? -1) + 1]
                 const uint8Array = connection.incomingUpdateBranch.lookup(address)
-                console.log(this.name, name, 'appending', branch.height, uint8Array)
                 branch.append(uint8Array)
               }
             }
@@ -105,9 +103,6 @@ export class Peer {
                 for (let height = incomingBranchUpdate.height ?? 0; height <= branch.height; ++height) {
                   recaller.call(() => {
                     const uint8Array = branch.u8aTurtle.findParentByHeight(height).uint8Array
-                    if (!outgoingBranchUpdate.uint8Arrays[height]) {
-                      console.log(this.name, name, 'sending', height, uint8Array)
-                    }
                     outgoingBranchUpdate.uint8Arrays[height] ??= connection.outgoingUpdateDictionary.upsert(uint8Array)
                   }, IGNORE_ACCESS) // don't trigger ourselves
                 }
