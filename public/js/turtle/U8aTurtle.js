@@ -31,6 +31,11 @@ export class U8aTurtle {
     }
   }
 
+  /**
+   * @param {number} height
+   * @param {number} tooHigh
+   * @returns {U8aTurtle}
+   */
   findParentByHeight (height, tooHigh) {
     if (height < 0) height += this.height
     if (height === this.height) return this
@@ -43,6 +48,11 @@ export class U8aTurtle {
     }
   }
 
+  /**
+   * @param {number} address
+   * @param {number} tooHigh
+   * @returns {U8aTurtle}
+   */
   findParentByAddress (address, tooHigh) {
     if (address < 0) address += this.length
     if (address >= this.offset && address < this.length) return this

@@ -32,6 +32,6 @@ globalRunner.describe(urlToName(import.meta.url), suite => {
     readableStream.pipeTo(writableStream)
     primary.append(new Uint8Array([1, 2, 3]))
     await new Promise(resolve => setTimeout(resolve))
-    console.log(secondary.u8aTurtle.exportUint8Arrays())
+    assert.equal(secondary.u8aTurtle.exportUint8Arrays(), [new Uint8Array([1, 2, 3])])
   })
 })

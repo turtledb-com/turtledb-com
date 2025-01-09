@@ -1,7 +1,9 @@
 import { globalRunner, urlToName } from '../../test/Runner.js'
 import { Peer } from './Peer.js'
+import { TurtleDictionary } from './TurtleDictionary.js'
 
-globalRunner.describe(urlToName(import.meta.url), suite => {
+globalRunner.only.describe(urlToName(import.meta.url), suite => {
+  /*
   suite.it('pipes changes', async ({ assert }) => {
     const peerA = new Peer('a')
     const peerB = new Peer('b')
@@ -10,7 +12,57 @@ globalRunner.describe(urlToName(import.meta.url), suite => {
     await new Promise(resolve => setTimeout(resolve))
     assert.equal(peerB.connections[0].remoteBranch.lookup(), { a: 1, b: 2 })
     peerB.connections[0].localDictionary.upsert('asdf1234')
-    await new Promise(resolve => setTimeout(resolve, 1000))
+    await new Promise(resolve => setTimeout(resolve))
     assert.equal(peerA.connections[0].remoteBranch.lookup(), 'asdf1234')
+  })
+    */
+  suite.it('handles moving branches', async ({ assert }) => {
+    const peerA = new Peer('a')
+    const peerB = new Peer('b')
+    peerB.connect(peerA.makeConnection())
+    const dictionaryA = new TurtleDictionary('aaa', peerA.recaller)
+    peerA.addLocalDictionary(dictionaryA)
+
+    console.groupCollapsed('after adding dictionary to a')
+    console.log(peerA.summary())
+    console.log(peerB.summary())
+    console.groupEnd()
+    await new Promise(resolve => setTimeout(resolve))
+    console.groupCollapsed('after tick')
+    console.log(peerA.summary())
+    console.log(peerB.summary())
+    console.groupEnd()
+    await new Promise(resolve => setTimeout(resolve))
+    console.groupCollapsed('after tick')
+    console.log(peerA.summary())
+    console.log(peerB.summary())
+    console.groupEnd()
+    await new Promise(resolve => setTimeout(resolve))
+    console.groupCollapsed('after tick')
+    console.log(peerA.summary())
+    console.log(peerB.summary())
+    console.groupEnd()
+
+    dictionaryA.upsert('abcd')
+    console.group('after upserting')
+    console.log(peerA.summary())
+    console.log(peerB.summary())
+    console.groupEnd()
+    await new Promise(resolve => setTimeout(resolve))
+    await new Promise(resolve => setTimeout(resolve))
+    await new Promise(resolve => setTimeout(resolve))
+    console.group('after varioius tics')
+    console.log(peerA.summary())
+    console.log(peerB.summary())
+    console.groupEnd()
+
+    console.log(dictionaryA.lookup())
+    console.log(dictionaryA.u8aTurtle.exportUint8Arrays())
+    console.log(dictionaryA.u8aTurtle.parent.height)
+    console.log(dictionaryA.u8aTurtle.findParentByHeight(1).height)
+    console.log(dictionaryA.u8aTurtle.height)
+    const peerBSubAValue = peerB.getRemoteBranch('aaa').lookup()
+    console.log(peerBSubAValue)
+    console.log(peerB.getRemoteBranch('aaa').u8aTurtle.uint8Array)
   })
 })

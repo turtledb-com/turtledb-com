@@ -1,4 +1,4 @@
-import { Recaller } from '../utils/Recaller.js'
+import { IGNORE_ACCESS, Recaller } from '../utils/Recaller.js'
 import { TurtleBranch } from './TurtleBranch.js'
 import { TurtleDictionary } from './TurtleDictionary.js'
 
@@ -9,18 +9,34 @@ import { TurtleDictionary } from './TurtleDictionary.js'
  */
 
 /**
- * @typedef connection
+ * @typedef Connection
  * @property {Duplex} duplex
- * @property {TurtleDictionary} localDictionary
- * @property {TurtleBranch} remoteBranch
+ * @property {TurtleDictionary} outgoingUpdateDictionary
+ * @property {TurtleBranch} incomingUpdateBranch
+ */
+
+/**
+ * @typedef BranchUpdate
+ * @property {number} height
+ * @property {Array.<number>} uint8Arrays
+ */
+
+/**
+ * @typedef PeerBranchesUpdate
+ * @property {Object.<string, BranchUpdate>} publicationBranches
+ * @property {Object.<string, BranchUpdate>} subscriptionBranches
  */
 
 export class Peer {
-  /** @type {Array.<{localDictionary: TurtleBranch, remoteBranch: TurtleBranch, connection: Duplex>} */
+  /** @type {Array.<Connection>} */
   connections = []
 
-  localBranches = {}
-  remoteBranches = {}
+  branchesByType = {
+    /** @type {Object.<string, TurtleBranch>} */
+    publicationBranches: {},
+    /** @type {Object.<string, TurtleBranch>} */
+    subscriptionBranches: {}
+  }
 
   /**
    * @param {string} name
@@ -31,25 +47,112 @@ export class Peer {
     this.recaller = recaller
 
     this.recaller.watch('handle remote updates', () => {
-      this.recaller.reportKeyAccess(this, 'connection', 'update', this.name)
-      this.recaller.reportKeyAccess(this, 'localBranches', 'update', this.name)
+      console.log(this.name, 'updating')
+      this.recaller.reportKeyAccess(this, 'connections', 'update', this.name)
+      this.recaller.reportKeyAccess(this, 'publicationBranches', 'update', this.name)
+
+      // apply updates from incoming
       this.connections.forEach(connection => {
-        const localState = connection.localDictionary.lookup()
-        const remoteState = connection.remoteBranch.lookup()
-        console.log({ localState, remoteState })
+        /** @type {PeerBranchesUpdate} */
+        const incomingUpdate = connection.incomingUpdateBranch.lookup()
+        const pubsUpdate = incomingUpdate?.publicationBranches ?? {}
+        const subsUpdate = incomingUpdate?.subscriptionBranches ?? {}
+        // create missing subscription branches
+        for (const name in pubsUpdate) {
+          if (!Object.values(this.branchesByType).some(branches => branches[name])) {
+            this.branchesByType.subscriptionBranches[name] = new TurtleBranch(name, this.recaller)
+          }
+        }
+        // append missing uint8Arrays
+        for (const branches of Object.values(this.branchesByType)) {
+          for (const name in branches) {
+            const branch = branches[name]
+            const branchUpdates = [pubsUpdate[name], subsUpdate[name]]
+            for (const branchUpdate of branchUpdates) {
+              while (branchUpdate?.uint8Arrays?.[branch.height === undefined ? 0 : branch.height + 1]) {
+                const address = branchUpdate.uint8Arrays[branch.height === undefined ? 0 : branch.height + 1]
+                const uint8Array = connection.incomingUpdateBranch.lookup(address)
+                console.log(this.name, name, 'appending', branch.height, uint8Array)
+                branch.append(uint8Array)
+              }
+            }
+          }
+        }
+      })
+      // prepare updates for outgoing
+      this.connections.forEach(connection => {
+        /** @type {PeerBranchesUpdate} */
+        const incomingUpdate = connection.incomingUpdateBranch.lookup()
+        /** @type {PeerBranchesUpdate} */
+        let lastOutgoingUpdate
+        this.recaller.call(() => {
+          lastOutgoingUpdate = connection.outgoingUpdateDictionary.lookup()
+        })
+        /** @type {PeerBranchesUpdate} */
+        const outgoingUpdate = { publicationBranches: {}, subscriptionBranches: {} }
+        for (const branchType in this.branchesByType) {
+          /** @type {Object.<string, TurtleBranch>} */
+          const branches = this.branchesByType[branchType]
+          for (const name in branches) {
+            const incomingBranchUpdate = incomingUpdate?.publicationBranches?.[name] ?? incomingUpdate?.subscriptionBranches?.[name]
+            if (branchType === 'publicationBranches' || incomingBranchUpdate) {
+              const branch = branches[name]
+              /** @type {BranchUpdate} */
+              const outgoingBranchUpdate = lastOutgoingUpdate?.[branchType]?.[name] ?? {}
+              outgoingBranchUpdate.height = branch.height
+              outgoingBranchUpdate.uint8Arrays ??= []
+              if (incomingBranchUpdate) {
+                for (let height = incomingBranchUpdate.height ?? 0; height <= branch.height; ++height) {
+                  recaller.call(() => {
+                    const uint8Array = branch.u8aTurtle.findParentByHeight(height).uint8Array
+                    if (!outgoingBranchUpdate.uint8Arrays[height]) {
+                      console.log(this.name, name, 'sending', height, uint8Array)
+                    }
+                    outgoingBranchUpdate.uint8Arrays[height] ??= connection.outgoingUpdateDictionary.upsert(uint8Array)
+                  }, IGNORE_ACCESS) // don't trigger ourselves
+                }
+              }
+              outgoingUpdate[branchType][name] = outgoingBranchUpdate
+            }
+          }
+        }
+        this.recaller.call(() => {
+          connection.outgoingUpdateDictionary.upsert(outgoingUpdate)
+        }, IGNORE_ACCESS) // don't trigger ourselves
       })
     })
   }
 
+  summary () {
+    return {
+      name: this.name,
+      branchesByType: {
+        publicationBranches: Object.fromEntries(Object.entries(this.branchesByType.publicationBranches).map(([name, branch]) => [name, branch.height])),
+        subscriptionBranches: Object.fromEntries(Object.entries(this.branchesByType.subscriptionBranches).map(([name, branch]) => [name, branch.height]))
+      },
+      connections: this.connections.map(connection => ({
+        outgoingUpdateDictionary: connection.outgoingUpdateDictionary.lookup(),
+        incomingUpdateBranch: connection.incomingUpdateBranch.lookup()
+      }))
+    }
+  }
+
+  getRemoteBranch (name) {
+    if (!this.branchesByType.subscriptionBranches[name]) {
+      this.branchesByType.subscriptionBranches[name] = new TurtleBranch(name, this.recaller)
+      this.recaller.reportKeyMutation(this, 'subscriptionBranches', 'getRemoteBranch', this.name)
+    }
+    return this.branchesByType.subscriptionBranches[name]
+  }
+
   /**
-   *
-   * @param {TurtleBranch} turtleBranch
+   * @param {TurtleDictionary} turtleDictionary
    * @param {string} name
    */
-  addBranch (turtleBranch, name = turtleBranch.name) {
-    if (this.localBranches[name]) throw new Error('branch name already exists')
-    this.recaller.reportKeyMutation(this, 'localBranches', 'addBranch', this.name)
-    this.localBranches[name] = turtleBranch
+  addLocalDictionary (turtleDictionary, name = turtleDictionary.name) {
+    if (this.branchesByType.publicationBranches[name]) throw new Error('branch name already exists')
+    this.recaller.reportKeyMutation(this, 'publicationBranches', 'addLocalDictionary', this.name)
+    this.branchesByType.publicationBranches[name] = turtleDictionary
   }
 
   /**
@@ -57,24 +160,24 @@ export class Peer {
    */
   makeConnection () {
     const index = this.connections.length
-    const localDictionary = new TurtleDictionary(`${this.name}.connections.${index}.localDictionary`, this.recaller)
-    const remoteBranch = new TurtleBranch(`${this.name}.connections.${index}.remoteBranch`, this.recaller)
-    const connection = { readableStream: localDictionary.makeReadableStream(), writableStream: remoteBranch.makeWritableStream() }
-    this.connections.push({ localDictionary, remoteBranch, connection })
-    this.recaller.reportKeyMutation(this, 'connection', 'makeConnection', this.name)
+    const outgoingUpdateDictionary = new TurtleDictionary(`${this.name}.connections.${index}.outgoingUpdateDictionary`, this.recaller)
+    const incomingUpdateBranch = new TurtleBranch(`${this.name}.connections.${index}.incomingUpdateBranch`, this.recaller)
+    const connection = { readableStream: outgoingUpdateDictionary.makeReadableStream(), writableStream: incomingUpdateBranch.makeWritableStream() }
+    this.connections.push({ outgoingUpdateDictionary, incomingUpdateBranch, connection })
+    this.recaller.reportKeyMutation(this, 'connections', 'makeConnection', this.name)
     return connection
   }
 
   /**
-   * @param {Duplex} connection
+   * @param {Duplex} duplex
    */
-  connect (connection) {
+  connect (duplex) {
     const index = this.connections.length
-    const localDictionary = new TurtleDictionary(`${this.name}.connections.${index}.localDictionary`, this.recaller)
-    const remoteBranch = new TurtleBranch(`${this.name}.connections.${index}.remoteBranch`, this.recaller)
-    this.connections.push({ localDictionary, remoteBranch, connection })
-    this.recaller.reportKeyMutation(this, 'connection', 'connect', this.name)
-    connection.readableStream.pipeTo(remoteBranch.makeWritableStream())
-    localDictionary.makeReadableStream().pipeTo(connection.writableStream)
+    const outgoingUpdateDictionary = new TurtleDictionary(`${this.name}.connections[${index}].outgoingUpdateDictionary`, this.recaller)
+    const incomingUpdateBranch = new TurtleBranch(`${this.name}.connections[${index}].incomingUpdateBranch`, this.recaller)
+    this.connections[index] = { outgoingUpdateDictionary, incomingUpdateBranch, duplex }
+    this.recaller.reportKeyMutation(this, 'connections', 'connect', this.name)
+    duplex.readableStream.pipeTo(incomingUpdateBranch.makeWritableStream())
+    outgoingUpdateDictionary.makeReadableStream().pipeTo(duplex.writableStream)
   }
 }

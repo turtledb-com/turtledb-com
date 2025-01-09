@@ -131,3 +131,14 @@ export function zabacaba (i) {
   const b = Math.clz32(j & -j) // 31 - b is right zeros
   return 32 - b
 }
+
+/**
+ * @param {string} bigB36IntString
+ * @returns {bigint}
+ */
+export function parseBigB36Int (bigB36IntString) {
+  return bigB36IntString.split('').reduce(
+    (acc, char) => acc * 36n + BigInt(parseInt(char, 36)),
+    0n
+  )
+}
