@@ -39,7 +39,7 @@ export const toCombinedVersion = (subVersions, subVersionCounts) => {
  * @returns {Uint8Array}
  */
 export function combineUint8ArrayLikes (uint8ArrayLikes) {
-  if (!Array.isArray(uint8ArrayLikes)) throw new Error('combineUint8ArrayLikes accepts arrays')
+  if (!Array.isArray(uint8ArrayLikes)) throw new Error('friendly reminder... combineUint8ArrayLikes accepts an array of Uint8ArrayLikes')
   const uint8Arrays = uint8ArrayLikes.map(uint8ArrayLike => {
     if (uint8ArrayLike instanceof Uint8Array) return uint8ArrayLike
     if (uint8ArrayLike instanceof Object.getPrototypeOf(Uint8Array)) return new Uint8Array(uint8ArrayLike.buffer)
@@ -55,11 +55,15 @@ export function combineUint8ArrayLikes (uint8ArrayLikes) {
  * @returns {Uint8Array}
  */
 export function combineUint8Arrays (uint8Arrays) {
-  if (!Array.isArray(uint8Arrays)) throw new Error('uint8Arrays accepts arrays')
+  if (!Array.isArray(uint8Arrays)) throw new Error('friendly reminder... combineUint8Arrays accepts an array of Uint8Arrays')
   const combinedLength = uint8Arrays.reduce((length, uint8Array) => length + (uint8Array?.length ?? 0), 0)
   const collapsedUint8Array = new Uint8Array(combinedLength)
   let address = 0
   for (const uint8Array of uint8Arrays) {
+    if (!(uint8Array instanceof Uint8Array)) {
+      console.error('not Uint8Array', uint8Array)
+      throw new Error('combineUint8Arrays can only combine Uint8Arrays')
+    }
     if (uint8Array?.length) {
       collapsedUint8Array.set(uint8Array, address)
       address += uint8Array.length
@@ -133,12 +137,46 @@ export function zabacaba (i) {
 }
 
 /**
- * @param {string} bigB36IntString
+ * @param {string} b36
  * @returns {bigint}
  */
-export function parseBigB36Int (bigB36IntString) {
-  return bigB36IntString.split('').reduce(
+export function parseB36 (b36) {
+  return b36.split('').reduce(
     (acc, char) => acc * 36n + BigInt(parseInt(char, 36)),
     0n
   )
+}
+
+/**
+ * @param {BigInt} bigInt
+ * @returns {Uint8Array}
+ */
+export function bigIntToUint8Array (bigInt) {
+  let hex = bigInt.toString(16)
+  if (hex.length % 2) hex = `0${hex}`
+  return new Uint8Array(hex.match(/../g).map(hexByte => parseInt(hexByte, 16)))
+}
+
+/**
+ * @param {Uint8Array} uint8Array
+ * @returns {BigInt}
+ */
+export function uint8ArrayToBigInt (uint8Array) {
+  return uint8Array.reduce((acc, byte) => acc * 256n + BigInt(byte), 0n)
+}
+
+/**
+ * @param {string} b36
+ * @returns {Uint8Array}
+ */
+export function b36ToUint8Array (b36) {
+  return bigIntToUint8Array(parseB36(b36))
+}
+
+/**
+ * @param {Uint8Array} uint8Array
+ * @returns {string}
+ */
+export function uint8ArrayToB36 (uint8Array) {
+  return uint8ArrayToBigInt(uint8Array).toString(36)
 }

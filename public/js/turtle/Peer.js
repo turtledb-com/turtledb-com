@@ -1,4 +1,5 @@
 import { IGNORE_ACCESS, Recaller } from '../utils/Recaller.js'
+import { codec, OPAQUE_UINT8ARRAY } from './codecs/codec.js'
 import { TurtleBranch } from './TurtleBranch.js'
 import { TurtleDictionary } from './TurtleDictionary.js'
 
@@ -103,7 +104,7 @@ export class Peer {
                 for (let height = (incomingBranchUpdate.height ?? -1) + 1; height <= branch.height; ++height) {
                   recaller.call(() => {
                     const uint8Array = branch.u8aTurtle.findParentByHeight(height).uint8Array
-                    outgoingBranchUpdate.uint8Arrays[height] ??= connection.outgoingUpdateDictionary.upsert(uint8Array)
+                    outgoingBranchUpdate.uint8Arrays[height] ??= connection.outgoingUpdateDictionary.upsert(uint8Array, [codec.getCodecType(OPAQUE_UINT8ARRAY)])
                   }, IGNORE_ACCESS) // don't trigger ourselves
                 }
               }

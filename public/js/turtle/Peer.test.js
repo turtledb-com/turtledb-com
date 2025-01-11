@@ -13,10 +13,10 @@ globalRunner.describe(urlToName(import.meta.url), suite => {
     // why 4 tics... recaller, stream, recaller, ???
     for (let i = 0; i < 4; ++i) {
       await new Promise(resolve => setTimeout(resolve))
-      console.group('after tick')
-      console.log(JSON.stringify(peerA.summary(), null, 2))
-      console.log(JSON.stringify(peerB.summary(), null, 2))
-      console.groupEnd()
+      // console.group('after tick')
+      // console.log(JSON.stringify(peerA.summary(), null, 2))
+      // console.log(JSON.stringify(peerB.summary(), null, 2))
+      // console.groupEnd()
     }
     const peerBSubAValue = peerB.getRemoteBranch('aaa').lookup()
     assert.equal(peerBSubAValue, 'abcd')

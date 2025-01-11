@@ -1,5 +1,5 @@
 import { globalRunner, urlToName } from '../../test/Runner.js'
-import { combineUint8ArrayLikes, combineUint8Arrays, decodeNumberFromU8a, encodeNumberToU8a, toCombinedVersion, toSubVersions, toVersionCount, ValueByUint8Array, zabacaba } from './utils.js'
+import { b36ToUint8Array, bigIntToUint8Array, combineUint8ArrayLikes, combineUint8Arrays, decodeNumberFromU8a, encodeNumberToU8a, parseB36, toCombinedVersion, toSubVersions, toVersionCount, uint8ArrayToB36, uint8ArrayToBigInt, ValueByUint8Array, zabacaba } from './utils.js'
 
 globalRunner.describe(urlToName(import.meta.url), suite => {
   suite.it('returns expected values for a zabacaba function', ({ assert }) => {
@@ -75,5 +75,18 @@ globalRunner.describe(urlToName(import.meta.url), suite => {
     const u8aFFFFFF = encodeNumberToU8a(0xFFFFFF, 2)
     assert.equal(u8aFFFFFF.length, 3)
     assert.equal(decodeNumberFromU8a(u8aFFFFFF), 0xFFFFFF)
+  })
+  suite.it('translates big ints', ({ assert }) => {
+    const bigInt = 1234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890n
+    const b36BigInt = bigInt.toString(36)
+    const recoveredBigInt = parseB36(b36BigInt)
+    assert.equal(bigInt, recoveredBigInt)
+    const uint8Array = bigIntToUint8Array(bigInt)
+    const recoveredFromUint8Array = uint8ArrayToBigInt(uint8Array)
+    assert.equal(bigInt, recoveredFromUint8Array)
+    const uint8Array2 = b36ToUint8Array(b36BigInt)
+    assert.equal(uint8Array, uint8Array2)
+    const b36 = uint8ArrayToB36(uint8Array2)
+    assert.equal(b36, b36BigInt)
   })
 })
