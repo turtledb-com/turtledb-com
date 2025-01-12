@@ -15,6 +15,8 @@ globalRunner.describe(urlToName(import.meta.url), suite => {
     assert.equal(b.findParentByAddress(1), a, 'a is correct b.parent')
     assert.equal(b.findParentByHeight(0), a, 'a is correct b.parent')
     assert.equal(b.getByte(6), 6, '6th byte is 6')
+    assert.equal(b.getByte(7), 7, '7th byte is 7')
+    assert.equal(b.getByte(), 7, 'last byte is 7')
     assert.throw(() => {
       b.getByte(2)
     }, 'no out of range bytes')
@@ -24,6 +26,7 @@ globalRunner.describe(urlToName(import.meta.url), suite => {
     assert.equal(c.findParentByHeight(0), a, 'a is correct c.parent')
     assert.equal(c.findParentByAddress(6).getByte(6), 6, '6th byte is 6')
 
+    assert.equal(b.slice(7, 8), new Uint8Array([7]))
     assert.equal(b.slice(4, 7), new Uint8Array([4, 5, 6]))
     assert.equal(b.slice(4), new Uint8Array([4, 5, 6, 7]))
     assert.equal(b.slice(-3, -2), new Uint8Array([5]))

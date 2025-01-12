@@ -41,7 +41,6 @@ export class Signer {
    */
   async sign (turtleName, uint8Array) {
     const { privateKey } = await this.makeKeysFor(turtleName)
-    console.log('signing with', privateKey)
     const hash = await digestData(uint8Array)
     const signature = await signAsync(hash, privateKey)
     return signature.toCompactRawBytes()
@@ -69,9 +68,7 @@ export class Signer {
       }
       uint8Array = combineUint8Arrays([previousCommit.signature, uint8Array])
     }
-    console.log('commit uint8Array', uint8Array)
     const signature = await this.sign(name, uint8Array)
-    console.log('commit signature', signature)
     const commit = new Commit(address, signature)
     const encodedCommit = codec.encodeValue(commit, [codec.getCodecType(COMMIT)], null, AS_REFS)
     target.append(combineUint8Arrays([uint8Array, encodedCommit.uint8Array]))
@@ -96,8 +93,6 @@ export async function verifyTurtleCommit (u8aTurtle, publicKey) {
     const parentCommit = u8aTurtle.parent.lookup(AS_REFS)
     uint8Array = combineUint8Arrays([parentCommit.signature, uint8Array])
   }
-  console.log('verify uint8Array', uint8Array)
-  console.log('verify signature', commit.signature)
   const hash = await digestData(uint8Array)
   return verify(commit.signature, hash, b36ToUint8Array(publicKey))
 }

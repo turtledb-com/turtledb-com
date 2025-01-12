@@ -65,23 +65,20 @@ export class U8aTurtle {
     }
   }
 
-  remapAddress (address, isLength = false) {
+  #remapAddress (address, isLengthOkay = false) {
     if (address < 0) address += this.length
     if (address < this.offset) throw new Error('address out of range')
-    if (isLength) {
-      if (address > this.length) throw new Error('address out of range')
-    } else {
-      if (address >= this.length) throw new Error('address out of range')
-    }
+    if (address > this.length) throw new Error('address out of range')
+    if (!isLengthOkay && address === this.length) throw new Error('address out of range')
     return address - this.offset
   }
 
   getByte (address = this.length - 1) {
-    return this.uint8Array[this.remapAddress(address)]
+    return this.uint8Array[this.#remapAddress(address)]
   }
 
   slice (start = this.offset, end = this.length) {
-    return this.uint8Array.slice(this.remapAddress(start), this.remapAddress(end, true))
+    return this.uint8Array.slice(this.#remapAddress(start), this.#remapAddress(end, true))
   }
 
   /**
