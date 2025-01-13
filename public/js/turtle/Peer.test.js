@@ -8,8 +8,9 @@ globalRunner.describe(urlToName(import.meta.url), suite => {
     const peerB = new Peer('b')
     peerB.connect(peerA.makeConnection())
     const dictionaryA = new TurtleDictionary('aaa', peerA.recaller)
-    peerA.addLocalDictionary(dictionaryA)
+    const branchA = peerA.getPublicationBranch('aaa')
     dictionaryA.upsert('abcd')
+    branchA.u8aTurtle = dictionaryA.u8aTurtle
     // why 4 tics... recaller, stream, recaller, ???
     for (let i = 0; i < 4; ++i) {
       await new Promise(resolve => setTimeout(resolve))
@@ -18,7 +19,7 @@ globalRunner.describe(urlToName(import.meta.url), suite => {
       // console.log(JSON.stringify(peerB.summary(), null, 2))
       // console.groupEnd()
     }
-    const peerBSubAValue = peerB.getRemoteBranch('aaa').lookup()
+    const peerBSubAValue = peerB.getSubscriptionBranch('aaa').lookup()
     assert.equal(peerBSubAValue, 'abcd')
   })
 })

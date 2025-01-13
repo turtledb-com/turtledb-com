@@ -133,22 +133,24 @@ export class Peer {
     }
   }
 
-  getRemoteBranch (name) {
+  getSubscriptionBranch (name) {
     if (!this.branchesByType.subscriptionBranches[name]) {
       this.branchesByType.subscriptionBranches[name] = new TurtleBranch(name, this.recaller)
-      this.recaller.reportKeyMutation(this, 'subscriptionBranches', 'getRemoteBranch', this.name)
+      this.recaller.reportKeyMutation(this, 'subscriptionBranches', 'getSubscriptionBranch', this.name)
     }
     return this.branchesByType.subscriptionBranches[name]
   }
 
   /**
-   * @param {TurtleDictionary} turtleDictionary
    * @param {string} name
+   * @returns {TurtleBranch}
    */
-  addLocalDictionary (turtleDictionary, name = turtleDictionary.name) {
-    if (this.branchesByType.publicationBranches[name]) throw new Error('branch name already exists')
-    this.recaller.reportKeyMutation(this, 'publicationBranches', 'addLocalDictionary', this.name)
-    this.branchesByType.publicationBranches[name] = turtleDictionary
+  getPublicationBranch (name) {
+    if (!this.branchesByType.publicationBranches[name]) {
+      this.branchesByType.publicationBranches[name] = new TurtleBranch(name, this.recaller)
+      this.recaller.reportKeyMutation(this, 'publicationBranches', 'getPublicationBranch', this.name)
+    }
+    return this.branchesByType.publicationBranches[name]
   }
 
   /**
