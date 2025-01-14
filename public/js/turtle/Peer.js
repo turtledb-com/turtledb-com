@@ -22,22 +22,12 @@ import { TurtleDictionary } from './TurtleDictionary.js'
  * @property {Array.<number>} uint8Arrays
  */
 
-/**
- * @typedef PeerBranchesUpdate
- * @property {Object.<string, BranchUpdate>} publicationBranches
- * @property {Object.<string, BranchUpdate>} subscriptionBranches
- */
-
 export class Peer {
   /** @type {Array.<Connection>} */
   connections = []
 
-  branchesByType = {
-    /** @type {Object.<string, TurtleBranch>} */
-    publicationBranches: {},
-    /** @type {Object.<string, TurtleBranch>} */
-    subscriptionBranches: {}
-  }
+  /** @type {Object.<string, TurtleBranch>} */
+  branches = {}
 
   /**
    * @param {string} name
@@ -49,32 +39,27 @@ export class Peer {
 
     this.recaller.watch('handle remote updates', () => {
       this.recaller.reportKeyAccess(this, 'connections', 'update', this.name)
-      this.recaller.reportKeyAccess(this, 'publicationBranches', 'update', this.name)
+      this.recaller.reportKeyAccess(this, 'branches', 'update', this.name)
 
       // apply updates from incoming
       this.connections.forEach(connection => {
         /** @type {PeerBranchesUpdate} */
         const incomingUpdate = connection.incomingUpdateBranch.lookup()
-        const pubsUpdate = incomingUpdate?.publicationBranches ?? {}
-        const subsUpdate = incomingUpdate?.subscriptionBranches ?? {}
+        const update = incomingUpdate ?? {}
         // create missing subscription branches
-        for (const name in pubsUpdate) {
-          if (!Object.values(this.branchesByType).some(branches => branches[name])) {
-            this.branchesByType.subscriptionBranches[name] = new TurtleBranch(name, this.recaller)
+        for (const name in update) {
+          if (!this.branches[name]) {
+            this.branches[name] = new TurtleBranch(name, this.recaller)
           }
         }
         // append missing uint8Arrays
-        for (const branches of Object.values(this.branchesByType)) {
-          for (const name in branches) {
-            const branch = branches[name]
-            const branchUpdates = [pubsUpdate[name], subsUpdate[name]]
-            for (const branchUpdate of branchUpdates) {
-              while (branchUpdate?.uint8Arrays?.[(branch.height ?? -1) + 1]) {
-                const address = branchUpdate.uint8Arrays[(branch.height ?? -1) + 1]
-                const uint8Array = connection.incomingUpdateBranch.lookup(address)
-                branch.append(uint8Array)
-              }
-            }
+        for (const name in this.branches) {
+          const branch = this.branches[name]
+          const branchUpdate = update[name]
+          while (branchUpdate?.uint8Arrays?.[(branch.height ?? -1) + 1]) {
+            const address = branchUpdate.uint8Arrays[(branch.height ?? -1) + 1]
+            const uint8Array = connection.incomingUpdateBranch.lookup(address)
+            branch.append(uint8Array)
           }
         }
       })
@@ -87,30 +72,24 @@ export class Peer {
         this.recaller.call(() => {
           lastOutgoingUpdate = connection.outgoingUpdateDictionary.lookup()
         })
-        /** @type {PeerBranchesUpdate} */
-        const outgoingUpdate = { publicationBranches: {}, subscriptionBranches: {} }
-        for (const branchType in this.branchesByType) {
-          /** @type {Object.<string, TurtleBranch>} */
-          const branches = this.branchesByType[branchType]
-          for (const name in branches) {
-            const incomingBranchUpdate = incomingUpdate?.publicationBranches?.[name] ?? incomingUpdate?.subscriptionBranches?.[name]
-            if (branchType === 'publicationBranches' || incomingBranchUpdate) {
-              const branch = branches[name]
-              /** @type {BranchUpdate} */
-              const outgoingBranchUpdate = lastOutgoingUpdate?.[branchType]?.[name] ?? {}
-              outgoingBranchUpdate.height = branch.height ?? -1
-              outgoingBranchUpdate.uint8Arrays ??= []
-              if (incomingBranchUpdate) {
-                for (let height = (incomingBranchUpdate.height ?? -1) + 1; height <= branch.height; ++height) {
-                  recaller.call(() => {
-                    const uint8Array = branch.u8aTurtle.findParentByHeight(height).uint8Array
-                    outgoingBranchUpdate.uint8Arrays[height] ??= connection.outgoingUpdateDictionary.upsert(uint8Array, [codec.getCodecType(OPAQUE_UINT8ARRAY)])
-                  }, IGNORE_ACCESS) // don't trigger ourselves
-                }
-              }
-              outgoingUpdate[branchType][name] = outgoingBranchUpdate
+        /** @type {Object.<string, BranchUpdate>} */
+        const outgoingUpdate = {}
+        for (const name in this.branches) {
+          const incomingBranchUpdate = incomingUpdate?.[name]
+          const branch = this.branches[name]
+          /** @type {BranchUpdate} */
+          const outgoingBranchUpdate = lastOutgoingUpdate?.[name] ?? {}
+          outgoingBranchUpdate.height = branch.height ?? -1
+          outgoingBranchUpdate.uint8Arrays ??= []
+          if (incomingBranchUpdate) {
+            for (let height = (incomingBranchUpdate.height ?? -1) + 1; height <= branch.height; ++height) {
+              recaller.call(() => {
+                const uint8Array = branch.u8aTurtle.findParentByHeight(height).uint8Array
+                outgoingBranchUpdate.uint8Arrays[height] ??= connection.outgoingUpdateDictionary.upsert(uint8Array, [codec.getCodecType(OPAQUE_UINT8ARRAY)])
+              }, IGNORE_ACCESS) // don't trigger ourselves
             }
           }
+          outgoingUpdate[name] = outgoingBranchUpdate
         }
         this.recaller.call(() => {
           connection.outgoingUpdateDictionary.upsert(outgoingUpdate)
@@ -122,10 +101,7 @@ export class Peer {
   summary () {
     return {
       name: this.name,
-      branchesByType: {
-        publicationBranches: Object.fromEntries(Object.entries(this.branchesByType.publicationBranches).map(([name, branch]) => [name, branch.height])),
-        subscriptionBranches: Object.fromEntries(Object.entries(this.branchesByType.subscriptionBranches).map(([name, branch]) => [name, branch.height]))
-      },
+      branches: Object.fromEntries(Object.entries(this.branches).map(([name, branch]) => [name, branch.height])),
       connections: this.connections.map(connection => ({
         outgoingUpdateDictionary: connection.outgoingUpdateDictionary.lookup(),
         incomingUpdateBranch: connection.incomingUpdateBranch.lookup()
@@ -133,24 +109,16 @@ export class Peer {
     }
   }
 
-  getSubscriptionBranch (name) {
-    if (!this.branchesByType.subscriptionBranches[name]) {
-      this.branchesByType.subscriptionBranches[name] = new TurtleBranch(name, this.recaller)
-      this.recaller.reportKeyMutation(this, 'subscriptionBranches', 'getSubscriptionBranch', this.name)
-    }
-    return this.branchesByType.subscriptionBranches[name]
-  }
-
   /**
    * @param {string} name
    * @returns {TurtleBranch}
    */
-  getPublicationBranch (name) {
-    if (!this.branchesByType.publicationBranches[name]) {
-      this.branchesByType.publicationBranches[name] = new TurtleBranch(name, this.recaller)
-      this.recaller.reportKeyMutation(this, 'publicationBranches', 'getPublicationBranch', this.name)
+  getBranch (name) {
+    if (!this.branches[name]) {
+      this.branches[name] = new TurtleBranch(name, this.recaller)
+      this.recaller.reportKeyMutation(this, 'branches', 'getBranch', this.name)
     }
-    return this.branchesByType.publicationBranches[name]
+    return this.branches[name]
   }
 
   /**

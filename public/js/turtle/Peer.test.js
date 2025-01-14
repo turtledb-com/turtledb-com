@@ -8,7 +8,7 @@ globalRunner.describe(urlToName(import.meta.url), suite => {
     const peerB = new Peer('b')
     peerB.connect(peerA.makeConnection())
     const dictionaryA = new TurtleDictionary('aaa', peerA.recaller)
-    const branchA = peerA.getPublicationBranch('aaa')
+    const branchA = peerA.getBranch('aaa')
     dictionaryA.upsert('abcd')
     branchA.u8aTurtle = dictionaryA.u8aTurtle
     // why 4 tics... recaller, stream, recaller, ???
@@ -19,7 +19,7 @@ globalRunner.describe(urlToName(import.meta.url), suite => {
       // console.log(JSON.stringify(peerB.summary(), null, 2))
       // console.groupEnd()
     }
-    const peerBSubAValue = peerB.getSubscriptionBranch('aaa').lookup()
+    const peerBSubAValue = peerB.getBranch('aaa').lookup()
     assert.equal(peerBSubAValue, 'abcd')
   })
 })
