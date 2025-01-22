@@ -18,9 +18,10 @@ This significantly reduces the complexities and costs associated with making an 
   -- The average human typing speed is 40 WPM. 
   2MB of typed data would take 175 hours to generate. 
 
-> [!NOTE] The primary inspirations for this project are bittorrent, bitcoin, git, and the w3c. 
+[!NOTE] The primary inspirations for this project are bittorrent, bitcoin, git, and the w3c. 
 
-> [!WARNING] THIS PROJECT IS A WORK IN PROGRESS
+> [!WARNING] 
+> THIS PROJECT IS A WORK IN PROGRESS
 
 
 
@@ -31,7 +32,7 @@ A `new Turtle` can be created using an existing `Turtle` and appending any chang
 Because a `Turtle` is an ongoing sequence of byte-arrays, every `Turtle` is a stream.
 This makes them a cheap, easy, and standardized to deal with.
 
-> [!NOTE] The name "Turtle" is a reference to the "Turtles All the Way Down" idiom. 
+[!NOTE] The name "Turtle" is a reference to the "Turtles All the Way Down" idiom. 
 
 
 turtledb-com is version control, transfer protocol, and a service. 
