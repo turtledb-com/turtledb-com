@@ -1,18 +1,19 @@
 # turtledb-com
 
-This project provides an accessable way to create **useful** applications.
-> **Useful** application requirements: display, persist, and share user-generated data.
+This project provides an accessable way to create useful[^1] applications.
+
+[^1]: **Useful:** display, persist, and share user-generated data.
 
 ## The Problem
 
-Setting up and maintaing the technologies to make an application **useful** is prohibitively expensive for a human.
-> By "human" I mean "not-a-corporation". 
+Setting up and maintaing the technologies to make an application **useful** is prohibitively expensive for a **human**.
+> **Human:** not-a-corporation. -- 
 
 ## The Solution 
 By limiting the applications to human-scale usage we are able treat all the data an app-user ever creates as a single database entry.
 This significantly reduces the complexities and costs associated with making an application.
-> I'm assuming human-scale usage to be around 2MB.
-> The average human typing speed is 40 WPM. 
+> **human-scale usage:** around 2MB.
+> -- The average human typing speed is 40 WPM. 
 > 2MB of typed data would take 175 hours to generate. 
 
 ## How it works
