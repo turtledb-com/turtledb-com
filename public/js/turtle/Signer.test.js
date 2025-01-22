@@ -11,6 +11,7 @@ globalRunner.describe(urlToName(import.meta.url), suite => {
     const address = workspace.upsert(value)
     const identity = new Signer('admin', 'secret')
     const keys = await identity.makeKeysFor(commits.name)
+    console.log(keys)
     await identity.commit(commits, workspace, address)
     const verified = await verifyTurtleCommit(commits.u8aTurtle, keys.publicKey)
     assert.equal(verified, true)

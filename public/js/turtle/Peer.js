@@ -111,14 +111,17 @@ export class Peer {
 
   /**
    * @param {string} name
+   * @param {string} [bale=name]
+   * @param {string} [hostname='turtledb.com']
    * @returns {TurtleBranch}
    */
-  getBranch (name) {
-    if (!this.branches[name]) {
-      this.branches[name] = new TurtleBranch(name, this.recaller)
+  getBranch (name, bale = name, hostname = 'turtledb.com') {
+    const branchName = `${hostname}-${bale}-${name}`
+    if (!this.branches[branchName]) {
+      this.branches[branchName] = new TurtleBranch(branchName, this.recaller)
       this.recaller.reportKeyMutation(this, 'branches', 'getBranch', this.name)
     }
-    return this.branches[name]
+    return this.branches[branchName]
   }
 
   /**
