@@ -34,33 +34,40 @@ Because a `Turtle` is an ongoing sequence of byte-arrays, every `Turtle` is a st
 This makes them a cheap, easy, and standardized to deal with.
 
 > [!NOTE] 
-> "Turtle" is a reference to ["Turtles All the Way Down"](https://en.wikipedia.org/wiki/Turtles_all_the_way_down)
+> Fun Fact: "Turtle" is a reference to ["Turtles All the Way Down"](https://en.wikipedia.org/wiki/Turtles_all_the_way_down)
 
-### turtledb-com is version control, transfer protocol, and a service. 
-> [!NOTE] 
-> It also uses a light-weight display framework to simplify data rendering (which you can use or ignore).
+### turtledb-com is version control, transfer protocol, service, and display framework. 
+
 
 #### turtledb-com is version control
 
-After being streamed, a `Turtle` can be decoded to a JavaScript value. 
-For streamed changes to be accepted they must end with a signed `Commit` value.
-Streamed changes without a valid signature are rejected.
+Every version of a `Turtle` ends with a signed `Commit`. 
+All previous `Commit`s are included with each new `Turtle`
+
+After being streamed, a `Turtle`'s `Commit` can be decoded to a JavaScript value. 
 The committed value can be anything but it's recommended you use an object with `timestamp`, `message`, and `state` fields.
 
 #### turtledb-com is a transfer protocol
 
-A `Turtle` is a sequence of *changed data*.
-*Changed data* is a byte array.
-`Turtle`s can be synced just by sending any missing byte arrays.
-As the `Turtle` grows so does the dictionary of reusable values.
+From a storage point-of-view, a `Turtle` is a sequence of *changes*.
+Each *change* is described in a byte array.
+A `Turtle` can be synced just by sending any missing byte arrays.
+
+From the codec's point-of-view, a `Turtle` is a dictionary of values and sub-values.
+The `Turtle`'s dictionary of reusable values grows with each new *change*.
 As the dictionary grows, the efficiency of the protocol increases.
 
 #### turtledb-com is a service provider
+
 turtledb-com as a service provides a file-system for virtual computers described in JavaScript, HTML, and CSS.
 
 turtledb.com is the built-in service provider designed to handle realistic-levels of **human-scale** usage for free[^4].
 
 [^4]: **Free**: until we abuse it and need to qualify what "persist" means...
+
+#### turtledb-com includes a display framework
+
+I use a light-weight display framework to simplify data rendering. It's not a core part of the problem-solution but it's part of turtledb-com (you don't have to use it but you'll see it in this project).
 
 ## Additional Documentation
 
