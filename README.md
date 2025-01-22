@@ -1,5 +1,8 @@
 # turtledb-com
 
+> [!WARNING] 
+> THIS PROJECT IS A WORK IN PROGRESS
+
 This project provides an accessable way to create **useful**[^1] applications.
 
 [^1]: **Useful:** display, persist, and share user-generated data.
@@ -20,9 +23,6 @@ This significantly reduces the complexities and costs associated with making an 
 
 > [!NOTE] 
 > The primary inspirations for this project are bittorrent, bitcoin, git, and the w3c. 
-
-> [!WARNING] 
-> THIS PROJECT IS A WORK IN PROGRESS
 
 
 
