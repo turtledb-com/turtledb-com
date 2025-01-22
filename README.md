@@ -34,7 +34,7 @@ Because a `Turtle` is an ongoing sequence of byte-arrays, every `Turtle` is a st
 This makes them a cheap, easy, and standardized to deal with.
 
 > [!NOTE] 
-> The name "Turtle" is a reference to the "Turtles All the Way Down" idiom. 
+> The name "Turtle" is a reference to ["Turtles All the Way Down"](https://en.wikipedia.org/wiki/Turtles_all_the_way_down)
 
 
 turtledb-com is version control, transfer protocol, and a service. 
