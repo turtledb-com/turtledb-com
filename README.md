@@ -17,7 +17,7 @@ Setting up and maintaing the technologies to make an application **useful**[^1] 
 This project handles displaying, persisting, and sharing a **human-scale**[^3] amount of data.
 By limiting the applications to **human-scale usage**[^3] we are able treat all the data an app-user ever creates as a single database entry.
 This significantly reduces the complexities and costs associated with making an application.
-[^3]: **human-scale usage:** around 2MB.
+[^3]: **Human-scale Usage:** around 2MB.
   -- The average human typing speed is 40 WPM. 
   2MB of typed data would take 175 hours to generate. 
 
@@ -28,17 +28,19 @@ This significantly reduces the complexities and costs associated with making an 
 
 ## Overview
 
-A `Turtle` in this project is an object that holds the entire collection of an app-user's data encoded as an array of bytes.
+Everything using this project is built on `Turtle`s.
+A `Turtle` is an object that holds the entire collection of an app-user's data encoded as an array of bytes.
 A `new Turtle` can be created using an existing `Turtle` and appending any changes to that `Turtle`.
 Because a `Turtle` is an ongoing sequence of byte-arrays, every `Turtle` is a stream.
 This makes them a cheap, easy, and standardized to deal with.
 
 > [!NOTE] 
-> The name "Turtle" is a reference to ["Turtles All the Way Down"](https://en.wikipedia.org/wiki/Turtles_all_the_way_down)
+> "Turtle" is a reference to ["Turtles All the Way Down"](https://en.wikipedia.org/wiki/Turtles_all_the_way_down)
 
 
-turtledb-com is version control, transfer protocol, and a service. 
-It uses a light-weight display framework (optional) to simplify data rendering.
+## turtledb-com is version control, transfer protocol, and a service. 
+> [!NOTE] 
+> It also uses a light-weight display framework to simplify data rendering (which you can use or ignore).
 
 ### turtledb-com is version control
 
