@@ -1,23 +1,24 @@
 # turtledb-com
 
-This project provides an accessable way to create useful[^1] applications.
+This project provides an accessable way to create **useful**[^1] applications.
 
 [^1]: **Useful:** display, persist, and share user-generated data.
 
 ## The Problem
 
-Setting up and maintaing the technologies to make an application **useful** is prohibitively expensive for a **human**.
-> **Human:** not-a-corporation. -- 
+Setting up and maintaing the technologies to make an application useful[^1] is prohibitively expensive for a **human**[^2].
+
+[^2] **Human:** not-a-corporation.
 
 ## The Solution 
-By limiting the applications to human-scale usage we are able treat all the data an app-user ever creates as a single database entry.
+By limiting the applications to **human-scale usage**[^3] we are able treat all the data an app-user ever creates as a single database entry.
 This significantly reduces the complexities and costs associated with making an application.
-> **human-scale usage:** around 2MB.
-> -- The average human typing speed is 40 WPM. 
-> 2MB of typed data would take 175 hours to generate. 
+{^3} **human-scale usage:** around 2MB.
+  -- The average human typing speed is 40 WPM. 
+  2MB of typed data would take 175 hours to generate. 
 
 ## How it works
-This project handles displaying, persisting, and sharing a human-scale amount of data without being prohibitively expensive.
+This project handles displaying, persisting, and sharing a human-scale[^3] amount of data without being prohibitively expensive.
 
 The primary inspirations for this project are bittorrent, bitcoin, git, and the w3c. 
 
@@ -58,7 +59,7 @@ As the dictionary grows, the efficiency of the protocol increases.
 ### turtledb-com is a service provider
 turtledb-com as a service provides a file-system for virtual computers described in JavaScript, HTML, and CSS.
 
-turtledb.com is the built-in service provider designed to handle realistic-levels of human-scale usage for free.
+turtledb.com is the built-in service provider designed to handle realistic-levels of human-scale[^3] usage for free.
 
 
 ## Usage example
