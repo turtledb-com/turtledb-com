@@ -5,38 +5,36 @@
 
 This project provides an accessable way to create **useful**[^1] applications.
 
-[^1]: **Useful:** display, persist, and share user-generated data.
+[^1]: **Useful:** An application must be able to display, persist, and share user-generated data.
 
 ## The Problem
 
-Setting up and maintaing the technologies to make an application **useful**[^1] is prohibitively expensive for a **human**[^2].
+Setting up and maintaining the technologies to make an application **useful** is prohibitively expensive for a **human**[^2].
 
-[^2]: **Human:** not-a-corporation.
+[^2]: **Human:** An person/app-user who is not-a-corporation.
 
 ## The Solution 
 This project handles displaying, persisting, and sharing a **human-scale**[^3] amount of data.
-By limiting the applications to **human-scale usage**[^3] we are able treat all the data an app-user ever creates as a single database entry.
+By limiting the applications to **human-scale** usage we are able treat all the data a **human** ever creates as a single database entry.
 This significantly reduces the complexities and costs associated with making an application.
-[^3]: **Human-scale Usage:** around 2MB.
+
+[^3]: **Human-scale:** About 2MB of input data.
   -- The average human typing speed is 40 WPM. 
-  2MB of typed data would take 175 hours to generate. 
+  2MB of typed data would take 175 hours to input. 
 
 > [!NOTE] 
 > The primary inspirations for this project are bittorrent, bitcoin, git, and the w3c. 
 
-
-
 ## Overview
 
 Everything using this project is built on `Turtle`s.
-A `Turtle` is an object that holds the entire collection of an app-user's data encoded as an array of bytes.
+A `Turtle` is an object that holds the entire collection of a **human**'s data encoded as arrays of bytes.
 A `new Turtle` can be created using an existing `Turtle` and appending any changes to that `Turtle`.
 Because a `Turtle` is an ongoing sequence of byte-arrays, every `Turtle` is a stream.
 This makes them a cheap, easy, and standardized to deal with.
 
 > [!NOTE] 
 > "Turtle" is a reference to ["Turtles All the Way Down"](https://en.wikipedia.org/wiki/Turtles_all_the_way_down)
-
 
 ## turtledb-com is version control, transfer protocol, and a service. 
 > [!NOTE] 
@@ -60,8 +58,9 @@ As the dictionary grows, the efficiency of the protocol increases.
 ### turtledb-com is a service provider
 turtledb-com as a service provides a file-system for virtual computers described in JavaScript, HTML, and CSS.
 
-turtledb.com is the built-in service provider designed to handle realistic-levels of **human-scale**[^3] usage for free.
+turtledb.com is the built-in service provider designed to handle realistic-levels of **human-scale** usage for free[^4].
 
+[^4]: **Free**: until we abuse it and need to qualify what "persist" means...
 
 ## Usage example
 
