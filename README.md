@@ -11,20 +11,16 @@ Setting up and maintaing the technologies to make an application **useful**[^1] 
 [^2]: **Human:** not-a-corporation.
 
 ## The Solution 
+This project handles displaying, persisting, and sharing a **human-scale**[^3] amount of data.
 By limiting the applications to **human-scale usage**[^3] we are able treat all the data an app-user ever creates as a single database entry.
 This significantly reduces the complexities and costs associated with making an application.
 [^3]: **human-scale usage:** around 2MB.
   -- The average human typing speed is 40 WPM. 
   2MB of typed data would take 175 hours to generate. 
 
-## How it works
-This project handles displaying, persisting, and sharing a **human-scale**[^3] amount of data without being prohibitively expensive.
+> [!NOTE] The primary inspirations for this project are bittorrent, bitcoin, git, and the w3c. 
 
-The primary inspirations for this project are bittorrent, bitcoin, git, and the w3c. 
-
-
-
-## THIS PROJECT IS A WORK IN PROGRESS
+> [!WARNING] THIS PROJECT IS A WORK IN PROGRESS
 
 
 
@@ -35,7 +31,7 @@ A `new Turtle` can be created using an existing `Turtle` and appending any chang
 Because a `Turtle` is an ongoing sequence of byte-arrays, every `Turtle` is a stream.
 This makes them a cheap, easy, and standardized to deal with.
 
-> The name "Turtle" is a reference to the "Turtles All the Way Down" idiom. 
+> [!NOTE] The name "Turtle" is a reference to the "Turtles All the Way Down" idiom. 
 
 
 turtledb-com is version control, transfer protocol, and a service. 
