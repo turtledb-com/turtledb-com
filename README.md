@@ -36,10 +36,7 @@ This makes them a cheap, easy, and standardized to deal with.
 > [!NOTE] 
 > Fun Fact: "Turtle" is a reference to ["Turtles All the Way Down"](https://en.wikipedia.org/wiki/Turtles_all_the_way_down)
 
-### turtledb-com is version control, transfer protocol, service, and display framework. 
-
-
-#### turtledb-com is version control
+### turtledb-com is version control
 
 Every version of a `Turtle` ends with a signed `Commit`. 
 All previous `Commit`s are included with each new `Turtle`
@@ -47,7 +44,7 @@ All previous `Commit`s are included with each new `Turtle`
 After being streamed, a `Turtle`'s `Commit` can be decoded to a JavaScript value. 
 The committed value can be anything but it's recommended you use an object with `timestamp`, `message`, and `state` fields.
 
-#### turtledb-com is a transfer protocol
+### turtledb-com is a transfer protocol
 
 From a storage point-of-view, a `Turtle` is a sequence of *changes*.
 Each *change* is described in a byte array.
@@ -57,7 +54,7 @@ From the codec's point-of-view, a `Turtle` is a dictionary of values and sub-val
 The `Turtle`'s dictionary of reusable values grows with each new *change*.
 As the dictionary grows, the efficiency of the protocol increases.
 
-#### turtledb-com is a service provider
+### turtledb-com is a service provider
 
 turtledb-com as a service provides a file-system for virtual computers described in JavaScript, HTML, and CSS.
 
@@ -65,7 +62,7 @@ turtledb.com is the built-in service provider designed to handle realistic-level
 
 [^4]: **Free**: until we abuse it and need to qualify what "persist" means...
 
-#### turtledb-com includes a display framework
+### turtledb-com includes a display framework
 
 I use a light-weight display framework to simplify data rendering. It's not a core part of the problem-solution but it's part of turtledb-com (you don't have to use it but you'll see it in this project).
 
