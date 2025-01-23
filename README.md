@@ -1,17 +1,18 @@
 # turtledb-com
 
-An achievable way to create **useful**[^1] applications.
+A **humanly**[^1] achievable way to create **useful**[^2] applications.
 
 > [!WARNING] 
 > THIS PROJECT IS A WORK IN PROGRESS
 
-[^1]: **Useful:** An application must be able to display, persist, and share user-generated data.
+[^1]: **Human:** A person/app-user who is not a corporation.
+
+[^2]: **Useful:** An application must be able to display, persist, and share user-generated data.
 
 ## The Problem
 
-Setting up and maintaining the technologies to make an application **useful** is prohibitively expensive for a **human**[^2].
+Setting up and maintaining the technologies to make an application **useful** is prohibitively expensive for a **human**.
 
-[^2]: **Human:** An person/app-user who is not-a-corporation.
 
 ## The Solution 
 This project handles displaying, persisting, and sharing a **human-scale**[^3] amount of data.
