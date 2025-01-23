@@ -1,5 +1,15 @@
 # turtledb-com
 
+
+> [!NOTE] 
+> This document is meant to be academic.
+> Links to documents meant for developers are at the end
+
+## terms
+
+Human
+: A person/app-user who is not a corporation.
+
 A **humanly**[^1] achievable way to create **useful**[^2] applications.
 
 > [!WARNING] 
