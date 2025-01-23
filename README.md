@@ -1,9 +1,9 @@
 # turtledb-com
 
+An achievable way to create **useful**[^1] applications.
+
 > [!WARNING] 
 > THIS PROJECT IS A WORK IN PROGRESS
-
-This project provides an accessable way to create **useful**[^1] applications.
 
 [^1]: **Useful:** An application must be able to display, persist, and share user-generated data.
 
