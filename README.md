@@ -79,13 +79,12 @@ A `new Turtle` can be created by taking an existing `Turtle` and combining it wi
 Because a `Turtle` is an ongoing sequence of byte-arrays it's literally a data-stream and can be treated as such.
 Because streams can be easily stored, retrieved, shared, and *uh...* streamed, it makes `Turtle`s a cheap, easy, and standard to deal with.
 
-> [!NOTE] 
-> Fun Fact: "Turtle" is a reference to ["Turtles All the Way Down"](https://en.wikipedia.org/wiki/Turtles_all_the_way_down)
-
 ## Overview
 
 > [!NOTE] 
-> The primary inspirations for this project are bittorrent, bitcoin, git, and the w3c. 
+> Fun Facts: 
+> * "Turtle" is a reference to ["Turtles All the Way Down"](https://en.wikipedia.org/wiki/Turtles_all_the_way_down)
+> * The primary inspirations for this project are bittorrent, bitcoin, git, and the w3c. 
 
 ### turtledb-com is Version Control
 
