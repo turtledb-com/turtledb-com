@@ -119,7 +119,7 @@ It's not a core part of the problem-solution but it's part of turtledb-com (you 
 ## Additional Documentation
 
 > [!WARNING] 
-> This section is fiction, notes-to-self, and rough-sketches for now
+> This section is fictional, notes-to-self, and/or rough-sketches for now
 
 * [Basic Usage](docs/basic_usage.md)
 * [Server Setup](docs/server_setup.md)

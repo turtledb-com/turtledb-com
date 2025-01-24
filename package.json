@@ -1,7 +1,7 @@
 {
   "name": "turtledb-com",
   "version": "0.1.0",
-  "description": "A humanly achievable way to create useful applications",
+  "description": "A humanly achievable way to create useful applications for other humans",
   "type": "module",
   "repository": "git@github.com:turtledb-com/turtledb-com.git",
   "author": "David Tudury <david.tudury@gmail.com>",
