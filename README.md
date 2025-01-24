@@ -1,53 +1,93 @@
 # turtledb-com
 
+A humanly achievable way to create useful applications for other humans.
 
 > [!NOTE] 
 > This document is meant to be academic.
 > Links to documents meant for developers are at the end
 
-## terms
-
-Human
-: A person/app-user who is not a corporation.
-
-A **humanly**[^1] achievable way to create **useful**[^2] applications.
-
 > [!WARNING] 
 > THIS PROJECT IS A WORK IN PROGRESS
 
-[^1]: **Human:** A person/app-user who is not a corporation.
-
-[^2]: **Useful:** An application must be able to display, persist, and share user-generated data.
 
 ## The Problem
 
-Setting up and maintaining the technologies to make an application **useful** is prohibitively expensive for a **human**.
+Setting up and maintaining the technologies to make a useful application is prohibitively expensive for humans. 
+This is because "industry best practices" are made by businesses.
+Business applications must scale with world-spanning teams and be able to consume data from billions of users. 
 
+The internet is for humans but applications are for businesses.
 
 ## The Solution 
-This project handles displaying, persisting, and sharing a **human-scale**[^3] amount of data.
-By limiting the applications to **human-scale** usage we are able treat all the data a **human** ever creates as a single database entry.
-This significantly reduces the complexities and costs associated with making an application.
 
-[^3]: **Human-scale:** About 2MB of input data.
-  -- The average human typing speed is 40 WPM. 
-  2MB of typed data would take 175 hours to input. 
+Replace "industry best practices" with a "cheap, easy, and good enough practice"
 
-> [!NOTE] 
-> The primary inspirations for this project are bittorrent, bitcoin, git, and the w3c. 
+### Solution Requirements
 
-## Overview
+* The server is fully managed and inexpensive.
+* The application is useful.
+* Any technologies are standard and easy to learn.
+
+We achieve this by treating each app-instance as a stand-alone unit with human-scale usage.
+This way we are able treat all the data an app-instance ever creates as a single database entry.
+This strategy *significantly* reduces the complexity and cost of serving an application.
+Additionally, when possible, this project uses standard web technologies.
+
+## Definition of Terms
+
+##### Application
+For now we aren't handling images, audio, or video (CSS, SVG, and Canvas are fine though). 
+Some possible applications with limited media are:
+
+* class notes
+* chat
+* internet forums
+* issue trackers
+* personal publications
+* grocery lists
+
+##### App-Instance
+To be used, an application is copied into a new cryptographically signed instance (`TurtleBranch`). 
+Any data or other changes must be signed and added to this instance.
+
+##### Human
+The term *human* is used rather than *user*. 
+The most important *user* for most apps are marketing departments.
+For turtledb-com apps, the most important *user* is the consumer.
+
+##### Human-scale
+About 2MB of input data
+-- The average human typing speed is 40 WPM. 
+2MB of typed data would take 175 hours to input. 
+
+##### `Turtle`
+A read-only holder for "all the data an app-instance ever creates" (see more below)
+
+##### `TurtleBranch`
+A moveable tag pointing to a `Turtle`. 
+An app-instance's uses a `TurtleBranch` to point to the current state of "all the data".
+
+##### Useful 
+The term *useful* is meant as a minimum set of features all apps must provide.
+An application must be able to display, persist, and share user-generated data.
+
+## A Little More about `Turtle`s
 
 Everything using this project is built on `Turtle`s.
-A `Turtle` is an object that holds the entire collection of a **human**'s data encoded as arrays of bytes.
-A `new Turtle` can be created using an existing `Turtle` and appending any changes to that `Turtle`.
-Because a `Turtle` is an ongoing sequence of byte-arrays, every `Turtle` is a stream.
-This makes them a cheap, easy, and standardized to deal with.
+A `Turtle` is an object that holds a dictionary of an app-instance's data encoded as sequential arrays of bytes.
+A `new Turtle` can be created by taking an existing `Turtle` and combining it with changes as a new arrays of bytes.
+Because a `Turtle` is an ongoing sequence of byte-arrays it's literally a data-stream and can be treated as such.
+Because streams can be easily stored, retrieved, shared, and *uh...* streamed, it makes `Turtle`s a cheap, easy, and standard to deal with.
 
 > [!NOTE] 
 > Fun Fact: "Turtle" is a reference to ["Turtles All the Way Down"](https://en.wikipedia.org/wiki/Turtles_all_the_way_down)
 
-### turtledb-com is version control
+## Overview
+
+> [!NOTE] 
+> The primary inspirations for this project are bittorrent, bitcoin, git, and the w3c. 
+
+### turtledb-com is Version Control
 
 Every version of a `Turtle` ends with a signed `Commit`. 
 All previous `Commit`s are included with each new `Turtle`
@@ -69,15 +109,17 @@ As the dictionary grows, the efficiency of the protocol increases.
 
 turtledb-com as a service provides a file-system for virtual computers described in JavaScript, HTML, and CSS.
 
-turtledb.com is the built-in service provider designed to handle realistic-levels of **human-scale** usage for free[^4].
-
-[^4]: **Free**: until we abuse it and need to qualify what "persist" means...
+turtledb.com is the built-in service provider designed to handle realistic-levels of human-scale usage.
 
 ### turtledb-com includes a display framework
 
-I use a light-weight display framework to simplify data rendering. It's not a core part of the problem-solution but it's part of turtledb-com (you don't have to use it but you'll see it in this project).
+This project uses a light-weight display framework to simplify data rendering. 
+It's not a core part of the problem-solution but it's part of turtledb-com (you don't have to use it but you'll see it in this project).
 
 ## Additional Documentation
+
+> [!WARNING] 
+> This section is fiction, notes-to-self, and rough-sketches for now
 
 * [Basic Usage](docs/basic_usage.md)
 * [Server Setup](docs/server_setup.md)
