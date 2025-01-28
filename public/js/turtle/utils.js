@@ -1,35 +1,35 @@
 /**
- * @param {Array.<number>} subVersionCounts
+ * @param {Array.<number>} versionArrayCounts
  * @return number
  */
-export const toVersionCount = subVersionCounts => subVersionCounts.reduce((acc, value) => acc * value, 1)
+export const toVersionCount = versionArrayCounts => versionArrayCounts.reduce((acc, value) => acc * value, 1)
 
 /**
  * @param {number} combinedVersion
- * @param {Array.<number>} subVersionCounts
+ * @param {Array.<number>} versionArrayCounts
  * @return {Array.<number}
  */
-export const toSubVersions = (combinedVersion, subVersionCounts) => {
-  const subVersions = new Array(subVersionCounts.length)
-  for (let i = subVersions.length - 1; i >= 0; --i) {
-    const subVersionCount = subVersionCounts[i]
-    subVersions[i] = combinedVersion % subVersionCount
-    combinedVersion = Math.floor(combinedVersion / subVersionCount)
+export const toSubVersions = (combinedVersion, versionArrayCounts) => {
+  const versionArrays = new Array(versionArrayCounts.length)
+  for (let i = versionArrays.length - 1; i >= 0; --i) {
+    const versionArrayCount = versionArrayCounts[i]
+    versionArrays[i] = combinedVersion % versionArrayCount
+    combinedVersion = Math.floor(combinedVersion / versionArrayCount)
   }
-  return subVersions
+  return versionArrays
 }
 
 /**
- * @param {Array.<number>} subVersions
- * @param {Array.<number>} subVersionCounts
+ * @param {Array.<number>} versionArrays
+ * @param {Array.<number>} versionArrayCounts
  * @return number
  */
-export const toCombinedVersion = (subVersions, subVersionCounts) => {
-  if (subVersions.length !== subVersionCounts.length) throw new Error('subVersions/subVersionCounts mismatch')
+export const toCombinedVersion = (versionArrays, versionArrayCounts) => {
+  if (versionArrays.length !== versionArrayCounts.length) throw new Error('versionArrays/versionArrayCounts mismatch')
   let combinedVersion = 0
-  for (let i = 0; i < subVersions.length; ++i) {
-    combinedVersion *= subVersionCounts[i]
-    combinedVersion += subVersions[i]
+  for (let i = 0; i < versionArrays.length; ++i) {
+    combinedVersion *= versionArrayCounts[i]
+    combinedVersion += versionArrays[i]
   }
   return combinedVersion
 }

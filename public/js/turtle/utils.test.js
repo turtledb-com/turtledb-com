@@ -37,10 +37,10 @@ globalRunner.describe(urlToName(import.meta.url), suite => {
     const versionParts = [2, 3, 4]
     const versionCount = toVersionCount(versionParts)
     for (let combinedVersion = 0; combinedVersion < versionCount; ++combinedVersion) {
-      const subVersions = toSubVersions(combinedVersion, versionParts)
-      const _combinedVersion = toCombinedVersion(subVersions, versionParts)
-      // console.log(subVersions, combinedVersion)
-      assert.equal(combinedVersion, _combinedVersion, `combinedVersion: ${combinedVersion} to subVersions${subVersions} and back ${_combinedVersion}`)
+      const versionArrays = toSubVersions(combinedVersion, versionParts)
+      const _combinedVersion = toCombinedVersion(versionArrays, versionParts)
+      // console.log(versionArrays, combinedVersion)
+      assert.equal(combinedVersion, _combinedVersion, `combinedVersion: ${combinedVersion} to versionArrays${versionArrays} and back ${_combinedVersion}`)
     }
   })
   suite.it('stores and retrieves values by Uint8Array', ({ assert }) => {

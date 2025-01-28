@@ -24,9 +24,9 @@ export class CompositeCodec {
 
   getCodecTypeVersion (footer) { return this.codecTypeVersionsByFooter[footer] }
   getCodecType (name) { return this.codecTypesByName[name] }
-  getFooter (codecType, subVersions) {
+  getFooter (codecType, versionArrays) {
     const footerByCombinedVersions = this.footerByCodecTypeAndCombinedVersions.get(codecType)
-    const combinedVersion = toCombinedVersion(subVersions, codecType.subVersionCounts)
+    const combinedVersion = toCombinedVersion(versionArrays, codecType.versionArrayCounts)
     return footerByCombinedVersions[combinedVersion]
   }
 
@@ -34,7 +34,7 @@ export class CompositeCodec {
    * @param {import('./CodecType.js').CodecType} codecType
    */
   addCodecType (codecType) {
-    const versionCount = toVersionCount(codecType.subVersionCounts)
+    const versionCount = toVersionCount(codecType.versionArrayCounts)
     const footerByVersion = new Array(versionCount)
     for (let combinedVersion = 0; combinedVersion < versionCount; ++combinedVersion) {
       const footer = this.codecTypeVersionsByFooter.length

@@ -31,6 +31,7 @@
     "standard": "^17.1.0"
   },
   "scripts": {
+    "newstart": "./bin/server.js --interactive --username dev --password secret",
     "start": "concurrently -p time --restart-tries 10 --restart-after exponential -c cyan,magenta -n webserver,s3peer \"$npm_execpath run webserver.prod\" \"$npm_execpath run s3peer.prod\"",
     "dev": "node --inspect ./bin/webserver.js --path public:/ --path test --insecure --https --s3host turtledb.com --s3port 1024",
     "dev.fs": "./bin/fspeer.js --s3host localhost --s3port 1024 --path ./public/",

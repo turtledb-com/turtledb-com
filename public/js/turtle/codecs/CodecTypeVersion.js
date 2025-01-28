@@ -10,7 +10,7 @@ export class CodecTypeVersion {
     /** @type {import('./CodecType.js').CodecType} */
     this.codecType = codecType
     this.combinedVersion = combinedVersion
-    this.subVersions = toSubVersions(combinedVersion, codecType.subVersionCounts)
+    this.versionArrays = toSubVersions(combinedVersion, codecType.versionArrayCounts)
   }
 
   /**

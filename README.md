@@ -74,10 +74,11 @@ An application must be able to display, persist, and share user-generated data.
 ## A Little More about `Turtle`s
 
 Everything using this project is built on `Turtle`s.
-A `Turtle` is an object that holds a dictionary of an app-instance's data encoded as sequential arrays of bytes.
+A `Turtle` is an object that holds a dictionary of an app-instance's data encoded as a series of arrays of bytes.
 A `new Turtle` can be created by taking an existing `Turtle` and combining it with changes as a new arrays of bytes.
-Because a `Turtle` is an ongoing sequence of byte-arrays it's literally a data-stream and can be treated as such.
-Because streams can be easily stored, retrieved, shared, and *uh...* streamed, it makes `Turtle`s a cheap, easy, and standard to deal with.
+Because a `Turtle` is data broken into smaller packets it's the definition of a data-stream.
+At it's most basic, the internet is designed to allow communication between networked computers using data-streams. 
+Because `Turtle`s are streams, the internet is literally designed to make useful apps with them.
 
 ## Overview
 
