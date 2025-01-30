@@ -5,15 +5,15 @@ globalRunner.describe(urlToName(import.meta.url), suite => {
   suite.it('constructs correctly', ({ assert }) => {
     console.log('running suite')
     const a = new U8aTurtle(new Uint8Array([0, 1, 2, 3]))
-    assert.equal(a.height, 0, 'a.height')
+    assert.equal(a.index, 0, 'a.index')
     assert.equal(a.length, 4, 'a.length')
 
     const b = new U8aTurtle(new Uint8Array([4, 5, 6, 7]), a)
-    assert.equal(b.height, 1, 'b.height')
+    assert.equal(b.index, 1, 'b.index')
     assert.equal(b.length, 8, 'b.length')
 
     assert.equal(b.findParentByAddress(1), a, 'a is correct b.parent')
-    assert.equal(b.findParentByHeight(0), a, 'a is correct b.parent')
+    assert.equal(b.findParentByIndex(0), a, 'a is correct b.parent')
     assert.equal(b.getByte(6), 6, '6th byte is 6')
     assert.equal(b.getByte(7), 7, '7th byte is 7')
     assert.equal(b.getByte(), 7, 'last byte is 7')
@@ -23,7 +23,7 @@ globalRunner.describe(urlToName(import.meta.url), suite => {
 
     const c = new U8aTurtle(new Uint8Array([8, 9]), b)
     assert.equal(c.findParentByAddress(1), a, 'a is correct c.parent')
-    assert.equal(c.findParentByHeight(0), a, 'a is correct c.parent')
+    assert.equal(c.findParentByIndex(0), a, 'a is correct c.parent')
     assert.equal(c.findParentByAddress(6).getByte(6), 6, '6th byte is 6')
 
     assert.equal(b.slice(7, 8), new Uint8Array([7]))

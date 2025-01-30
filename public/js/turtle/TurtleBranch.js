@@ -80,10 +80,10 @@ export class TurtleBranch {
   }
 
   get length () { return this.u8aTurtle?.length }
-  get height () { return this.u8aTurtle?.height }
+  get index () { return this.u8aTurtle?.index }
   getByte (address) { return this.u8aTurtle?.findParentByAddress?.(address)?.getByte?.(address) }
   slice (start, end) { return this.u8aTurtle?.findParentByAddress?.(start)?.slice?.(start, end) }
-  squash (downToHeight) { this.u8aTurtle = squashTurtle(this.u8aTurtle, downToHeight) }
+  squash (downToIndex) { this.u8aTurtle = squashTurtle(this.u8aTurtle, downToIndex) }
   /**
    * @param  {[optional_address:number, ...path:Array.<string>, optional_options:import('./codecs/CodecType.js').CodecOptions]} path
    * @returns {any}

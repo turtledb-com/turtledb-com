@@ -53,10 +53,10 @@ export class Signer {
    * @param {string} [publicKey=target.name]
    */
   async commit (target, updates, address, name = target.name) {
-    if (target.u8aTurtle !== updates.u8aTurtle.findParentByHeight(target.height)) {
+    if (target.u8aTurtle !== updates.u8aTurtle.findParentByIndex(target.index)) {
       throw new Error('target must be ancestor of updates (merge required)')
     }
-    let uint8Array = combineUint8Arrays(updates.u8aTurtle.exportUint8Arrays(target.height))
+    let uint8Array = combineUint8Arrays(updates.u8aTurtle.exportUint8Arrays(target.index))
     if (target.u8aTurtle) {
       /** @type {Commit} */
       const previousCommit = target.lookup(AS_REFS)

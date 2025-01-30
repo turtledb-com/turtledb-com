@@ -9,7 +9,7 @@ import { proxyWithRecaller } from '../utils.js'
 
 /**
  * @typedef BranchUpdate
- * @property {number} height
+ * @property {number} index
  * @property {Array.<number>} uint8Arrays
  */
 

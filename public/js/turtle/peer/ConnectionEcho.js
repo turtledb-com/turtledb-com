@@ -47,8 +47,8 @@ export class ConnectionEcho {
         for (const cpk in incomingUpdates[hostname][bale]) {
           const branch = this.peer.getBranch(cpk, bale, hostname)
           const branchUpdate = incomingUpdates[hostname][bale][cpk]
-          while (branchUpdate?.uint8Arrays?.[(branch.height ?? -1) + 1]) {
-            const address = branchUpdate.uint8Arrays[(branch.height ?? -1) + 1]
+          while (branchUpdate?.uint8Arrays?.[(branch.index ?? -1) + 1]) {
+            const address = branchUpdate.uint8Arrays[(branch.index ?? -1) + 1]
             const uint8Array = this.incomingUpdateBranch.lookup(address)
             this.peer.recaller.call(() => {
               branch.append(uint8Array)
@@ -68,13 +68,13 @@ export class ConnectionEcho {
           const incomingBranchUpdate = incomingUpdates?.[hostname]?.[bale]?.[cpk]
           const branch = this.peer.branches[hostname][bale][cpk]
           const outgoingBranchUpdate = lastOutgoingUpdates?.[hostname]?.[bale]?.[cpk] ?? {}
-          outgoingBranchUpdate.height = branch.height ?? -1
+          outgoingBranchUpdate.index = branch.index ?? -1
           outgoingBranchUpdate.uint8Arrays ??= []
           if (incomingBranchUpdate) {
-            for (let height = (incomingBranchUpdate.height ?? -1) + 1; height <= branch.height; ++height) {
+            for (let index = (incomingBranchUpdate.index ?? -1) + 1; index <= branch.index; ++index) {
               this.peer.recaller.call(() => {
-                const uint8Array = branch.u8aTurtle.findParentByHeight(height).uint8Array
-                outgoingBranchUpdate.uint8Arrays[height] ??= this.outgoingUpdateDictionary.upsert(uint8Array, [codec.getCodecType(OPAQUE_UINT8ARRAY)])
+                const uint8Array = branch.u8aTurtle.findParentByIndex(index).uint8Array
+                outgoingBranchUpdate.uint8Arrays[index] ??= this.outgoingUpdateDictionary.upsert(uint8Array, [codec.getCodecType(OPAQUE_UINT8ARRAY)])
               }, IGNORE_MUTATE) // don't trigger ourselves
             }
           }

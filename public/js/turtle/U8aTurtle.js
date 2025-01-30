@@ -16,32 +16,32 @@ export class U8aTurtle {
     if (parent) {
       this.parent = parent
       this.offset = parent.length
-      this.height = parent.height + 1
+      this.index = parent.index + 1
       this.length = parent.length + uint8Array.length
       let seekLayer = parent
-      const seekCount = zabacaba(this.height)
+      const seekCount = zabacaba(this.index)
       for (let i = 0; i < seekCount; ++i) {
         this.seekLayers.unshift(seekLayer)
         seekLayer = seekLayer.seekLayers[0]
       }
     } else {
       this.offset = 0
-      this.height = 0
+      this.index = 0
       this.length = uint8Array.length
     }
   }
 
   /**
-   * @param {number} height
+   * @param {number} index
    * @param {number} tooHigh
    * @returns {U8aTurtle}
    */
-  findParentByHeight (height, tooHigh) {
-    if (height < 0) height += this.height
-    if (height === this.height) return this
-    if (height < this.height) {
+  findParentByIndex (index, tooHigh) {
+    if (index < 0) index += this.index
+    if (index === this.index) return this
+    if (index < this.index) {
       for (const seekLayer of this.seekLayers.filter(seekLayer => seekLayer !== tooHigh)) {
-        const found = seekLayer.findParentByHeight(height, tooHigh)
+        const found = seekLayer.findParentByIndex(index, tooHigh)
         if (found) return found
         tooHigh = seekLayer
       }
@@ -115,13 +115,13 @@ export class U8aTurtle {
    * @param {number} end
    * @returns {Array.<Uint8Array>}
    */
-  exportUint8Arrays (start = 0, end = this.height) {
-    if (start > this.height || start < 0) throw new Error('start out of range')
-    if (end > this.height || end < 0) throw new Error('end out of range')
+  exportUint8Arrays (start = 0, end = this.index) {
+    if (start > this.index || start < 0) throw new Error('start out of range')
+    if (end > this.index || end < 0) throw new Error('end out of range')
     const uint8Arrays = new Array(1 + end - start)
-    let index = this.findParentByHeight(end)
-    while (index && index.height >= start) {
-      uint8Arrays[index.height - start] = index.uint8Array
+    let index = this.findParentByIndex(end)
+    while (index && index.index >= start) {
+      uint8Arrays[index.index - start] = index.uint8Array
       index = index.parent
     }
     return uint8Arrays
@@ -130,12 +130,12 @@ export class U8aTurtle {
 
 /**
  * @param {U8aTurtle} u8aTurtle
- * @param {number} downToHeight
+ * @param {number} downToIndex
  * @returns {U8aTurtle}
  */
-export function squashTurtle (u8aTurtle, downToHeight = 0) {
+export function squashTurtle (u8aTurtle, downToIndex = 0) {
   return new U8aTurtle(
-    combineUint8Arrays(u8aTurtle.exportUint8Arrays(downToHeight)),
-    u8aTurtle.findParentByHeight(downToHeight).parent
+    combineUint8Arrays(u8aTurtle.exportUint8Arrays(downToIndex)),
+    u8aTurtle.findParentByIndex(downToIndex).parent
   )
 }
