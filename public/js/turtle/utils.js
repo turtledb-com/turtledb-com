@@ -1,3 +1,5 @@
+export const OWN_KEYS = Symbol('ownKeys')
+
 /**
  * @param {Array.<number>} versionArrayCounts
  * @return number
@@ -179,4 +181,47 @@ export function b36ToUint8Array (b36) {
  */
 export function uint8ArrayToB36 (uint8Array) {
   return uint8ArrayToBigInt(uint8Array).toString(36)
+}
+
+/**
+ * @param {Object} target
+ * @param {import('../utils/Recaller.js').Recaller} recaller
+ */
+export function proxyWithRecaller (target, recaller, name = '<unnamed proxyWithRecaller>') {
+  if (!target || typeof target !== 'object') throw new Error('proxyWithRecaller can only proxy objects')
+  return new Proxy(target, {
+    has: (target, propertyKey) => {
+      recaller.reportKeyAccess(target, propertyKey, 'get', name)
+      return Reflect.has(target, propertyKey)
+    },
+    get: (target, propertyKey) => {
+      recaller.reportKeyAccess(target, propertyKey, 'get', name)
+      if (propertyKey === 'length' && Array.isArray(target)) return target.length
+      return Reflect.get(target, propertyKey)
+    },
+    set: (target, propertyKey, value) => {
+      const length = target.length
+      if (value !== target[propertyKey]) {
+        recaller.reportKeyMutation(target, propertyKey, 'set', name)
+      }
+      if (!Object.hasOwn(target, propertyKey)) {
+        recaller.reportKeyMutation(target, OWN_KEYS, 'set', name)
+      }
+      const result = Reflect.set(target, propertyKey, value)
+      if (Array.isArray(target) && length !== target.length) {
+        recaller.reportKeyMutation(target, 'length', 'set', name)
+      }
+      return result
+    },
+    deleteProperty: (target, propertyKey) => {
+      if (Object.hasOwn(target, propertyKey)) {
+        recaller.reportKeyMutation(target, OWN_KEYS, 'delete', name)
+      }
+      return Reflect.deleteProperty(target, propertyKey)
+    },
+    ownKeys: target => {
+      recaller.reportKeyAccess(target, OWN_KEYS, 'ownKeys', name)
+      return Reflect.ownKeys(target)
+    }
+  })
 }

@@ -11,7 +11,7 @@
       myRepo = globalPeer.checkout(mySigner, 'name of the repo')
       console.log(myRepo.name)
       // '42f8jho4f...'
-      await myRepo.ready
+      await globalPeer.ready(myRepo)
       ```
     * once the `await` resolves the repo should be ready to `Commit` to
 1. `Commit` some data

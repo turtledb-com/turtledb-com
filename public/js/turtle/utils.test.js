@@ -1,5 +1,7 @@
 import { globalRunner, urlToName } from '../../test/Runner.js'
-import { b36ToUint8Array, bigIntToUint8Array, combineUint8ArrayLikes, combineUint8Arrays, decodeNumberFromU8a, encodeNumberToU8a, parseB36, toCombinedVersion, toSubVersions, toVersionCount, uint8ArrayToB36, uint8ArrayToBigInt, ValueByUint8Array, zabacaba } from './utils.js'
+import { handleNextTick } from '../utils/nextTick.js'
+import { Recaller } from '../utils/Recaller.js'
+import { b36ToUint8Array, bigIntToUint8Array, combineUint8ArrayLikes, combineUint8Arrays, decodeNumberFromU8a, encodeNumberToU8a, parseB36, proxyWithRecaller, toCombinedVersion, toSubVersions, toVersionCount, uint8ArrayToB36, uint8ArrayToBigInt, ValueByUint8Array, zabacaba } from './utils.js'
 
 globalRunner.describe(urlToName(import.meta.url), suite => {
   suite.it('returns expected values for a zabacaba function', ({ assert }) => {
@@ -88,5 +90,38 @@ globalRunner.describe(urlToName(import.meta.url), suite => {
     assert.equal(uint8Array, uint8Array2)
     const b36 = uint8ArrayToB36(uint8Array2)
     assert.equal(b36, b36BigInt)
+  })
+  suite.it('proxyWithRecaller', ({ assert }) => {
+    const recaller = new Recaller('proxyWithRecaller')
+    const proxiedArray = proxyWithRecaller([1, 2, 3], recaller)
+    const arrayIndex1Updates = []
+    const arrayLengthUpdates = []
+    recaller.watch('proxiedArray index 1', () => {
+      arrayIndex1Updates.push(proxiedArray[1])
+    })
+    recaller.watch('proxiedArray length', () => {
+      arrayLengthUpdates.push(proxiedArray.length)
+    })
+    assert.equal(arrayIndex1Updates, [2])
+    assert.equal(arrayLengthUpdates, [3])
+    handleNextTick()
+    assert.equal(arrayIndex1Updates, [2])
+    assert.equal(arrayLengthUpdates, [3])
+    proxiedArray[1] = 4
+    handleNextTick()
+    assert.equal(arrayIndex1Updates, [2, 4])
+    assert.equal(arrayLengthUpdates, [3])
+    proxiedArray[2] = 4
+    handleNextTick()
+    assert.equal(arrayIndex1Updates, [2, 4])
+    assert.equal(arrayLengthUpdates, [3])
+    proxiedArray[5] = 4
+    handleNextTick()
+    assert.equal(arrayIndex1Updates, [2, 4])
+    assert.equal(arrayLengthUpdates, [3, 6])
+    proxiedArray.pop()
+    handleNextTick()
+    assert.equal(arrayIndex1Updates, [2, 4])
+    assert.equal(arrayLengthUpdates, [3, 6, 5])
   })
 })
