@@ -1,7 +1,17 @@
 import { Recaller } from '../../utils/Recaller.js'
 import { TurtleBranch } from '../TurtleBranch.js'
 import { proxyWithRecaller } from '../utils.js'
-import { ConnectionEcho } from './ConnectionEcho.js'
+
+/**
+ * @typedef Connection
+ * @property {() => void} sync
+ */
+
+/**
+ * @typedef BranchUpdate
+ * @property {number} height
+ * @property {Array.<number>} uint8Arrays
+ */
 
 /**
  * @typedef Duplex
@@ -10,7 +20,7 @@ import { ConnectionEcho } from './ConnectionEcho.js'
  */
 
 export class Peer {
-  /** @type {Array.<ConnectionEcho>} */
+  /** @type {Array.<Connection>} */
   connections
 
   /** @type {Object.<string, TurtleBranch>} */
@@ -26,7 +36,7 @@ export class Peer {
     this.connections = proxyWithRecaller([], recaller)
     this.branches = proxyWithRecaller({}, recaller)
     this.recaller.watch('handle remote updates', () => {
-      this.connections.forEach(connection => connection.sync(this))
+      this.connections.forEach(connection => connection.sync())
     })
   }
 
@@ -41,16 +51,5 @@ export class Peer {
     this.branches[hostname][bale] ??= proxyWithRecaller({}, this.recaller)
     this.branches[hostname][bale][cpk] ??= new TurtleBranch(cpk, this.recaller)
     return this.branches[hostname][bale][cpk]
-  }
-
-  /**
-   * @param {Duplex} [duplex]
-   * @returns {Duplex}
-   */
-  connect (duplex = null) {
-    const name = `${this.name}.connections[${this.connections.length}]`
-    const connection = new ConnectionEcho(name, this, duplex)
-    this.connections.push(connection)
-    return connection.duplex
   }
 }
