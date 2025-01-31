@@ -1,12 +1,11 @@
 {
   "name": "turtledb-com",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "A humanly achievable way to create useful applications for other humans",
   "type": "module",
   "repository": "git@github.com:turtledb-com/turtledb-com.git",
   "author": "David Tudury <david.tudury@gmail.com>",
   "license": "AGPL-3.0",
-  "main": "./index.js",
   "bin": {
     "fspeer": "./bin/fspeer.js",
     "s3peer": "./bin/s3peer.js",
