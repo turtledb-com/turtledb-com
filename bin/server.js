@@ -29,9 +29,7 @@ program
 const options = program.opts()
 options.username ??= question('username: ')
 options.password ??= question('password: ', { hideEchoBack: true })
-console.log(options)
 const { username, password, s3EndPoint, s3Region, s3Bucket, s3AccessKeyId, s3SecretAccessKey, fsdir, jsobj, turtle, root, port, originHost, originPort, interactive } = options
-console.log({ username, password, s3EndPoint, s3Region, s3Bucket, s3AccessKeyId, s3SecretAccessKey, fsdir, jsobj, turtle, root, port, originHost, originPort, interactive })
 
 const peer = new Peer(username)
 const signer = new Signer(username, password)

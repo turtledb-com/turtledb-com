@@ -1,12 +1,13 @@
 {
   "name": "turtledb-com",
-  "version": "0.1.2",
+  "version": "0.1.4",
   "description": "A humanly achievable way to create useful applications for other humans",
   "type": "module",
   "repository": "git@github.com:turtledb-com/turtledb-com.git",
   "author": "David Tudury <david.tudury@gmail.com>",
   "license": "AGPL-3.0",
   "bin": {
+    "turtledb-com": "./bin/server.js",
     "fspeer": "./bin/fspeer.js",
     "s3peer": "./bin/s3peer.js",
     "repl": "./bin/repl.js",
@@ -30,7 +31,7 @@
     "standard": "^17.1.0"
   },
   "scripts": {
-    "turtledb-com": "./bin/server.js --interactive",
+    "repl": "./bin/server.js --interactive",
     "start": "concurrently -p time --restart-tries 10 --restart-after exponential -c cyan,magenta -n webserver,s3peer \"$npm_execpath run webserver.prod\" \"$npm_execpath run s3peer.prod\"",
     "dev": "node --inspect ./bin/webserver.js --path public:/ --path test --insecure --https --s3host turtledb.com --s3port 1024",
     "dev.fs": "./bin/fspeer.js --s3host localhost --s3port 1024 --path ./public/",
@@ -42,7 +43,6 @@
     "dev.all": "concurrently -k -i -c cyan,magenta,yellow -n repl,webserver,fspeer \"$npm_execpath run dev.repl\" \"$npm_execpath run dev.web\" \"$npm_execpath run dev.fs\"",
     "webserver.prod": "./bin/webserver.js --path public:/ --s3port 1024",
     "s3peer.prod": "./bin/s3peer.js --endpoint https://sfo3.digitaloceanspaces.com --bucket tarasque --region sfo3 --port 1024",
-    "repl": "./bin/repl.js",
     "fspeer": "./bin/fspeer.js --s3host turtledb.com --s3port 1024 --path ./public/",
     "fspeer.main": "./bin/fspeer.js --s3host turtledb.com --s3port 1024 --path ./public/components/main/ --prefix components/main",
     "canary": "open '/Applications/Google Chrome Canary.app' --args --auto-open-devtools-for-tabs --allow-insecure-localhost --ignore-certificate-errors --unsafely-treat-insecure-origin-as-secure=https://localhost:8080/ https://localhost:8080/",
