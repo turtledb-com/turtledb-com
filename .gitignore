@@ -12,3 +12,6 @@ public/js/utils/noble-secp256k1.js
 
 # self signed certs for dev go here
 dev/
+
+# for running server with --interactive
+.node_repl_history

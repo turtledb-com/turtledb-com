@@ -1,6 +1,6 @@
 {
   "name": "turtledb-com",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "A humanly achievable way to create useful applications for other humans",
   "type": "module",
   "repository": "git@github.com:turtledb-com/turtledb-com.git",
@@ -31,7 +31,7 @@
     "standard": "^17.1.0"
   },
   "scripts": {
-    "newstart": "./bin/server.js --interactive --username dev --password secret",
+    "turtledb-com": "./bin/server.js --interactive",
     "start": "concurrently -p time --restart-tries 10 --restart-after exponential -c cyan,magenta -n webserver,s3peer \"$npm_execpath run webserver.prod\" \"$npm_execpath run s3peer.prod\"",
     "dev": "node --inspect ./bin/webserver.js --path public:/ --path test --insecure --https --s3host turtledb.com --s3port 1024",
     "dev.fs": "./bin/fspeer.js --s3host localhost --s3port 1024 --path ./public/",
