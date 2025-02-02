@@ -1,15 +1,15 @@
 import { globalRunner, urlToName } from '../../../test/Runner.js'
 import { Peer } from './Peer.js'
 import { TurtleDictionary } from '../TurtleDictionary.js'
-import { ConnectionEcho } from './ConnectionEcho.js'
+import { EchoConnection } from './EchoConnection.js'
 
 globalRunner.describe(urlToName(import.meta.url), suite => {
   suite.it('handles moving branches', async ({ assert }) => {
     const peerA = new Peer('a')
     const peerB = new Peer('b')
-    const connectionAB = new ConnectionEcho('connectionAB', peerA)
+    const connectionAB = new EchoConnection('connectionAB', peerA)
     peerA.connections.push(connectionAB)
-    const connectionBA = new ConnectionEcho('connectionBA', peerB, connectionAB.duplex)
+    const connectionBA = new EchoConnection('connectionBA', peerB, connectionAB.duplex)
     peerB.connections.push(connectionBA)
     const dictionaryA = new TurtleDictionary('aaa', peerA.recaller)
     const branchA = peerA.getBranch('aaa')

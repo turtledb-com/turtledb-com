@@ -28,6 +28,9 @@ export class Workspace extends TurtleDictionary {
     })
   }
 
+  get lastCommit () { return this.lookup()?.value }
+  get lastCommitValue () { return this.lastCommit?.value }
+
   async commit (value, message) {
     if (this.u8aTurtle && this.branch.u8aTurtle !== this.u8aTurtle.findParentByIndex(this.branch.index)) {
       throw new Error('target must be ancestor of updates (merge required)')

@@ -4,24 +4,13 @@ import { proxyWithRecaller } from '../utils.js'
 import { Workspace } from '../Workspace.js'
 
 /**
- * @typedef Connection
- * @property {() => void} sync
- */
-
-/**
- * @typedef BranchUpdate
- * @property {number} index
- * @property {Array.<number>} uint8Arrays
- */
-
-/**
  * @typedef Duplex
  * @property {ReadableStream} readableStream
  * @property {WritableStream} writableStream
  */
 
 export class Peer {
-  /** @type {Array.<Connection>} */
+  /** @type {Array.<import('./AbstractConnection.js').AbstractConnection>} */
   connections
 
   /** @type {Object.<string, TurtleBranch>} */

@@ -5,7 +5,7 @@ import { Peer } from '../public/js/turtle/peer/Peer.js'
 import { Signer } from '../public/js/turtle/Signer.js'
 import { question } from 'readline-sync'
 import { TurtleDictionary } from '../public/js/turtle/TurtleDictionary.js'
-import { ConnectionS3 } from '../public/js/turtle/peer/ConnectionS3.js'
+import { S3Connection } from '../public/js/turtle/peer/S3Connection.js'
 
 program
   .name('turtledb-com')
@@ -50,6 +50,6 @@ if (s3EndPoint || s3Region || s3Bucket || s3AccessKeyId || s3SecretAccessKey) {
   if (!s3EndPoint || !s3Region || !s3Bucket || !s3AccessKeyId || !s3SecretAccessKey) {
     throw new Error('--s3-end-point, --s3-region, --s3-bucket, --s3-access-key-id, and --s3-secret-access-key must all be set to connect to s3')
   }
-  const connectionToS3 = new ConnectionS3('connectionToS3', peer, s3EndPoint, s3Region, s3Bucket, s3AccessKeyId, s3SecretAccessKey)
+  const connectionToS3 = new S3Connection('connectionToS3', peer, s3EndPoint, s3Region, s3Bucket, s3AccessKeyId, s3SecretAccessKey)
   peer.connections.push(connectionToS3)
 }

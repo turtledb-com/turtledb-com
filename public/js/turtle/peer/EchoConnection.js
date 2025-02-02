@@ -1,29 +1,22 @@
 import { IGNORE_MUTATE } from '../../utils/Recaller.js'
 import { codec, OPAQUE_UINT8ARRAY } from '../codecs/codec.js'
-import { TurtleBranch } from '../TurtleBranch.js'
-import { TurtleDictionary } from '../TurtleDictionary.js'
+import { AbstractConnection } from './AbstractConnection.js'
 
 /**
+ * @typedef {import('./AbstractConnection.js').Update} Update
  * @typedef {import('./Peer.js').BranchUpdate} BranchUpdate
- * @typedef {import('./Peer.js').Connection} Connection
  * @typedef {import('./Peer.js').Peer} Peer
  * @typedef {import('./Peer.js').Duplex} Duplex
  */
 
-/**
- * @implements {Connection}
- */
-export class ConnectionEcho {
+export class EchoConnection extends AbstractConnection {
   /**
    * @param {string} name
    * @param {Peer} peer
    * @param {Duplex} duplex
    */
   constructor (name, peer, duplex = null) {
-    this.name = name
-    this.peer = peer
-    this.outgoingUpdateDictionary = new TurtleDictionary(`${name}.outgoingUpdateDictionary`, peer.recaller)
-    this.incomingUpdateBranch = new TurtleBranch(`${name}.incomingUpdateBranch`, peer.recaller)
+    super(name, peer)
     if (duplex) {
       this.duplex = duplex
       duplex.readableStream.pipeTo(this.incomingUpdateBranch.makeWritableStream())
@@ -38,15 +31,19 @@ export class ConnectionEcho {
 
   sync () {
     // this.peer.recaller.debug = true
-    /** @type {Object.<string, Object.<string, Object.<string, BranchUpdate>>>} */
-    const incomingUpdates = this.incomingUpdateBranch.lookup() ?? {}
+    const incomingUpdate = this.incomingUpdate
 
     // apply incoming updates
-    for (const hostname in incomingUpdates) {
-      for (const bale in incomingUpdates[hostname]) {
-        for (const cpk in incomingUpdates[hostname][bale]) {
-          const branch = this.peer.getBranch(cpk, bale, hostname)
-          const branchUpdate = incomingUpdates[hostname][bale][cpk]
+    const hostUpdates = incomingUpdate?.hostUpdates ?? {}
+    for (const hostname in hostUpdates) {
+      const hostUpdate = hostUpdates[hostname]
+      const baleUpdates = hostUpdate?.baleUpdates ?? {}
+      for (const balename in baleUpdates) {
+        const baleUpdate = baleUpdates[balename]
+        const branchUpdates = baleUpdate?.branchUpdates ?? {}
+        for (const cpk in branchUpdates) {
+          const branchUpdate = branchUpdates[cpk]
+          const branch = this.peer.getBranch(cpk, balename, hostname)
           while (branchUpdate?.uint8Arrays?.[(branch.index ?? -1) + 1]) {
             const address = branchUpdate.uint8Arrays[(branch.index ?? -1) + 1]
             const uint8Array = this.incomingUpdateBranch.lookup(address)
@@ -58,16 +55,15 @@ export class ConnectionEcho {
       }
     }
 
-    /** @type {Object.<string, Object.<string, Object.<string, BranchUpdate>>>} */
-    const lastOutgoingUpdates = this.outgoingUpdateDictionary.lookup()
-    /** @type {Object.<string, Object.<string, Object.<string, BranchUpdate>>>} */
-    const outgoingUpdate = {}
+    const lastOutgoingUpdates = this.outgoingUpdate
+    /** @type {Update} */
+    const outgoingUpdate = { hostUpdates: {} }
     for (const hostname in this.peer.branches) {
       for (const bale in this.peer.branches[hostname]) {
         for (const cpk in this.peer.branches[hostname][bale]) {
-          const incomingBranchUpdate = incomingUpdates?.[hostname]?.[bale]?.[cpk]
+          const incomingBranchUpdate = incomingUpdate?.hostUpdates?.[hostname]?.baleUpdates?.[bale]?.branchUpdates?.[cpk]
           const branch = this.peer.branches[hostname][bale][cpk]
-          const outgoingBranchUpdate = lastOutgoingUpdates?.[hostname]?.[bale]?.[cpk] ?? {}
+          const outgoingBranchUpdate = lastOutgoingUpdates?.hostUpdates?.[hostname]?.baleUpdates?.[bale]?.branchUpdates?.[cpk] ?? {}
           outgoingBranchUpdate.index = branch.index ?? -1
           outgoingBranchUpdate.uint8Arrays ??= []
           if (incomingBranchUpdate) {
@@ -78,9 +74,9 @@ export class ConnectionEcho {
               }, IGNORE_MUTATE) // don't trigger ourselves
             }
           }
-          outgoingUpdate[hostname] ??= {}
-          outgoingUpdate[hostname][bale] ??= {}
-          outgoingUpdate[hostname][bale][cpk] = outgoingBranchUpdate
+          outgoingUpdate.hostUpdates[hostname] ??= { baleUpdates: {} }
+          outgoingUpdate.hostUpdates[hostname].baleUpdates[bale] ??= { branchUpdates: {} }
+          outgoingUpdate.hostUpdates[hostname].baleUpdates[bale].branchUpdates[cpk] = outgoingBranchUpdate
         }
       }
     }

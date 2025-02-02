@@ -1,19 +1,19 @@
 import { globalRunner, urlToName } from '../../test/Runner.js'
 import { Signer, verifyTurtleCommit } from './Signer.js'
 import { TurtleBranch } from './TurtleBranch.js'
-import { TurtleDictionary } from './TurtleDictionary.js'
+import { Workspace } from './Workspace.js'
 
 globalRunner.describe(urlToName(import.meta.url), suite => {
   suite.it('handles moving branches', async ({ assert }) => {
     const commits = new TurtleBranch('commits')
-    const workspace = new TurtleDictionary('branch', undefined, commits.u8aTurtle)
+    const signer = new Signer('admin', 'secret')
+    const keys = await signer.makeKeysFor(commits.name)
+    const workspace = new Workspace(signer, 'branch', commits)
     const value = { strings: ['test', 'commit'] }
-    const address = workspace.upsert(value)
-    const identity = new Signer('admin', 'secret')
-    const keys = await identity.makeKeysFor(commits.name)
-    console.log(keys)
-    await identity.commit(commits, workspace, address)
+    await workspace.commit(value, 'commit message')
     const verified = await verifyTurtleCommit(commits.u8aTurtle, keys.publicKey)
     assert.equal(verified, true)
+    assert.equal(workspace.lastCommit.message, 'commit message')
+    assert.equal(workspace.lastCommitValue, value)
   })
 })

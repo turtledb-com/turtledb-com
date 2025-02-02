@@ -2,7 +2,6 @@ import { cryptoPromise, hashNameAndPassword } from '../utils/crypto.js'
 import { getPublicKey, signAsync, verify } from '../utils/noble-secp256k1.js'
 import { codec, COMMIT } from './codecs/codec.js'
 import { AS_REFS } from './codecs/CodecType.js'
-import { Commit } from './codecs/Commit.js'
 import { b36ToUint8Array, combineUint8Arrays, uint8ArrayToB36 } from './utils.js'
 
 /**
@@ -45,35 +44,6 @@ export class Signer {
     const signature = await signAsync(hash, privateKey)
     return signature.toCompactRawBytes()
   }
-
-  /**
-   * @param {import('./TurtleBranch.js').TurtleBranch} target
-   * @param {import('./TurtleBranch.js').TurtleBranch} updates
-   * @param {number} address
-   * @param {string} [publicKey=target.name]
-   */
-  async commit (target, updates, address, name = target.name) {
-    if (target.u8aTurtle !== updates.u8aTurtle.findParentByIndex(target.index)) {
-      throw new Error('target must be ancestor of updates (merge required)')
-    }
-    let uint8Array = combineUint8Arrays(updates.u8aTurtle.exportUint8Arrays(target.index))
-    if (target.u8aTurtle) {
-      /** @type {Commit} */
-      const previousCommit = target.lookup(AS_REFS)
-      if (!(previousCommit instanceof Commit)) {
-        throw new Error('previous last value must be a Commit')
-      }
-      if (previousCommit.value === address) {
-        throw new Error('duplicate commit (probably a bug...-f?)')
-      }
-      uint8Array = combineUint8Arrays([previousCommit.signature, uint8Array])
-    }
-    const signature = await this.sign(name, uint8Array)
-    const commit = new Commit(address, signature)
-    const encodedCommit = codec.encodeValue(commit, [codec.getCodecType(COMMIT)], null, AS_REFS)
-    target.append(combineUint8Arrays([uint8Array, encodedCommit.uint8Array]))
-    updates.u8aTurtle = target.u8aTurtle
-  }
 }
 
 /**
@@ -86,7 +56,7 @@ export async function verifyTurtleCommit (u8aTurtle, publicKey) {
   if (codecVersion.codecType !== codec.getCodecType(COMMIT)) {
     throw new Error('last value must be Commit')
   }
-  /** @type {Commit} */
+  /** @type {import('./codecs/Commit.js').Commit} */
   const commit = codecVersion.decode(u8aTurtle, undefined, AS_REFS)
   let uint8Array = u8aTurtle.slice(0, -codecVersion.getWidth(u8aTurtle) - 1)
   if (u8aTurtle.parent) {

@@ -1,22 +1,12 @@
 import { GetObjectCommand, HeadObjectCommand, NotFound, PutObjectCommand, S3Client } from '@aws-sdk/client-s3'
-
-/**
- * @typedef {import('./Peer.js').BranchUpdate} BranchUpdate
- * @typedef {import('./Peer.js').Connection} Connection
- * @typedef {import('./Peer.js').Peer} Peer
- * @typedef {import('./Peer.js').Duplex} Duplex
- */
+import { AbstractConnection } from './AbstractConnection.js'
 
 const toKey = (prefix, index) => `${prefix}/${index.toString(36).padStart(8, '0')}`
 
-/**
- * @implements {Connection}
- */
-export class ConnectionS3 {
+export class S3Connection extends AbstractConnection {
   #s3DataByPrefix = {}
   constructor (name, peer, endpoint, region, bucket, accessKeyId, secretAccessKey) {
-    this.name = name
-    this.peer = peer
+    super(name, peer)
     this.bucket = bucket
     this.s3Client = new S3Client({
       endpoint,
