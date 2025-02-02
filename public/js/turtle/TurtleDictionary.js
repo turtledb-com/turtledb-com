@@ -1,4 +1,4 @@
-import { DEREFERENCE } from './codecs/CodecType.js'
+import { AS_REFS, DEREFERENCE } from './codecs/CodecType.js'
 import { codec } from './codecs/codec.js'
 import { TurtleBranch } from './TurtleBranch.js'
 import { ValueByUint8Array } from './utils.js'
@@ -26,7 +26,7 @@ export class TurtleDictionary extends TurtleBranch {
     this.#valueByUint8Array.set(uint8Array, address)
   }
 
-  lexicograph (start = 0, end = this.length - 1) {
+  lexicograph (start = 0, end = this.length - 1, logall = false) {
     let address = end
     let u8aTurtle = this.u8aTurtle
     while (u8aTurtle) {
@@ -38,13 +38,18 @@ export class TurtleDictionary extends TurtleBranch {
           throw new Error('no decoder for footer')
         }
         const width = codecVersion.getWidth(u8aTurtle, address)
-        const uint8Array = this.slice(address - width, address)
-        if (this.#valueByUint8Array.get(uint8Array) !== undefined) {
+        const uint8Array = this.slice(address - width, address + 1)
+        if (logall) {
+          let string = u8aTurtle.lookup(address, AS_REFS)
+          if (string instanceof Uint8Array) string = [`Uint8Array( ${string.length} )`, [...string]]
+          else string = [string]
+          console.log(' -', address, ':', ...string)
+        } else if (this.#valueByUint8Array.get(uint8Array) !== undefined) {
           console.error({ address, footer, uint8Array, width })
           throw new Error('uint8Array already stored')
         }
         this.#cache(uint8Array, address, codecVersion.codecType)
-        address -= width
+        address -= width + 1
       }
       u8aTurtle = u8aTurtle.parent
     }

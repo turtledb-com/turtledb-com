@@ -1,6 +1,7 @@
 import { Recaller } from '../../utils/Recaller.js'
 import { TurtleBranch } from '../TurtleBranch.js'
 import { proxyWithRecaller } from '../utils.js'
+import { Workspace } from '../Workspace.js'
 
 /**
  * @typedef Connection
@@ -51,5 +52,17 @@ export class Peer {
     this.branches[hostname][bale] ??= proxyWithRecaller({}, this.recaller)
     this.branches[hostname][bale][cpk] ??= new TurtleBranch(cpk, this.recaller)
     return this.branches[hostname][bale][cpk]
+  }
+
+  /**
+   * @param {import('../Signer.js').Signer} signer
+   * @param {string} name
+   * @param {string} bale
+   * @param {string} hostname
+   * @returns {Workspace}
+   */
+  async getWorkspace (signer, name, bale, hostname) {
+    const keys = await signer.makeKeysFor(name)
+    return new Workspace(signer, name, this.getBranch(keys.publicKey, bale, hostname))
   }
 }
