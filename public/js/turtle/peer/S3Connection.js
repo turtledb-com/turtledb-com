@@ -20,9 +20,9 @@ export class S3Connection extends AbstractConnection {
   }
 
   sync () {
-    for (const hostname in this.peer.branches) {
-      for (const bale in this.peer.branches[hostname]) {
-        for (const cpk in this.peer.branches[hostname][bale]) {
+    for (const hostname in this.peer.branchesByHostBaleCpk) {
+      for (const bale in this.peer.branchesByHostBaleCpk[hostname]) {
+        for (const cpk in this.peer.branchesByHostBaleCpk[hostname][bale]) {
           this.#update(hostname, bale, cpk)
         }
       }
@@ -32,7 +32,7 @@ export class S3Connection extends AbstractConnection {
   async #update (hostname, bale, cpk) {
     const prefix = `${hostname}/${bale}/${cpk}`
     /** @type {import('../TurtleBranch.js').TurtleBranch} */
-    const branch = this.peer.branches[hostname][bale][cpk]
+    const branch = this.peer.branchesByHostBaleCpk[hostname][bale][cpk]
     const branchIndex = branch.index
     this.#s3DataByPrefix[prefix] ??= {}
     this.#s3DataByPrefix[prefix].index ??= this.#getS3BranchIndex(prefix)

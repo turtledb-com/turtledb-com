@@ -13,18 +13,21 @@ export class Peer {
   /** @type {Array.<import('./AbstractConnection.js').AbstractConnection>} */
   connections
 
-  /** @type {Object.<string, TurtleBranch>} */
-  branches
+  /** @type {Object.<string, Object.<string, Object.<string, TurtleBranch>>>} */
+  branchesByHostBaleCpk
 
   /**
    * @param {string} name
    * @param {Recaller} recaller
    */
-  constructor (name, recaller = new Recaller(name)) {
+  constructor (name, recaller = new Recaller(name), defaultCpk, defaultBale = defaultCpk, defaultHost = 'turtledb.com') {
     this.name = name
     this.recaller = recaller
+    this.defaultCpk = defaultCpk
+    this.defaultBale = defaultBale
+    this.defaultHost = defaultHost
     this.connections = proxyWithRecaller([], recaller)
-    this.branches = proxyWithRecaller({}, recaller)
+    this.branchesByHostBaleCpk = proxyWithRecaller({}, recaller)
     this.recaller.watch('handle remote updates', () => {
       this.connections.forEach(connection => connection.sync())
     })
@@ -36,11 +39,13 @@ export class Peer {
    * @param {string} [hostname='turtledb.com']
    * @returns {TurtleBranch}
    */
-  getBranch (cpk, bale = cpk, hostname = 'turtledb.com') {
-    this.branches[hostname] ??= proxyWithRecaller({}, this.recaller)
-    this.branches[hostname][bale] ??= proxyWithRecaller({}, this.recaller)
-    this.branches[hostname][bale][cpk] ??= new TurtleBranch(cpk, this.recaller)
-    return this.branches[hostname][bale][cpk]
+  getBranch (cpk, bale = cpk, hostname = this.defaultHost) {
+    if (!cpk) cpk = this.defaultCpk
+    if (!bale) bale = this.defaultBale
+    this.branchesByHostBaleCpk[hostname] ??= proxyWithRecaller({}, this.recaller)
+    this.branchesByHostBaleCpk[hostname][bale] ??= proxyWithRecaller({}, this.recaller)
+    this.branchesByHostBaleCpk[hostname][bale][cpk] ??= new TurtleBranch(cpk, this.recaller)
+    return this.branchesByHostBaleCpk[hostname][bale][cpk]
   }
 
   /**
