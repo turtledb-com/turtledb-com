@@ -55,7 +55,7 @@ const entriesToObjectRefs = (entries, dictionary, options) => {
  */
 function encodeAddress (codecType, address, minAddressBytes, ...subversions) {
   const u8aAddress = encodeNumberToU8a(address, minAddressBytes)
-  const footer = codec.getFooter(codecType, [u8aAddress.length - minAddressBytes, ...subversions])
+  const footer = codec.deriveFooter(codecType, [u8aAddress.length - minAddressBytes, ...subversions])
   return combineUint8ArrayLikes([u8aAddress, footer])
 }
 
@@ -64,7 +64,7 @@ codec.addCodecType(new CodecType({
   name: UNDEFINED,
   test: value => value === undefined,
   decode: (_uint8Array, _codecVersion, _dictionary) => undefined,
-  encode: (_value, codecType, _dictionary) => new Uint8Array([codec.getFooter(codecType, [0])]),
+  encode: (_value, codecType, _dictionary) => new Uint8Array([codec.deriveFooter(codecType, [0])]),
   getWidth: () => 0,
   versionArrayCounts: [1]
 }))
@@ -74,7 +74,7 @@ codec.addCodecType(new CodecType({
   name: NULL,
   test: value => value === null,
   decode: (_uint8Array, _codecVersion, _dictionary) => null,
-  encode: (_value, codecType, _dictionary) => new Uint8Array([codec.getFooter(codecType, [0])]),
+  encode: (_value, codecType, _dictionary) => new Uint8Array([codec.deriveFooter(codecType, [0])]),
   getWidth: () => 0,
   versionArrayCounts: [1]
 }))
@@ -84,7 +84,7 @@ codec.addCodecType(new CodecType({
   name: FALSE,
   test: value => value === false,
   decode: (_uint8Array, _codecVersion, _dictionary) => false,
-  encode: (_value, codecType, _dictionary) => new Uint8Array([codec.getFooter(codecType, [0])]),
+  encode: (_value, codecType, _dictionary) => new Uint8Array([codec.deriveFooter(codecType, [0])]),
   getWidth: () => 0,
   versionArrayCounts: [1]
 }))
@@ -94,7 +94,7 @@ codec.addCodecType(new CodecType({
   name: TRUE,
   test: value => value === true,
   decode: (_uint8Array, _codecVersion, _dictionary) => true,
-  encode: (_value, codecType, _dictionary) => new Uint8Array([codec.getFooter(codecType, [0])]),
+  encode: (_value, codecType, _dictionary) => new Uint8Array([codec.deriveFooter(codecType, [0])]),
   getWidth: () => 0,
   versionArrayCounts: [1]
 }))
@@ -104,7 +104,7 @@ codec.addCodecType(new CodecType({
   name: NUMBER,
   test: value => typeof value === 'number',
   decode: (uint8Array, _codecVersion, _dictionary) => new Float64Array(uint8Array.buffer)[0],
-  encode: (value, codecType, _dictionary) => combineUint8ArrayLikes([new Float64Array([value]), codec.getFooter(codecType, [0])]),
+  encode: (value, codecType, _dictionary) => combineUint8ArrayLikes([new Float64Array([value]), codec.deriveFooter(codecType, [0])]),
   getWidth: () => 8,
   versionArrayCounts: [1]
 }))
@@ -131,7 +131,7 @@ codec.addCodecType(new CodecType({
   name: DATE,
   test: value => value instanceof Date,
   decode: (uint8Array, _codecVersion, _dictionary) => new Date(new Float64Array(uint8Array.buffer)[0]),
-  encode: (value, codecType, _dictionary) => combineUint8ArrayLikes([new Float64Array([value.getTime()]), codec.getFooter(codecType, [0])]),
+  encode: (value, codecType, _dictionary) => combineUint8ArrayLikes([new Float64Array([value.getTime()]), codec.deriveFooter(codecType, [0])]),
   getWidth: () => 8,
   versionArrayCounts: [1]
 }))
@@ -163,7 +163,7 @@ codec.addCodecType(new CodecType({
   name: WORD,
   test: value => value instanceof Uint8Array && value.length < wordLengthVersions,
   decode: (uint8Array, _codecVersion, _dictionary) => uint8Array,
-  encode: (value, codecType, _dictionary) => combineUint8ArrayLikes([value, codec.getFooter(codecType, [value.length])]),
+  encode: (value, codecType, _dictionary) => combineUint8ArrayLikes([value, codec.deriveFooter(codecType, [value.length])]),
   getWidth: codecVersion => codecVersion.versionArrays[0],
   versionArrayCounts: [wordLengthVersions]
 }))
@@ -212,7 +212,7 @@ codec.addCodecType(new CodecType({
   name: EMPTY_ARRAY,
   test: value => Array.isArray(value) && value.length === 0,
   decode: (_uint8Array, _codecVersion, _dictionary) => [],
-  encode: (_value, codecType, _dictionary) => new Uint8Array([codec.getFooter(codecType, [0])]),
+  encode: (_value, codecType, _dictionary) => new Uint8Array([codec.deriveFooter(codecType, [0])]),
   getWidth: () => 0,
   versionArrayCounts: [1]
 }))
@@ -313,7 +313,7 @@ codec.addCodecType(new CodecType({
     const address = options.valuesAsRefs ? value.value : dictionary.upsert(value.value)
     if (value.signature) {
       const u8aAddress = encodeNumberToU8a(address, minAddressBytes)
-      return combineUint8ArrayLikes([u8aAddress, value.signature, codec.getFooter(codecType, [u8aAddress.length - minAddressBytes, 1])])
+      return combineUint8ArrayLikes([u8aAddress, value.signature, codec.deriveFooter(codecType, [u8aAddress.length - minAddressBytes, 1])])
     }
     return encodeAddress(codecType, address, minAddressBytes, 0)
   },
@@ -360,7 +360,7 @@ codec.addCodecType(new CodecType({
     let rightAddress
     if (value.length === leftLength + 1) rightAddress = encodeNumberToU8a(value[value.length - 1], minAddressBytes)
     else rightAddress = encodeNumberToU8a(dictionary.upsert(value.slice(leftLength), [codec.getCodecType(TREE_NODE)]), minAddressBytes)
-    const footer = codec.getFooter(codecType, [leftAddress.length - minAddressBytes, rightAddress.length - minAddressBytes])
+    const footer = codec.deriveFooter(codecType, [leftAddress.length - minAddressBytes, rightAddress.length - minAddressBytes])
     return combineUint8ArrayLikes([leftAddress, rightAddress, footer])
   },
   getWidth: codecVersion => codecVersion.versionArrays[0] + codecVersion.versionArrays[1] + 2 * (minAddressBytes),
@@ -377,7 +377,7 @@ codec.addCodecType(new CodecType({
   },
   encode: (value, codecType, dictionary) => {
     const encodedValueLength = encodeNumberToU8a(value.length, 1)
-    const footer = codec.getFooter(codecType, [encodedValueLength.length - 1])
+    const footer = codec.deriveFooter(codecType, [encodedValueLength.length - 1])
     return combineUint8ArrayLikes([value, encodedValueLength, footer])
   },
   getWidth: (codecVersion, u8aTurtle, index) => {

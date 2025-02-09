@@ -2,6 +2,7 @@ import { IGNORE_MUTATE } from '../../utils/Recaller.js'
 import { codec, OPAQUE_UINT8ARRAY } from '../codecs/codec.js'
 import { TurtleBranch } from '../TurtleBranch.js'
 import { TurtleDictionary } from '../TurtleDictionary.js'
+import { U8aTurtle } from '../U8aTurtle.js'
 import { AbstractConnection } from './AbstractConnection.js'
 
 /**
@@ -51,6 +52,9 @@ export class EchoConnection extends AbstractConnection {
     while (incomingBranchUpdate?.uint8Arrays?.[(branch.index ?? -1) + 1]) {
       const address = incomingBranchUpdate.uint8Arrays[(branch.index ?? -1) + 1]
       const uint8Array = this.incomingUpdateBranch.lookup(address)
+      console.log(uint8Array)
+      const u8aTurtle = new U8aTurtle(uint8Array)
+      console.log(codec.extractEncodedValue(u8aTurtle))
       this.peer.recaller.call(() => {
         branch.append(uint8Array)
       }, IGNORE_MUTATE) // don't trigger ourselves

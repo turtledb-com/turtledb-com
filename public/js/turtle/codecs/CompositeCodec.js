@@ -24,10 +24,33 @@ export class CompositeCodec {
 
   getCodecTypeVersion (footer) { return this.codecTypeVersionsByFooter[footer] }
   getCodecType (name) { return this.codecTypesByName[name] }
-  getFooter (codecType, versionArrays) {
+  deriveFooter (codecType, versionArrays) {
     const footerByCombinedVersions = this.footerByCodecTypeAndCombinedVersions.get(codecType)
     const combinedVersion = toCombinedVersion(versionArrays, codecType.versionArrayCounts)
     return footerByCombinedVersions[combinedVersion]
+  }
+
+  /**
+   * @param {import('../U8aTurtle.js').U8aTurtle} u8aTurtle
+   * @param {number} address
+   */
+  extractEncodedValue (u8aTurtle, address = u8aTurtle.length - 1) {
+    const codecVersion = this.extractCodecTypeVersion(u8aTurtle, address)
+    if (!codecVersion) {
+      console.error({ address, footer: u8aTurtle.getByte(address) })
+      throw new Error('no decoder for footer')
+    }
+    const width = codecVersion.getWidth(u8aTurtle, address)
+    return u8aTurtle.slice(address - width, address + 1) // include footer
+  }
+
+  /**
+   * @param {import('../U8aTurtle.js').U8aTurtle} u8aTurtle
+   * @param {number} address
+   */
+  extractCodecTypeVersion (u8aTurtle, address = u8aTurtle.length - 1) {
+    const footer = u8aTurtle.getByte(address)
+    return this.getCodecTypeVersion(footer)
   }
 
   /**

@@ -1,6 +1,10 @@
 import { GetObjectCommand, HeadObjectCommand, NotFound, PutObjectCommand, S3Client } from '@aws-sdk/client-s3'
 import { AbstractConnection } from './AbstractConnection.js'
 
+/**
+ * @typedef {import('./AbstractConnection.js').Update} Update
+ */
+
 const toKey = (prefix, index) => `${prefix}/${index.toString(36).padStart(8, '0')}`
 
 export class S3Connection extends AbstractConnection {
@@ -19,20 +23,26 @@ export class S3Connection extends AbstractConnection {
     })
   }
 
+  /** @type {Update} */
+  get incomingUpdate () { return undefined }
+
+  /** @type {Update} */
+  get outgoingUpdate () { return undefined }
+
   sync () {
-    for (const hostname in this.peer.branchesByHostBaleCpk) {
-      for (const bale in this.peer.branchesByHostBaleCpk[hostname]) {
-        for (const cpk in this.peer.branchesByHostBaleCpk[hostname][bale]) {
-          this.#update(hostname, bale, cpk)
-        }
-      }
-    }
+    this.processBranches()
   }
 
-  async #update (hostname, bale, cpk) {
+  /**
+   * @param {import('../TurtleBranch.js').TurtleBranch} branch
+   * @param {BranchUpdate} [incomingBranchUpdate]
+   * @param {BranchUpdate} [lastOutgoingBranchUpdate]
+   * @param {string} cpk
+   * @param {string} balename
+   * @param {string} hostname
+   */
+  async processBranch (branch, _incomingBranchUpdate, _lastOutgoingBranchUpdate, cpk, bale, hostname) {
     const prefix = `${hostname}/${bale}/${cpk}`
-    /** @type {import('../TurtleBranch.js').TurtleBranch} */
-    const branch = this.peer.branchesByHostBaleCpk[hostname][bale][cpk]
     const branchIndex = branch.index
     this.#s3DataByPrefix[prefix] ??= {}
     this.#s3DataByPrefix[prefix].index ??= this.#getS3BranchIndex(prefix)

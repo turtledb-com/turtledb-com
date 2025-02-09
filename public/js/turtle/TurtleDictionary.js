@@ -31,25 +31,19 @@ export class TurtleDictionary extends TurtleBranch {
     let u8aTurtle = this.u8aTurtle
     while (u8aTurtle) {
       while (address > start && address > u8aTurtle.offset) {
-        const footer = this.getByte(address)
-        const codecVersion = codec.getCodecTypeVersion(footer)
-        if (!codecVersion) {
-          console.error({ address, footer })
-          throw new Error('no decoder for footer')
-        }
-        const width = codecVersion.getWidth(u8aTurtle, address)
-        const uint8Array = this.slice(address - width, address + 1)
+        const codecVersion = codec.extractCodecTypeVersion(u8aTurtle, address)
+        const uint8Array = codec.extractEncodedValue(u8aTurtle, address)
         if (logall) {
           let string = u8aTurtle.lookup(address, AS_REFS)
           if (string instanceof Uint8Array) string = [`Uint8Array( ${string.length} )`, [...string]]
           else string = [string]
           console.log(' -', address, ':', ...string)
         } else if (this.#valueByUint8Array.get(uint8Array) !== undefined) {
-          console.error({ address, footer, uint8Array, width })
+          console.error({ address, footer: u8aTurtle.getByte(address), uint8Array })
           throw new Error('uint8Array already stored')
         }
         this.#cache(uint8Array, address, codecVersion.codecType)
-        address -= width + 1
+        address -= uint8Array.length
       }
       u8aTurtle = u8aTurtle.parent
     }

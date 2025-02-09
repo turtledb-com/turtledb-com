@@ -23,7 +23,7 @@ export class Recaller {
   #debug
   #ignore = null
   loopWarn = 2
-  loopEnd = 10
+  loopLimit = 10
 
   constructor (name) {
     if (!name) throw new Error('Recaller must be named')
@@ -133,11 +133,7 @@ export class Recaller {
   }
 
   #getFunctionName (f) {
-    return (
-      this.#functionNames.get(f) ||
-      f.name ||
-      `<<UNNAMED FUNCTION[${f.toString()}]>>`
-    )
+    return this.#functionNames.get(f) || f.name || `<<UNNAMED FUNCTION[${f.toString()}]>>`
   }
 
   #handleTriggered () {
@@ -146,8 +142,8 @@ export class Recaller {
     beforeTriggered.forEach(f => f())
     let loopCounter = 0
     while ((this.#triggered.size || this.#afterTriggered.length)) {
-      if (loopCounter >= this.loopEnd) {
-        console.error(`!! Recaller loop count: ${loopCounter} SEEMS BROKEN, STOPPING...`)
+      if (loopCounter >= this.loopLimit) {
+        console.error(`!! Recaller limit check ERROR; loop count: ${loopCounter}, loop limit: ${this.loopLimit}`)
         break
       }
       if (loopCounter >= this.loopWarn) {
@@ -158,14 +154,12 @@ export class Recaller {
       const triggering = [...triggered].map(f => this.#getFunctionName(f))
       if (this.debug) {
         console.time('handling triggered group')
-        console.groupCollapsed(
-          `triggering --- ${JSON.stringify({
-            recaller: this.name,
-            tickCount: getTickCount(),
-            loopCounter,
-            triggering
-          })}`
-        )
+        console.groupCollapsed(`triggering --- ${JSON.stringify({
+          recaller: this.name,
+          tickCount: getTickCount(),
+          loopCounter,
+          triggering
+        })}`)
       }
       triggered.forEach(f => {
         const name = this.#getFunctionName(f)

@@ -46,12 +46,15 @@ export class AbstractConnection {
    * @param {import('../TurtleBranch.js').TurtleBranch} branch
    * @param {BranchUpdate} [incomingBranchUpdate]
    * @param {BranchUpdate} [lastOutgoingBranchUpdate]
+   * @param {string} cpk
+   * @param {string} balename
+   * @param {string} hostname
    */
-  processBranch (branch, incomingBranchUpdate, lastOutgoingBranchUpdate) {
+  processBranch (branch, incomingBranchUpdate, lastOutgoingBranchUpdate, cpk, balename, hostname) {
     throw new Error('sync method must be overridden')
   }
 
-  sync () {
+  processBranches () {
     const outgoingUpdate = { hostUpdates: {} }
     const incomingUpdate = this.incomingUpdate
     const incomingHostUpdates = incomingUpdate?.hostUpdates ?? {}
@@ -79,6 +82,11 @@ export class AbstractConnection {
         }
       }
     }
+    return outgoingUpdate
+  }
+
+  sync () {
+    const outgoingUpdate = this.processBranches()
     this.peer.recaller.call(() => {
       this.outgoingUpdateDictionary.upsert(outgoingUpdate)
     }, IGNORE_MUTATE) // don't trigger ourselves
