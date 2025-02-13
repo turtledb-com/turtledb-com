@@ -10,7 +10,7 @@ const toKey = (prefix, index) => `${prefix}/${index.toString(36).padStart(8, '0'
 export class S3Connection extends AbstractConnection {
   #s3DataByPrefix = {}
   constructor (name, peer, endpoint, region, bucket, accessKeyId, secretAccessKey) {
-    super(name, peer)
+    super(name, peer, true) // always trusted
     this.bucket = bucket
     this.s3Client = new S3Client({
       endpoint,

@@ -1,10 +1,20 @@
 import { IGNORE_MUTATE } from '../../utils/Recaller.js'
 
 /**
+ * @typedef {import('./Peer.js').Peer} Peer
+ * @typedef {import('../TurtleBranch.js').TurtleBranch} TurtleBranch
+ */
+
+/**
+ * @typedef TurtlePart
+ * @property {number} commitAddress
+ * @property {number} dataAddress
+ */
+
+/**
  * @typedef BranchUpdate
  * @property {number} index
- * @property {Array.<number>} commits
- * @property {Array.<number>} uint8Arrays
+ * @property {Array.<TurtlePart>} turtleParts
  */
 
 /**
@@ -29,9 +39,10 @@ import { IGNORE_MUTATE } from '../../utils/Recaller.js'
 export class AbstractConnection {
   /**
    * @param {String} name
-   * @param {import('./Peer.js').Peer} peer
+   * @param {Peer} peer
+   * @param {boolean} [trusted=false]
    */
-  constructor (name, peer) {
+  constructor (name, peer, trusted = false) {
     this.name = name
     this.peer = peer
   }
@@ -42,8 +53,12 @@ export class AbstractConnection {
   /** @type {Update} */
   get outgoingUpdate () { throw new Error('outgoingUpdate getter must be overridden') }
 
+  sync () {
+    throw new Error('sync method must be overridden')
+  }
+
   /**
-   * @param {import('../TurtleBranch.js').TurtleBranch} branch
+   * @param {TurtleBranch} branch
    * @param {BranchUpdate} [incomingBranchUpdate]
    * @param {BranchUpdate} [lastOutgoingBranchUpdate]
    * @param {string} cpk
@@ -51,7 +66,7 @@ export class AbstractConnection {
    * @param {string} hostname
    */
   processBranch (branch, incomingBranchUpdate, lastOutgoingBranchUpdate, cpk, balename, hostname) {
-    throw new Error('sync method must be overridden')
+    throw new Error('processBranch method must be overridden')
   }
 
   processBranches () {
@@ -83,12 +98,5 @@ export class AbstractConnection {
       }
     }
     return outgoingUpdate
-  }
-
-  sync () {
-    const outgoingUpdate = this.processBranches()
-    this.peer.recaller.call(() => {
-      this.outgoingUpdateDictionary.upsert(outgoingUpdate)
-    }, IGNORE_MUTATE) // don't trigger ourselves
   }
 }
