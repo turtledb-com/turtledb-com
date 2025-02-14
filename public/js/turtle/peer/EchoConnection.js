@@ -55,7 +55,7 @@ export class EchoConnection extends AbstractConnection {
    * @param {BranchUpdate} [lastOutgoingBranchUpdate]
    */
   processBranch (branch, incomingBranchUpdate, lastOutgoingBranchUpdate) {
-    console.log(this.name, incomingBranchUpdate)
+    console.log(this.name, 'incoming', incomingBranchUpdate)
     /** @type {BranchUpdate} */
     const outgoingBranchUpdate = lastOutgoingBranchUpdate ?? {}
     outgoingBranchUpdate.index = branch?.index ?? -1
@@ -65,9 +65,7 @@ export class EchoConnection extends AbstractConnection {
       const encodedCommit = this.incomingUpdateBranch.lookup(turtlePart.commitAddress)
       const encodedData = this.incomingUpdateBranch.lookup(turtlePart.dataAddress)
       const uint8Array = combineUint8Arrays([encodedData, encodedCommit])
-      this.peer.recaller.call(() => {
-        branch.append(uint8Array)
-      }, IGNORE_MUTATE) // don't trigger ourselves
+      branch.append(uint8Array)
     }
     if (incomingBranchUpdate) {
       for (let index = (incomingBranchUpdate.index ?? -1) + 1; index <= branch.index; ++index) {

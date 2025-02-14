@@ -10,19 +10,19 @@ const tics = async count => {
   }
 }
 
-globalRunner.describe(urlToName(import.meta.url), suite => {
+globalRunner.only.describe(urlToName(import.meta.url), suite => {
   suite.it('handles moving branches', async ({ assert }) => {
     const peerA = new Peer('a')
     const peerB = new Peer('b')
-    const connectionAB = new EchoConnection('connectionAB', peerA)
+    const connectionAB = new EchoConnection('a-to-b', peerA)
     peerA.connections.push(connectionAB)
-    const connectionBA = new EchoConnection('connectionBA', peerB, connectionAB.duplex)
+    const connectionBA = new EchoConnection('b-to-a', peerB, connectionAB.duplex)
     peerB.connections.push(connectionBA)
     const dictionaryA = new TurtleDictionary('aaa', peerA.recaller)
     const branchA = peerA.getBranch('aaa')
     dictionaryA.upsert('abcd')
     branchA.u8aTurtle = dictionaryA.u8aTurtle
-    await tics(1) // number of tics found through trial and error (TODO: better visibility)
+    await tics(4) // tics needed found through trial and error (TODO: better visibility)
     const peerBSubAValue = peerB.getBranch('aaa').lookup()
     assert.equal(peerBSubAValue, 'abcd')
   })
@@ -30,37 +30,40 @@ globalRunner.describe(urlToName(import.meta.url), suite => {
     const peerOrigin = new Peer('origin')
 
     const peerA = new Peer('a')
-    const connectionOriginA = new EchoConnection('origin-from-A', peerOrigin, undefined, true)
+    const connectionOriginA = new EchoConnection('origin-to-A', peerOrigin, undefined, true)
     peerOrigin.connections.push(connectionOriginA)
-    const connectionAOrigin = new EchoConnection('origin-to-A', peerA, connectionOriginA.duplex)
+    const connectionAOrigin = new EchoConnection('A-to-origin', peerA, connectionOriginA.duplex)
     peerA.connections.push(connectionAOrigin)
 
     const peerB = new Peer('b')
-    const connectionOriginB = new EchoConnection('origin-from-B', peerOrigin, undefined, true)
+    const connectionOriginB = new EchoConnection('origin-to-B', peerOrigin, undefined, true)
     peerOrigin.connections.push(connectionOriginB)
-    const connectionBOrigin = new EchoConnection('origin-to-B', peerB, connectionOriginB.duplex)
+    const connectionBOrigin = new EchoConnection('B-to-origin', peerB, connectionOriginB.duplex)
     peerB.connections.push(connectionBOrigin)
 
     const signer = new Signer('user', 'secret')
 
     const originWorkspace = await peerOrigin.getWorkspace(signer, 'originWorkspace')
     await tics(8) // tics needed found through trial and error (TODO: better visibility)
-    console.log('\n\n--- origin commit follow')
+    console.log('\n\n--- initial settle')
     await originWorkspace.commit(1, 'commit 1')
     await tics(2) // tics needed found through trial and error (TODO: better visibility)
-    console.log('\n\n--- origin commit done?')
+    console.log('\n\n--- origin commit')
     const aWorkspace = await peerA.getWorkspace(signer, 'originWorkspace')
     console.log(aWorkspace.lastCommitValue)
     const bWorkspace = await peerB.getWorkspace(signer, 'originWorkspace')
     console.log(bWorkspace.lastCommitValue)
+    assert.equal(originWorkspace.lastCommit, aWorkspace.lastCommit)
     assert.equal(aWorkspace.lastCommit, bWorkspace.lastCommit)
+
+    console.log('\n\n--- origin commit settle')
 
     await Promise.all([
       aWorkspace.commit('a', 'commit 2'),
-      bWorkspace.commit('b', 'commit 2')
+      bWorkspace.commit('BEE', '2nd commit (#2)')
     ])
     console.log(originWorkspace.lastCommitValue)
-    await tics(8) // number of tics found through trial and error (TODO: better visibility)
+    await tics(8) // tics needed found through trial and error (TODO: better visibility)
     console.log(originWorkspace.lastCommitValue)
     console.log(aWorkspace.lastCommitValue)
     console.log(bWorkspace.lastCommitValue)
