@@ -4,6 +4,13 @@ import { Commit } from './Commit.js'
 import { CompositeCodec } from './CompositeCodec.js'
 import { TreeNode } from './TreeNode.js'
 
+/**
+ * @typedef {import('../U8aTurtle.js').U8aTurtle} U8aTurtle
+ * @typedef {import('../TurtleDictionary.js').TurtleDictionary} TurtleDictionary
+ * @typedef {import('./CodecType.js').CodecType} CodecType
+ * @typedef {import('./CodecType.js').CodecOptions} CodecOptions
+ */
+
 export const codec = new CompositeCodec()
 
 const minAddressBytes = 1
@@ -15,8 +22,8 @@ const TypedArrays = [Uint8Array, Int8Array, Uint8ClampedArray, Int16Array, Uint1
 
 /**
  * @param {Array} objectRefs
- * @param {import('../U8aTurtle.js').U8aTurtle} u8aTurtle
- * @param {import('./CodecType.js').CodecOptions} options
+ * @param {U8aTurtle} u8aTurtle
+ * @param {CodecOptions} options
  * @returns {Array.<[any, any]>}
  */
 const objectRefsToEntries = (objectRefs, u8aTurtle, options) => {
@@ -29,8 +36,8 @@ const objectRefsToEntries = (objectRefs, u8aTurtle, options) => {
 
 /**
  * @param {Array.<[any,any]>} entries
- * @param {import('../TurtleDictionary.js').TurtleDictionary} dictionary
- * @param {import('./CodecType.js').CodecOptions} options
+ * @param {TurtleDictionary} dictionary
+ * @param {CodecOptions} options
  * @returns {Array}
  */
 const entriesToObjectRefs = (entries, dictionary, options) => {
@@ -47,7 +54,20 @@ const entriesToObjectRefs = (entries, dictionary, options) => {
 }
 
 /**
- * @param {import('./CodecType.js').CodecType} codecType
+ * @param {U8aTurtle} u8aTurtle
+ * @returns {[Uint8Array, Uint8Array]}
+ */
+export function splitEncodedCommit (u8aTurtle) {
+  if (codec.codecTypeVersionsByFooter[u8aTurtle.getByte()].codecType.name !== COMMIT) {
+    throw new Error('non-commit found where commit is expected')
+  }
+  const encodedCommit = codec.extractEncodedValue(u8aTurtle)
+  const encodedData = u8aTurtle.uint8Array.slice(0, -encodedCommit.length)
+  return [encodedData, encodedCommit]
+}
+
+/**
+ * @param {CodecType} codecType
  * @param {number} address
  * @param {number} minAddressBytes
  * @param  {...number} subversions

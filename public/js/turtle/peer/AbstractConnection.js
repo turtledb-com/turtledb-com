@@ -1,5 +1,3 @@
-import { IGNORE_MUTATE } from '../../utils/Recaller.js'
-
 /**
  * @typedef {import('./Peer.js').Peer} Peer
  * @typedef {import('../TurtleBranch.js').TurtleBranch} TurtleBranch
@@ -9,28 +7,20 @@ import { IGNORE_MUTATE } from '../../utils/Recaller.js'
  * @typedef TurtlePart
  * @property {number} commitAddress
  * @property {number} dataAddress
- */
-
-/**
+ *
  * @typedef BranchUpdate
  * @property {number} index
  * @property {Array.<TurtlePart>} turtleParts
- */
-
-/**
+ *
  * @typedef BaleUpdate
  * @property {string} defaultCpk
  * @property {Array.<string>} availableBranches
  * @property {Object.<string, BranchUpdate>} branchUpdates
- */
-
-/**
+ *
  * @typedef HostUpdate
  * @property {string} defaultBale
  * @property {Object.<string, BaleUpdate>} baleUpdates
- */
-
-/**
+ *
  * @typedef Update
  * @property {string} defaultHost
  * @property {Object.<string, HostUpdate>} hostUpdates

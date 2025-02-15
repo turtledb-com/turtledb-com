@@ -1,9 +1,9 @@
 import { IGNORE_MUTATE } from '../../utils/Recaller.js'
-import { codec, OPAQUE_UINT8ARRAY } from '../codecs/codec.js'
+import { codec, OPAQUE_UINT8ARRAY, splitEncodedCommit } from '../codecs/codec.js'
 import { TurtleBranch } from '../TurtleBranch.js'
 import { TurtleDictionary } from '../TurtleDictionary.js'
 import { U8aTurtle } from '../U8aTurtle.js'
-import { combineUint8Arrays } from '../utils.js'
+import { combineUint8Arrays, compareUint8Arrays } from '../utils.js'
 import { AbstractConnection } from './AbstractConnection.js'
 
 /**
@@ -55,26 +55,47 @@ export class EchoConnection extends AbstractConnection {
    * @param {BranchUpdate} [lastOutgoingBranchUpdate]
    */
   processBranch (branch, incomingBranchUpdate, lastOutgoingBranchUpdate) {
+    /** @type {(branchlike: { index: number }) => number} */
+    const indexOf = branch => branch?.index ?? -1
     console.log(this.name, 'incoming', incomingBranchUpdate)
     /** @type {BranchUpdate} */
     const outgoingBranchUpdate = lastOutgoingBranchUpdate ?? {}
-    outgoingBranchUpdate.index = branch?.index ?? -1
-    outgoingBranchUpdate.turtleParts ??= []
-    while (incomingBranchUpdate?.turtleParts?.[(branch.index ?? -1) + 1]) {
-      const turtlePart = incomingBranchUpdate.turtleParts[(branch.index ?? -1) + 1]
+    outgoingBranchUpdate.index = indexOf(branch)
+    const turtleParts = outgoingBranchUpdate.turtleParts ??= []
+    // console.log('?', indexOf(incomingBranchUpdate), indexOf(branch))
+    if (indexOf(branch) >= 0 && indexOf(incomingBranchUpdate) >= indexOf(branch)) {
+      const encodedCommit = splitEncodedCommit(branch.u8aTurtle)[1]
+      const turtlePart = incomingBranchUpdate.turtleParts[indexOf(branch)]
+      if (turtlePart) {
+        const incomingCommit = this.incomingUpdateBranch.lookup(turtlePart.commitAddress)
+        // console.log(encodedCommit, incomingCommit)
+        console.log(compareUint8Arrays(encodedCommit, incomingCommit))
+      } else {
+        console.log('missing turtlePart', indexOf(branch))
+      }
+    }
+    while (incomingBranchUpdate?.turtleParts?.[indexOf(branch) + 1]) {
+      const turtlePart = incomingBranchUpdate.turtleParts[indexOf(branch) + 1]
       const encodedCommit = this.incomingUpdateBranch.lookup(turtlePart.commitAddress)
       const encodedData = this.incomingUpdateBranch.lookup(turtlePart.dataAddress)
       const uint8Array = combineUint8Arrays([encodedData, encodedCommit])
       branch.append(uint8Array)
     }
-    if (incomingBranchUpdate) {
-      for (let index = (incomingBranchUpdate.index ?? -1) + 1; index <= branch.index; ++index) {
+    if (incomingBranchUpdate) { // only send it if they're ready for it
+      if (indexOf(incomingBranchUpdate) >= 0 && indexOf(branch) >= indexOf(incomingBranchUpdate)) {
+        const index = incomingBranchUpdate.index
+        const uint8Array = branch.u8aTurtle.findParentByIndex(index).uint8Array
+        const u8aTurtle = new U8aTurtle(uint8Array)
+        const encodedCommit = codec.extractEncodedValue(u8aTurtle)
+        const turtlePart = turtleParts[index] ??= {}
+        turtlePart.commitAddress ??= this.outgoingUpdateDictionary.upsert(encodedCommit, [codec.getCodecType(OPAQUE_UINT8ARRAY)])
+      }
+      for (let index = (indexOf(incomingBranchUpdate)) + 1; index <= branch.index; ++index) {
         this.peer.recaller.call(() => {
           const uint8Array = branch.u8aTurtle.findParentByIndex(index).uint8Array
           const u8aTurtle = new U8aTurtle(uint8Array)
           const encodedCommit = codec.extractEncodedValue(u8aTurtle)
-          outgoingBranchUpdate.turtleParts[index] ??= {}
-          const turtlePart = outgoingBranchUpdate.turtleParts[index]
+          const turtlePart = turtleParts[index] ??= {}
           turtlePart.commitAddress ??= this.outgoingUpdateDictionary.upsert(encodedCommit, [codec.getCodecType(OPAQUE_UINT8ARRAY)])
 
           const encodedData = uint8Array.slice(0, -encodedCommit.length)

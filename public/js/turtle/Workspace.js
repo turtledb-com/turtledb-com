@@ -1,4 +1,4 @@
-import { codec, COMMIT } from './codecs/codec.js'
+import { codec, COMMIT, splitEncodedCommit } from './codecs/codec.js'
 import { AS_REFS } from './codecs/CodecType.js'
 import { Commit } from './codecs/Commit.js'
 import { TurtleDictionary } from './TurtleDictionary.js'
@@ -44,21 +44,16 @@ export class Workspace extends TurtleDictionary {
       ts,
       value
     })
-    const uint8Array = combineUint8Arrays(this.u8aTurtle.exportUint8Arrays((this.branch.index ?? -1) + 1))
-    let signature
+    const uint8Arrays = this.u8aTurtle.exportUint8Arrays((this.branch.index ?? -1) + 1)
+    const combinedNewUint8Array = combineUint8Arrays(uint8Arrays)
     if (this.branch.u8aTurtle) {
-      /** @type {Commit} */
-      const previousCommit = this.branch.lookup(AS_REFS)
-      if (!(previousCommit instanceof Commit)) {
-        throw new Error('previous last value must be a Commit')
-      }
-      signature = await this.signer.sign(this.branch.name, combineUint8Arrays([previousCommit.signature, uint8Array]))
-    } else {
-      signature = await this.signer.sign(this.branch.name, uint8Array)
+      const previousEncodedCommit = splitEncodedCommit(this.branch.u8aTurtle)[1]
+      uint8Arrays.unshift(previousEncodedCommit)
     }
+    const signature = await this.signer.sign(this.branch.name, combineUint8Arrays(uint8Arrays))
     const commit = new Commit(address, signature)
     const encodedCommit = codec.encodeValue(commit, [codec.getCodecType(COMMIT)], null, AS_REFS)
-    this.branch.append(combineUint8Arrays([uint8Array, encodedCommit.uint8Array]))
+    this.branch.append(combineUint8Arrays([combinedNewUint8Array, encodedCommit.uint8Array]))
     this.u8aTurtle = this.branch.u8aTurtle
   }
 }

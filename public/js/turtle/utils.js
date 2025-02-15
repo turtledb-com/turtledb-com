@@ -74,6 +74,15 @@ export function combineUint8Arrays (uint8Arrays) {
   return collapsedUint8Array
 }
 
+/**
+ * @param {Uint8Array} a
+ * @param {Uint8Array} b
+ * @returns boolean
+ */
+export function compareUint8Arrays (a, b) {
+  return a.length === b.length && a.every((value, index) => value === b[index])
+}
+
 export const encodeNumberToU8a = (number, minimumLength = 2) => {
   if (typeof number !== 'number') throw new Error('addresses are numbers')
   if (Number.isNaN(number)) throw new Error('addresses are not NaN')
