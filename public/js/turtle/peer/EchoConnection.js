@@ -1,4 +1,3 @@
-import { IGNORE_MUTATE } from '../../utils/Recaller.js'
 import { codec, OPAQUE_UINT8ARRAY, splitEncodedCommit } from '../codecs/codec.js'
 import { TurtleBranch } from '../TurtleBranch.js'
 import { TurtleDictionary } from '../TurtleDictionary.js'
@@ -26,14 +25,15 @@ export class EchoConnection extends AbstractConnection {
   constructor (name, peer, trusted, duplex = null) {
     super(name, peer, trusted)
     this.incomingBranch = new TurtleBranch(`${name}.incomingBranch`, peer.recaller)
+    this.outgoingBranch = new TurtleBranch(`${name}.outgoingBranch`, peer.recaller)
     this.outgoingDictionary = new TurtleDictionary(`${name}.outgoingDictionary`, peer.recaller)
     if (duplex) {
       this.duplex = duplex
       duplex.readableStream.pipeTo(this.incomingBranch.makeWritableStream())
-      this.outgoingDictionary.makeReadableStream().pipeTo(duplex.writableStream)
+      this.outgoingBranch.makeReadableStream().pipeTo(duplex.writableStream)
     } else {
       this.duplex = {
-        readableStream: this.outgoingDictionary.makeReadableStream(),
+        readableStream: this.outgoingBranch.makeReadableStream(),
         writableStream: this.incomingBranch.makeWritableStream()
       }
     }
@@ -43,7 +43,7 @@ export class EchoConnection extends AbstractConnection {
   get incomingUpdate () { return this.incomingBranch.lookup() }
 
   /** @type {Update} */
-  get outgoingUpdate () { return this.outgoingDictionary.lookup() }
+  get outgoingUpdate () { return this.outgoingBranch.lookup() }
 
   /**
    * @param {import('../../utils/Recaller.js').Recaller} recaller
@@ -53,9 +53,11 @@ export class EchoConnection extends AbstractConnection {
     this.syncing = true
     recaller.watch(this.name, () => {
       const outgoingUpdate = this.processBranches()
-      this.peer.recaller.call(() => {
-        this.outgoingDictionary.upsert(outgoingUpdate)
-      }, IGNORE_MUTATE) // don't trigger ourselves
+      this.outgoingDictionary.upsert(outgoingUpdate)
+      if (indexOf(this.outgoingDictionary) > indexOf(this.outgoingBranch)) {
+        this.outgoingDictionary.squash(indexOf(this.outgoingBranch) + 1)
+        this.outgoingBranch.append(this.outgoingDictionary.u8aTurtle.uint8Array)
+      }
     })
   }
 
@@ -92,16 +94,14 @@ export class EchoConnection extends AbstractConnection {
       }
       // send them what they're missing
       for (let index = (indexOf(incomingBranchUpdate)) + 1; index <= indexOf(branch); ++index) {
-        this.peer.recaller.call(() => {
-          const uint8Array = branch.u8aTurtle.findParentByIndex(index).uint8Array
-          const u8aTurtle = new U8aTurtle(uint8Array)
-          const encodedCommit = codec.extractEncodedValue(u8aTurtle)
-          const turtlePart = turtleParts[index] ??= {}
-          turtlePart.commitAddress ??= this.outgoingDictionary.upsert(encodedCommit, [codec.getCodecType(OPAQUE_UINT8ARRAY)])
-          const encodedData = uint8Array.slice(0, -encodedCommit.length)
-          turtlePart.dataAddress ??= this.outgoingDictionary.upsert(encodedData, [codec.getCodecType(OPAQUE_UINT8ARRAY)])
-          turtleParts[index] = turtlePart
-        }, IGNORE_MUTATE) // don't trigger ourselves
+        const uint8Array = branch.u8aTurtle.findParentByIndex(index).uint8Array
+        const u8aTurtle = new U8aTurtle(uint8Array)
+        const encodedCommit = codec.extractEncodedValue(u8aTurtle)
+        const turtlePart = turtleParts[index] ??= {}
+        turtlePart.commitAddress ??= this.outgoingDictionary.upsert(encodedCommit, [codec.getCodecType(OPAQUE_UINT8ARRAY)])
+        const encodedData = uint8Array.slice(0, -encodedCommit.length)
+        turtlePart.dataAddress ??= this.outgoingDictionary.upsert(encodedData, [codec.getCodecType(OPAQUE_UINT8ARRAY)])
+        turtleParts[index] = turtlePart
       }
     }
     console.log('  ↑  ', this.name, 'outgoing', outgoingBranchUpdate, branch.length)
