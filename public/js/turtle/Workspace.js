@@ -1,3 +1,4 @@
+import { IGNORE_MUTATE } from '../utils/Recaller.js'
 import { codec, COMMIT, splitEncodedCommit } from './codecs/codec.js'
 import { AS_REFS } from './codecs/CodecType.js'
 import { Commit } from './codecs/Commit.js'
@@ -14,7 +15,7 @@ export class Workspace extends TurtleDictionary {
     super(name, branch.recaller, branch.u8aTurtle)
     this.signer = signer
     this.branch = branch
-    branch.recaller.watch(`update ${name}`, () => {
+    branch.recaller.watch(`update Workspace:${name}`, () => {
       if (this.branch.u8aTurtle === this.u8aTurtle) return
       let lastLength = this.length
       if (this.branch.u8aTurtle && this.u8aTurtle) {
@@ -37,13 +38,16 @@ export class Workspace extends TurtleDictionary {
       throw new Error('target must be ancestor of updates (merge required)')
     }
     const ts = new Date()
-    const address = this.upsert({
-      message,
-      name: this.name,
-      username: this.signer.username,
-      ts,
-      value
-    })
+    let address
+    this.recaller.call(() => {
+      address = this.upsert({
+        message,
+        name: this.name,
+        username: this.signer.username,
+        ts,
+        value
+      })
+    }, IGNORE_MUTATE)
     const uint8Arrays = this.u8aTurtle.exportUint8Arrays((this.branch.index ?? -1) + 1)
     const combinedNewUint8Array = combineUint8Arrays(uint8Arrays)
     if (this.branch.u8aTurtle) {

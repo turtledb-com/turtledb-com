@@ -26,11 +26,15 @@ export class TurtleBranch {
   }
 
   set u8aTurtle (u8aTurtle) {
+    if (u8aTurtle === this.#u8aTurtle) return
     this.recaller.reportKeyMutation(this, 'u8aTurtle', 'set', this.name)
     this.#u8aTurtle = u8aTurtle
   }
 
   append (uint8Array) {
+    if (!uint8Array?.length) {
+      throw new Error('bad Uint8Array')
+    }
     this.u8aTurtle = new U8aTurtle(uint8Array, this.u8aTurtle)
     const controllers = this.#readableByteStreamControllers
     const encodedLength = new Uint32Array([uint8Array.length])
@@ -50,7 +54,9 @@ export class TurtleBranch {
       start (controller) {
         _controller = controller
         controllers.add(_controller)
-        uint8Arrays.forEach(uint8Array => _controller.enqueue(uint8Array))
+        uint8Arrays.forEach(uint8Array => {
+          _controller.enqueue(uint8Array)
+        })
       },
       cancel (reason) {
         console.log('stream cancelled', { reason })
@@ -69,6 +75,7 @@ export class TurtleBranch {
     const appender = this
     return new WritableStream({
       write (chunk) {
+        // console.log(appender.name, chunk)
         inProgress = combineUint8Arrays([inProgress, chunk])
         if (inProgress.length < 4) return
         totalLength = new Uint32Array(inProgress.slice(0, 4).buffer)[0]

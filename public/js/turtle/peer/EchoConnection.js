@@ -26,7 +26,7 @@ export class EchoConnection extends AbstractConnection {
     super(name, peer, trusted)
     this.incomingBranch = new TurtleBranch(`${name}.incomingBranch`, peer.recaller)
     this.outgoingBranch = new TurtleBranch(`${name}.outgoingBranch`, peer.recaller)
-    this.outgoingDictionary = new TurtleDictionary(`${name}.outgoingDictionary`, peer.recaller)
+    this.outgoingDictionary = new TurtleDictionary(`${name}.outgoingDictionary`)
     if (duplex) {
       this.duplex = duplex
       duplex.readableStream.pipeTo(this.incomingBranch.makeWritableStream())
@@ -51,11 +51,11 @@ export class EchoConnection extends AbstractConnection {
   sync (recaller) {
     const outgoingUpdate = this.processBranches()
     this.outgoingDictionary.upsert(outgoingUpdate)
-    console.log('  ↓  ', this.name, 'incoming', this.incomingBranch.lookup(), this.incomingBranch.length)
+    // console.log('  ↓  ', this.name, 'incoming', this.incomingBranch.lookup(), this.incomingBranch.length)
     if (indexOf(this.outgoingDictionary) > indexOf(this.outgoingBranch)) {
       this.outgoingDictionary.squash(indexOf(this.outgoingBranch) + 1)
       this.outgoingBranch.append(this.outgoingDictionary.u8aTurtle.uint8Array)
-      console.log('  ↑  ', this.name, 'outgoing', this.outgoingBranch.lookup(), this.outgoingBranch.length)
+      // console.log('  ↑  ', this.name, 'outgoing', this.outgoingBranch.lookup(), this.outgoingBranch.length)
     }
   }
 
