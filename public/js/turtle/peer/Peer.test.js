@@ -19,8 +19,12 @@ globalRunner.only.describe(urlToName(import.meta.url), suite => {
     const connectionBA = new EchoConnection('b-to-a', peerB, false, connectionAB.duplex)
     peerB.connections.push(connectionBA)
     const aWorkspace = await peerA.getWorkspace(signer, 'simpleWorkspace')
+    aWorkspace.recaller.debug = true
+    console.log('\n\n\n')
     await aWorkspace.commit('abcd')
     await tics(4) // tics needed found through trial and error (TODO: better visibility)
+    aWorkspace.recaller.debug = false
+    console.log('\n\n\n')
     const bWorkspace = await peerA.getWorkspace(signer, 'simpleWorkspace')
     assert.equal(bWorkspace.lastCommitValue, 'abcd')
   })

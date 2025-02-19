@@ -49,16 +49,14 @@ export class EchoConnection extends AbstractConnection {
    * @param {import('../../utils/Recaller.js').Recaller} recaller
    */
   sync (recaller) {
-    if (this.syncing) return
-    this.syncing = true
-    recaller.watch(this.name, () => {
-      const outgoingUpdate = this.processBranches()
-      this.outgoingDictionary.upsert(outgoingUpdate)
-      if (indexOf(this.outgoingDictionary) > indexOf(this.outgoingBranch)) {
-        this.outgoingDictionary.squash(indexOf(this.outgoingBranch) + 1)
-        this.outgoingBranch.append(this.outgoingDictionary.u8aTurtle.uint8Array)
-      }
-    })
+    const outgoingUpdate = this.processBranches()
+    this.outgoingDictionary.upsert(outgoingUpdate)
+    console.log('  ↓  ', this.name, 'incoming', this.incomingBranch.lookup(), this.incomingBranch.length)
+    if (indexOf(this.outgoingDictionary) > indexOf(this.outgoingBranch)) {
+      this.outgoingDictionary.squash(indexOf(this.outgoingBranch) + 1)
+      this.outgoingBranch.append(this.outgoingDictionary.u8aTurtle.uint8Array)
+      console.log('  ↑  ', this.name, 'outgoing', this.outgoingBranch.lookup(), this.outgoingBranch.length)
+    }
   }
 
   /**
@@ -67,7 +65,7 @@ export class EchoConnection extends AbstractConnection {
    * @param {BranchUpdate} [lastOutgoingBranchUpdate]
    */
   processBranch (branch, incomingBranchUpdate, lastOutgoingBranchUpdate) {
-    console.log('  ↓  ', this.name, 'incoming', incomingBranchUpdate, branch.length)
+    // console.log('  ↓  ', this.name, 'incoming', incomingBranchUpdate, branch.length)
     /** @type {BranchUpdate} */
     const outgoingBranchUpdate = lastOutgoingBranchUpdate ?? {}
 
@@ -104,7 +102,6 @@ export class EchoConnection extends AbstractConnection {
         turtleParts[index] = turtlePart
       }
     }
-    console.log('  ↑  ', this.name, 'outgoing', outgoingBranchUpdate, branch.length)
     return outgoingBranchUpdate
   }
 
