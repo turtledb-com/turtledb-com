@@ -1,4 +1,5 @@
 /**
+ * @typedef {import('../../utils/Recaller.js').Recaller} Recaller
  * @typedef {import('./Peer.js').Peer} Peer
  * @typedef {import('../TurtleBranch.js').TurtleBranch} TurtleBranch
  */
@@ -35,6 +36,7 @@ export class AbstractConnection {
   constructor (name, peer, trusted = false) {
     this.name = name
     this.peer = peer
+    this.trusted = trusted
   }
 
   /** @type {Update} */
@@ -43,7 +45,10 @@ export class AbstractConnection {
   /** @type {Update} */
   get outgoingUpdate () { throw new Error('outgoingUpdate getter must be overridden') }
 
-  sync () {
+  /**
+   * @param {Recaller} recaller
+   */
+  sync (recaller) {
     throw new Error('sync method must be overridden')
   }
 

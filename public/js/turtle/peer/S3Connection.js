@@ -10,7 +10,7 @@ const toKey = (prefix, index) => `${prefix}/${index.toString(36).padStart(8, '0'
 export class S3Connection extends AbstractConnection {
   #s3DataByPrefix = {}
   constructor (name, peer, endpoint, region, bucket, accessKeyId, secretAccessKey) {
-    super(name, peer, true) // always trusted
+    super(name, peer, true) // always trust what's on S3 over peer
     this.bucket = bucket
     this.s3Client = new S3Client({
       endpoint,
@@ -29,8 +29,13 @@ export class S3Connection extends AbstractConnection {
   /** @type {Update} */
   get outgoingUpdate () { return undefined }
 
-  sync () {
-    this.processBranches()
+  /**
+   * @param {import('../../utils/Recaller.js').Recaller} recaller
+   */
+  sync (recaller) {
+    recaller.watch(this.name, () => {
+      this.processBranches()
+    })
   }
 
   /**

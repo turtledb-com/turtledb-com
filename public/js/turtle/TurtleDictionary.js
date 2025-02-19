@@ -4,7 +4,8 @@ import { TurtleBranch } from './TurtleBranch.js'
 import { ValueByUint8Array } from './utils.js'
 
 export class TurtleDictionary extends TurtleBranch {
-  #valueByUint8Array = new ValueByUint8Array()
+  /** @type {ValueByUint8Array} */
+  #valueByUint8Array
   /**
    * @param {string} name
    * @param {import('../utils/Recaller.js').Recaller} recaller
@@ -27,6 +28,9 @@ export class TurtleDictionary extends TurtleBranch {
   }
 
   lexicograph (start = 0, end = this.length - 1, logall = false) {
+    if (start === 0) {
+      this.#valueByUint8Array = new ValueByUint8Array()
+    }
     let address = end
     let u8aTurtle = this.u8aTurtle
     while (u8aTurtle) {

@@ -16,13 +16,13 @@ export class Workspace extends TurtleDictionary {
     this.branch = branch
     branch.recaller.watch(`update ${name}`, () => {
       if (this.branch.u8aTurtle === this.u8aTurtle) return
+      let lastLength = this.length
       if (this.branch.u8aTurtle && this.u8aTurtle) {
         if (this.u8aTurtle.findParentByIndex(this.branch.index) === this.branch.u8aTurtle) return
         if (this.branch.u8aTurtle.findParentByIndex(this.index) !== this.u8aTurtle) {
-          throw new Error(`${this.name} must be ancestor of branch (merge required)`)
+          lastLength = 0
         }
       }
-      const lastLength = this.length
       this.u8aTurtle = this.branch.u8aTurtle
       this.lexicograph(lastLength)
     })
