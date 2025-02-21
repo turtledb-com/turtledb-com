@@ -211,11 +211,6 @@ export class EchoConnection extends AbstractConnection {
 }
 
 export class EchoPeerState extends AbstractPeerState {
-  /**
-   * @param {EchoConnection} connection
-   */
-  constructor (connection) {
-    super()
-    this.connection = connection
-  }
+  /** @type {EchoConnection} */
+  connection
 }

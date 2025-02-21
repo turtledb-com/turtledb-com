@@ -10,7 +10,7 @@ const tics = async (count, ticLabel = '') => {
   }
 }
 
-globalRunner.only.describe(urlToName(import.meta.url), suite => {
+globalRunner.describe(urlToName(import.meta.url), suite => {
   const signer = new Signer('testuser', 'secret')
   suite.it('handles moving branches', async ({ assert }) => {
     const peerA = new Peer('a')

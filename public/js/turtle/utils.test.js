@@ -1,9 +1,33 @@
 import { globalRunner, urlToName } from '../../test/Runner.js'
 import { handleNextTick } from '../utils/nextTick.js'
 import { Recaller } from '../utils/Recaller.js'
-import { b36ToUint8Array, bigIntToUint8Array, combineUint8ArrayLikes, combineUint8Arrays, decodeNumberFromU8a, encodeNumberToU8a, parseB36, proxyWithRecaller, toCombinedVersion, toSubVersions, toVersionCount, uint8ArrayToB36, uint8ArrayToBigInt, ValueByUint8Array, zabacaba } from './utils.js'
+import { b36ToUint8Array, bigIntToUint8Array, combineUint8ArrayLikes, combineUint8Arrays, cpkBaleHostToPath, decodeNumberFromU8a, encodeNumberToU8a, parseB36, pathToCpkBaleHost, proxyWithRecaller, softSet, toCombinedVersion, toSubVersions, toVersionCount, uint8ArrayToB36, uint8ArrayToBigInt, ValueByUint8Array, zabacaba } from './utils.js'
 
 globalRunner.describe(urlToName(import.meta.url), suite => {
+  suite.it('goes from path to host/bale/cpk and back', ({ assert }) => {
+    ; [
+      ['turtledb.com/a/a', ['a', 'a', 'turtledb.com'], 'a'],
+      ['b.com/a/a', ['a', 'a', 'b.com'], 'b.com/a/a'],
+      ['a/a', ['a', 'a', 'turtledb.com'], 'a'],
+      ['b/a', ['a', 'b', 'turtledb.com'], 'b/a'],
+      ['a', ['a', 'a', 'turtledb.com'], 'a']
+    ].forEach(vector => {
+      const [path, cpkBaleHost, repath] = vector
+      assert.equal(pathToCpkBaleHost(path), cpkBaleHost)
+      assert.equal(cpkBaleHostToPath(...cpkBaleHost), repath)
+    })
+  })
+  suite.it('softsets completely', ({ assert }) => {
+    const obj = { a: 1, b: 2 }
+    ;[
+      { b: 3, c: [1, 2, 3] },
+      { c: [1, 2, 3,,,] },
+      { c: [, 2] }
+    ].forEach(vector => {
+      softSet(obj, vector)
+      assert.equal(obj, vector)
+    })
+  })
   suite.it('returns expected values for a zabacaba function', ({ assert }) => {
     const expectedResults = [
       0,

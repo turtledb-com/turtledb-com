@@ -234,3 +234,60 @@ export function proxyWithRecaller (target, recaller, name = '<unnamed proxyWithR
     }
   })
 }
+
+/**
+ * @param {Object} a
+ * @param {Object} b
+ */
+export function softSet (a, b) {
+  let changed = false
+  const aKeys = Object.keys(a)
+  for (const i of aKeys) {
+    if (Object.hasOwn(b, i)) { // softSet any overlapping attributes
+      if (a[i] !== b[i]) {
+        if (
+          typeof a[i] === 'object' && typeof b[i] === 'object' &&
+          Array.isArray(a[i]) === Array.isArray(b[i])
+        ) {
+          changed = softSet(a[i], b[i]) && changed
+        } else {
+          a[i] = b[i]
+          changed = true
+        }
+      }
+    } else { // remove any extra attributes
+      delete a[i]
+      changed = true
+    }
+  }
+  for (const i in b) { // add missing attributes
+    if (!Object.hasOwn(a, i)) {
+      a[i] = b[i]
+      changed = true
+    }
+  }
+  if (Array.isArray(b) && a.length !== b.length) {
+    a.length = b.length
+    changed = true
+  }
+  return changed
+}
+
+export const defaultHostname = 'turtledb.com'
+
+export const pathToCpkBaleHost = path => {
+  const parts = path.split(/\//)
+  const cpk = parts.pop()
+  const balename = parts.pop() ?? cpk
+  const hostname = parts.pop() ?? defaultHostname
+  return [cpk, balename, hostname]
+}
+
+export const cpkBaleHostToPath = (cpk, balename = cpk, hostname = defaultHostname) => {
+  const parts = [cpk]
+  if (balename !== cpk || hostname !== defaultHostname) {
+    parts.unshift(balename)
+    if (hostname !== defaultHostname) parts.unshift(hostname)
+  }
+  return parts.join('/')
+}

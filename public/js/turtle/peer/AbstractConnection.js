@@ -60,7 +60,6 @@ export class AbstractConnection {
    * @param {AbstractPeerState} theirs
    */
   forEachHostBaleCpk (ours, theirs) {
-
   }
 
   startSyncing () {
@@ -96,9 +95,21 @@ export class AbstractPeerState {
   constructor (connection) {
     this.connection = connection
   }
+
+  /**
+   * @param {(cpk, balename, hostname) => void} f
+   */
+  forEach (f) {
+  }
 }
 
 export class AbstractTurtleState {
+  /**
+   * @param {AbstractPeerState} peerState
+   * @param {string} cpk
+   * @param {string} balename
+   * @param {string} hostname
+   */
   constructor (peerState, cpk, balename, hostname) {
     this.peerState = peerState
     this.cpk = cpk
