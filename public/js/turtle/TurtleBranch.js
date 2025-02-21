@@ -38,9 +38,10 @@ export class TurtleBranch {
     this.u8aTurtle = new U8aTurtle(uint8Array, this.u8aTurtle)
     const controllers = this.#readableByteStreamControllers
     const encodedLength = new Uint32Array([uint8Array.length])
-    controllers.forEach(controller => controller.enqueue(
-      combineUint8ArrayLikes([encodedLength, uint8Array])
-    ))
+    controllers.forEach(controller => {
+      console.log(` >>>> sending ${this.name} 4 + ${uint8Array.length} bytes`)
+      controller.enqueue(combineUint8ArrayLikes([encodedLength, uint8Array]))
+    })
   }
 
   /**

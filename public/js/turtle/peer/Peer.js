@@ -28,10 +28,6 @@ export class Peer {
     this.defaultHost = defaultHost
     this.connections = proxyWithRecaller([], recaller)
     this.branchesByHostBaleCpk = proxyWithRecaller({}, recaller)
-    // this.connections.forEach(connection => connection.sync(recaller))
-    this.recaller.watch('handle remote updates', () => {
-      this.connections.forEach(connection => connection.sync(recaller))
-    })
   }
 
   /**

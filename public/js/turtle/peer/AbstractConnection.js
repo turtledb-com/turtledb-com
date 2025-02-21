@@ -33,10 +33,11 @@ export class AbstractConnection {
    * @param {Peer} peer
    * @param {boolean} [trusted=false]
    */
-  constructor (name, peer, trusted = false) {
+  constructor (name, peer, trusted = false, broadcast = false) {
     this.name = name
     this.peer = peer
-    this.trusted = trusted
+    this.trusted = trusted // resolve conflicts in our favor if trusted
+    this.broadcast = broadcast // offer to share everything in our peer
   }
 
   /** @type {Update} */
@@ -46,52 +47,62 @@ export class AbstractConnection {
   get outgoingUpdate () { throw new Error('outgoingUpdate getter must be overridden') }
 
   /**
-   * @param {Recaller} recaller
-   */
-  sync (recaller) {
-    throw new Error('sync method must be overridden')
-  }
-
-  /**
-   * @param {TurtleBranch} branch
-   * @param {BranchUpdate} [incomingBranchUpdate]
-   * @param {BranchUpdate} [lastOutgoingBranchUpdate]
    * @param {string} cpk
    * @param {string} balename
    * @param {string} hostname
    */
-  processBranch (branch, incomingBranchUpdate, lastOutgoingBranchUpdate, cpk, balename, hostname) {
+  async processBranch (cpk, balename, hostname) {
     throw new Error('processBranch method must be overridden')
   }
 
-  processBranches () {
-    const outgoingUpdate = { hostUpdates: {} }
-    const incomingUpdate = this.incomingUpdate
-    const incomingHostUpdates = incomingUpdate?.hostUpdates ?? {}
-    const lastOutgoingUpdates = this.outgoingUpdate
-    /** @type {Update} */
-    const hostnames = new Set([...Object.keys(incomingHostUpdates), ...Object.keys(this.peer.branchesByHostBaleCpk)])
-    for (const hostname of hostnames) {
-      const incomingHostUpdate = incomingHostUpdates[hostname]
-      const incomingBaleUpdates = incomingHostUpdate?.baleUpdates ?? {}
-      const branchesByBaleCpk = this.peer.branchesByHostBaleCpk[hostname] ?? {}
-      const balenames = new Set([...Object.keys(incomingBaleUpdates), ...Object.keys(branchesByBaleCpk)])
-      for (const balename of balenames) {
-        const incomingBaleUpdate = incomingBaleUpdates[balename]
-        const incomingBranchUpdates = incomingBaleUpdate?.branchUpdates ?? {}
-        const branchesByCpk = branchesByBaleCpk[balename] ?? {}
-        const cpks = new Set([...Object.keys(incomingBranchUpdates), ...Object.keys(branchesByCpk)])
-        for (const cpk of cpks) {
-          const lastOutgoingBranchUpdate = lastOutgoingUpdates?.hostUpdates?.[hostname]?.baleUpdates?.[balename]?.branchUpdates?.[cpk] ?? {}
-          const incomingBranchUpdate = incomingBranchUpdates[cpk]
-          const branch = this.peer.getBranch(cpk, balename, hostname)
-          const outgoingBranchUpdate = this.processBranch(branch, incomingBranchUpdate, lastOutgoingBranchUpdate, cpk, balename, hostname)
-          outgoingUpdate.hostUpdates[hostname] ??= { baleUpdates: {} }
-          outgoingUpdate.hostUpdates[hostname].baleUpdates[balename] ??= { branchUpdates: {} }
-          outgoingUpdate.hostUpdates[hostname].baleUpdates[balename].branchUpdates[cpk] = outgoingBranchUpdate
+  /**
+   * @param {AbstractPeerState} ours
+   * @param {AbstractPeerState} theirs
+   */
+  forEachHostBaleCpk (ours, theirs) {
+
+  }
+
+  startSyncing () {
+    if (this.sync) return
+    this.sync = () => {
+      const incomingUpdate = this.incomingUpdate
+      const incomingHostUpdates = incomingUpdate?.hostUpdates ?? {}
+      const hostnames = new Set([...Object.keys(incomingHostUpdates), ...Object.keys(this.peer.branchesByHostBaleCpk)])
+      for (const hostname of hostnames) {
+        const incomingHostUpdate = incomingHostUpdates[hostname]
+        const incomingBaleUpdates = incomingHostUpdate?.baleUpdates ?? {}
+        const branchesByBaleCpk = this.peer.branchesByHostBaleCpk[hostname] ?? {}
+        const balenames = new Set([...Object.keys(incomingBaleUpdates), ...Object.keys(branchesByBaleCpk)])
+        for (const balename of balenames) {
+          const incomingBaleUpdate = incomingBaleUpdates[balename]
+          const incomingBranchUpdates = incomingBaleUpdate?.branchUpdates ?? {}
+          const branchesByCpk = branchesByBaleCpk[balename] ?? {}
+          const cpks = new Set([...Object.keys(incomingBranchUpdates), ...Object.keys(branchesByCpk)])
+          for (const cpk of cpks) {
+            this.processBranch(cpk, balename, hostname)
+          }
         }
       }
     }
-    return outgoingUpdate
+    this.peer.recaller.watch(this.name, this.sync)
+  }
+}
+
+export class AbstractPeerState {
+  /**
+   * @param {AbstractConnection} connection
+   */
+  constructor (connection) {
+    this.connection = connection
+  }
+}
+
+export class AbstractTurtleState {
+  constructor (peerState, cpk, balename, hostname) {
+    this.peerState = peerState
+    this.cpk = cpk
+    this.balename = balename
+    this.hostname = hostname
   }
 }

@@ -58,7 +58,8 @@ export async function verifyTurtleCommit (u8aTurtle, publicKey) {
   }
   /** @type {import('./codecs/Commit.js').Commit} */
   const commit = codecVersion.decode(u8aTurtle, undefined, AS_REFS)
-  let uint8Array = u8aTurtle.slice(0, -codecVersion.getWidth(u8aTurtle) - 1)
+  console.log(commit, codecVersion.getWidth(u8aTurtle))
+  let uint8Array = u8aTurtle.slice(undefined, -codecVersion.getWidth(u8aTurtle) - 1)
   if (u8aTurtle.parent) {
     const parentCommit = u8aTurtle.parent.lookup(AS_REFS)
     uint8Array = combineUint8Arrays([parentCommit.signature, uint8Array])
