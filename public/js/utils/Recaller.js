@@ -42,7 +42,7 @@ export class Recaller {
     if (typeof f !== 'function') throw new Error('can only hide functions')
     const previousIgnore = this.#ignore
     this.#ignore = ignore
-    f()
+    f(this)
     this.#ignore = previousIgnore
   }
 
@@ -54,7 +54,7 @@ export class Recaller {
     this.#nameFunction(f, name)
     if (this.debug) console.group(`watching --- ${JSON.stringify(name)}`)
     this.#stack.unshift(f)
-    f()
+    f(this)
     this.#stack.shift()
     if (this.debug) console.groupEnd()
   }

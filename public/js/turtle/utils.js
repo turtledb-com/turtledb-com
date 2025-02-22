@@ -245,7 +245,12 @@ export function softSet (a, b) {
   for (const i of aKeys) {
     if (Object.hasOwn(b, i)) { // softSet any overlapping attributes
       if (a[i] !== b[i]) {
-        if (
+        if (!a[i] || !b[i]) {
+          a[i] = b[i]
+          changed = true
+        } if (a[i] instanceof Uint8Array && b[i] instanceof Uint8Array) {
+          changed = compareUint8Arrays(a[i], b[i]) && changed
+        } else if (
           typeof a[i] === 'object' && typeof b[i] === 'object' &&
           Array.isArray(a[i]) === Array.isArray(b[i])
         ) {
