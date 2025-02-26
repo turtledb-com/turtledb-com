@@ -40,6 +40,7 @@ globalRunner.only.describe(urlToName(import.meta.url), suite => {
 
     await tics(10, '\t-\t-\tworkspaceAUpdate1 appending commit')
 
+    console.log(await workspaceAUpdate1.getUint8Array(0))
     console.log(await workspaceAUpdate2.getUint8Array(0))
 
     /*

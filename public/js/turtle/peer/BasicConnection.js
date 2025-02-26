@@ -118,24 +118,6 @@ export class UpdateManifold {
       }
     })
   }
-
-  /**
-   * @param {BranchUpdate} branchUpdate
-   */
-  // setCommitAsRefs (hostname, balename, cpk, commitsAsRefs) {
-  //   this.#updates.hostUpdates[hostname] ??= { baleUpdates: {} }
-  //   this.#updates.hostUpdates[hostname].baleUpdates[balename] ??= { commitsAsRefsAddresses: {} }
-  //   const lastAddress = this.#updates.hostUpdates[hostname].baleUpdates[balename].commitsAsRefsAddresses[cpk]
-  //   const newAddress = this.#dictionary.upsert(commitsAsRefs)
-  //   if (newAddress === lastAddress) return
-  //   this.#updates.hostUpdates[hostname].baleUpdates[balename].commitsAsRefsAddresses[cpk] = newAddress
-  //   ++this.#updates.index
-  //   this.#updates.ts = new Date()
-  //   this.#dictionary.upsert(this.#updates)
-  //   console.log('sending updata with', cpk, commitsAsRefs)
-  //   this.#dictionary.squash((this.outgoingBranch.index ?? -1) + 1)
-  //   this.outgoingBranch.append(this.#dictionary.u8aTurtle.uint8Array)
-  // }
 }
 
 export class BranchUpdate {
@@ -162,9 +144,6 @@ export class BranchUpdate {
     this.#commits = []
     this.#commitsAsRefs = commitsAsRefs
     updateManifold.setBranchUpdate(hostname, balename, cpk, this)
-    // this.recaller.watch(name, () => {
-    //   updateManifold.setCommitAsRefs(this.hostname, this.balename, this.cpk, this.commitsAsRefs)
-    // })
   }
 
   get commitsAsRefs () {
