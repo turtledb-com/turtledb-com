@@ -8,13 +8,13 @@ export class U8aTurtle {
 
   /**
    * @param {Uint8Array} uint8Array
-   * @param {U8aTurtle} [parent]
+   * @param {U8aTurtle} parent
    */
   constructor (uint8Array, parent) {
     if (!uint8Array) throw new Error('missing Uint8Array')
     this.uint8Array = uint8Array
+    this.parent = parent
     if (parent) {
-      this.parent = parent
       this.offset = parent.length
       this.index = parent.index + 1
       this.length = parent.length + uint8Array.length

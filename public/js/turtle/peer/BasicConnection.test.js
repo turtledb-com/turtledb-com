@@ -19,13 +19,30 @@ globalRunner.only.describe(urlToName(import.meta.url), suite => {
     const keys = await signer.makeKeysFor(turtlename)
     const workspaceA = new Workspace(signer, turtlename, new TurtleBranch(keys.publicKey))
 
+    const updateManifold1 = new UpdateManifold('basic-test-manifold_#1')
+    const updateManifold2 = new UpdateManifold('basic-test-manifold_#2')
+    updateManifold1.connect(updateManifold2.duplex)
+
+    await tics(10, '\t-\t-\tupdateManifolds connected')
+
     const recaller1 = new Recaller('BranchUpdateRecaller #1')
-    const updateManifold1 = new UpdateManifold('basic test manifold #1', recaller1)
-    const workspaceAUpdate1 = new BranchUpdate('WSU1', updateManifold1, recaller1, keys.publicKey)
+    const workspaceAUpdate1 = new BranchUpdate('WSU1', updateManifold1, recaller1, false, keys.publicKey)
+
+    await tics(10, '\t-\t-\tworkspaceAUpdate1 created')
 
     const recaller2 = new Recaller('BranchUpdateRecaller #2')
-    const updateManifold2 = new UpdateManifold('basic test manifold #2', recaller2)
-    const workspaceAUpdate2 = new BranchUpdate('wsu2', updateManifold2, recaller2, keys.publicKey)
+    const workspaceAUpdate2 = new BranchUpdate('wsu2', updateManifold2, recaller2, false, keys.publicKey)
+
+    await tics(10, '\t-\t-\tworkspaceAUpdate2 created')
+
+    await workspaceA.commit('1', 'a')
+    await workspaceAUpdate1.setUint8Array(0, workspaceA.u8aTurtle.uint8Array)
+
+    await tics(10, '\t-\t-\tworkspaceAUpdate1 appending commit')
+
+    console.log(await workspaceAUpdate2.getUint8Array(0))
+
+    /*
 
     await workspaceAUpdate2.combine(workspaceAUpdate1)
     await workspaceAUpdate1.combine(workspaceAUpdate2)
@@ -43,5 +60,6 @@ globalRunner.only.describe(urlToName(import.meta.url), suite => {
     await workspaceAUpdate1.combine(workspaceAUpdate2)
     await workspaceAUpdate2.combine(workspaceAUpdate1)
     await workspaceAUpdate1.combine(workspaceAUpdate2)
+    */
   })
 })

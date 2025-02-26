@@ -1,5 +1,6 @@
 import { Recaller } from '../../utils/Recaller.js'
 import { codec, OPAQUE_UINT8ARRAY, splitEncodedCommit } from '../codecs/codec.js'
+import { TurtleBranch } from '../TurtleBranch.js'
 import { TurtleDictionary } from '../TurtleDictionary.js'
 import { U8aTurtle } from '../U8aTurtle.js'
 import { combineUint8Arrays, compareUint8Arrays, cpkBaleHostToPath } from '../utils.js'
@@ -9,6 +10,10 @@ import { combineUint8Arrays, compareUint8Arrays, cpkBaleHostToPath } from '../ut
  */
 
 /**
+ * @typedef Duplex
+ * @property {ReadableStream} readableStream
+ * @property {WritableStream} writableStream
+ *
  * @typedef CommitAsRefs
  * @property {number} head
  * @property {number} body
@@ -20,7 +25,7 @@ import { combineUint8Arrays, compareUint8Arrays, cpkBaleHostToPath } from '../ut
  * @typedef BaleUpdate
  * @property {string} defaultCpk
  * @property {Array.<string>} availableBranches
- * @property {Object.<string, BranchUpdate>} branchUpdates
+ * @property {Object.<string, number>} commitsAsRefsAddresses
  *
  * @typedef HostUpdate
  * @property {string} defaultBale
@@ -33,71 +38,104 @@ import { combineUint8Arrays, compareUint8Arrays, cpkBaleHostToPath } from '../ut
 
 export class UpdateManifold {
   /** @type {Updates} */
-  #hostBaleCpk
+  #updates = { hostUpdates: {}, index: 0 }
   /** @type {TurtleDictionary} */
-  dictionary
+  #dictionary
+  /** @type {TurtleBranch} */
+  outgoingBranch
+  /** @type {TurtleBranch} */
+  incomingBranch
+
   /**
    * @param {string} name
-   * @param {Recaller} recaller
-   * @param {boolean} trusted
    */
-  constructor (name, recaller, trusted) {
+  constructor (name) {
     this.name = name
-    this.recaller = recaller
-    this.trusted = trusted
-    this.dictionary = new TurtleDictionary(`${this.name}.dictionary`, recaller)
-    let lastIndex = this.dictionary.index ?? -1
-    recaller.watch(`UpdateManifold ${this.name}`, () => {
-      if (this.dictionary.index > lastIndex) {
-        this.dictionary.squash(lastIndex + 1)
-        lastIndex = this.dictionary.index
-        console.log(name, lastIndex)
-      }
-    })
-  }
-
-  getUpdate (hostname, balename, cpk) {
-    this.recaller.reportKeyAccess(this, cpkBaleHostToPath(hostname, balename, cpk))
-    return this.#hostBaleCpk?.hostUpdates?.[hostname]?.baleUpdates?.[balename]?.branchUpdates?.[cpk]
+    this.incomingBranch = new TurtleBranch(`${name}.incomingBranch`)
+    this.outgoingBranch = new TurtleBranch(`${name}.outgoingBranch`)
+    this.#dictionary = new TurtleDictionary(`${name}.dictionary`)
+    this.duplex = {
+      readableStream: this.outgoingBranch.makeReadableStream(),
+      writableStream: this.incomingBranch.makeWritableStream()
+    }
   }
 
   /**
-   * @param {string} hostname
-   * @param {string} balename
-   * @param {string} cpk
+   * @param {Duplex} duplex
+   */
+  connect (duplex) {
+    this.duplex.readableStream.pipeTo(duplex.writableStream)
+    duplex.readableStream.pipeTo(this.duplex.writableStream)
+  }
+
+  getOpaqueUint8Array (address) {
+    return this.#dictionary.lookup(address)
+  }
+
+  setOpaqueUint8Array (uint8Array) {
+    return this.#dictionary.upsert(uint8Array, [codec.getCodecType([OPAQUE_UINT8ARRAY])])
+  }
+
+  /**
    * @param {BranchUpdate} branchUpdate
    */
-  initUpdate (branchUpdate) {
-    const { hostname, balename, cpk } = branchUpdate
-    this.#hostBaleCpk ??= { hostUpdates: {} }
-    this.#hostBaleCpk.hostUpdates[hostname] ??= { baleUpdates: {} }
-    this.#hostBaleCpk.hostUpdates[hostname].baleUpdates[balename] ??= { branchUpdates: {} }
-    if (this.#hostBaleCpk.hostUpdates[hostname].baleUpdates[balename].branchUpdates[cpk]) {
-      throw new Error(`BranchUpdate already exists at ${cpkBaleHostToPath(cpk, balename, hostname)}`)
-    }
-    this.#hostBaleCpk.hostUpdates[hostname].baleUpdates[balename].branchUpdates[cpk] = branchUpdate
-    const updates = { hostUpdates: {} }
-    branchUpdate.recaller.watch(`${this.name} watching ${branchUpdate.name}`, () => {
+  setBranchUpdate (hostname, balename, cpk, branchUpdate) {
+    const hostUpdates = this.#updates.hostUpdates
+    hostUpdates[hostname] ??= { baleUpdates: {} }
+    const baleUpdates = hostUpdates[hostname].baleUpdates
+    baleUpdates[balename] ??= { commitsAsRefsAddresses: {} }
+    const commitsAsRefsAddresses = baleUpdates[balename].commitsAsRefsAddresses
+    if (Object.hasOwn(commitsAsRefsAddresses, cpk)) throw new Error(`BranchUpdate already exists at ${JSON.stringify({ hostname, balename, cpk })}`)
+    /** @type {Updates} */
+    const lastIncomingUpdates = this.incomingBranch.lookup()
+    let lastIncomingAddress = lastIncomingUpdates?.hostUpdates?.[hostname]?.baleUpdates?.[balename]?.commitsAsRefsAddresses?.[cpk]
+    this.incomingBranch.recaller.watch(`${branchUpdate.name}.incomingBranch`, () => {
       /** @type {Updates} */
-      updates.hostUpdates[hostname] ??= { baleUpdates: {} }
-      updates.hostUpdates[hostname].baleUpdates[balename] ??= { branchUpdates: {} }
-      const commitsAddress = this.dictionary.upsert(branchUpdate.commits)
-      if (updates.hostUpdates[hostname].baleUpdates[balename].branchUpdates[cpk] !== commitsAddress) {
-        updates.hostUpdates[hostname].baleUpdates[balename].branchUpdates[cpk] = commitsAddress
-        console.group(this.name)
-        Object.values(updates.hostUpdates).forEach(hostUpdate => {
-          Object.values(hostUpdate.baleUpdates).forEach(baleUpdate => {
-            Object.entries(baleUpdate.branchUpdates).forEach(([name, branchUpdate]) => {
-              console.log(name, this.dictionary.lookup(branchUpdate))
-            })
-          })
-        })
-        console.groupEnd()
-        this.dictionary.upsert(updates)
+      const newIncomingUpdates = this.incomingBranch.lookup()
+      const newIncomingAddress = newIncomingUpdates?.hostUpdates?.[hostname]?.baleUpdates?.[balename]?.commitsAsRefsAddresses?.[cpk]
+      if (newIncomingAddress !== lastIncomingAddress) {
+        const commitsAsRefs = this.incomingBranch.lookup(newIncomingAddress)
+        const stubBranchUpdate = new BranchUpdate('stubBranchUpdate', {
+          getOpaqueUint8Array: address => this.incomingBranch.lookup(address),
+          setOpaqueUint8Array: () => { throw new Error('trying to setOpaqueUint8Array of stubUpdateManifold') },
+          setBranchUpdate: () => {}
+        }, undefined, undefined, cpk, balename, hostname, commitsAsRefs)
+        branchUpdate.combine(stubBranchUpdate)
+        lastIncomingAddress = newIncomingAddress
       }
     })
-    this.recaller.reportKeyAccess(this, cpkBaleHostToPath(hostname, balename, cpk))
+    let lastOutgoingAddress
+    branchUpdate.recaller.watch(branchUpdate.name, () => {
+      const newOutgoingAddress = this.#dictionary.upsert(branchUpdate.commitsAsRefs)
+      if (newOutgoingAddress !== lastOutgoingAddress) {
+        commitsAsRefsAddresses[cpk] = newOutgoingAddress
+        lastOutgoingAddress = newOutgoingAddress
+        ++this.#updates.index
+        this.#updates.ts = new Date()
+        this.#dictionary.upsert(this.#updates)
+        this.#dictionary.squash((this.outgoingBranch.index ?? -1) + 1)
+        this.outgoingBranch.append(this.#dictionary.u8aTurtle.uint8Array)
+      }
+    })
   }
+
+  /**
+   * @param {BranchUpdate} branchUpdate
+   */
+  // setCommitAsRefs (hostname, balename, cpk, commitsAsRefs) {
+  //   this.#updates.hostUpdates[hostname] ??= { baleUpdates: {} }
+  //   this.#updates.hostUpdates[hostname].baleUpdates[balename] ??= { commitsAsRefsAddresses: {} }
+  //   const lastAddress = this.#updates.hostUpdates[hostname].baleUpdates[balename].commitsAsRefsAddresses[cpk]
+  //   const newAddress = this.#dictionary.upsert(commitsAsRefs)
+  //   if (newAddress === lastAddress) return
+  //   this.#updates.hostUpdates[hostname].baleUpdates[balename].commitsAsRefsAddresses[cpk] = newAddress
+  //   ++this.#updates.index
+  //   this.#updates.ts = new Date()
+  //   this.#dictionary.upsert(this.#updates)
+  //   console.log('sending updata with', cpk, commitsAsRefs)
+  //   this.#dictionary.squash((this.outgoingBranch.index ?? -1) + 1)
+  //   this.outgoingBranch.append(this.#dictionary.u8aTurtle.uint8Array)
+  // }
 }
 
 export class BranchUpdate {
@@ -113,7 +151,7 @@ export class BranchUpdate {
    * @param {boolean} trusted
    * @param {BranchUpdate} init
    */
-  constructor (name, updateManifold, recaller = new Recaller(name), trusted = false, cpk = name, balename = cpk, hostname = 'turtledb.com') {
+  constructor (name, updateManifold, recaller = new Recaller(name), trusted = false, cpk = name, balename = cpk, hostname = 'turtledb.com', commitsAsRefs = []) {
     this.name = name
     this.updateManifold = updateManifold
     this.recaller = recaller
@@ -122,8 +160,11 @@ export class BranchUpdate {
     this.hostname = hostname
     this.trusted = trusted
     this.#commits = []
-    this.#commitsAsRefs = []
-    updateManifold.initUpdate(this)
+    this.#commitsAsRefs = commitsAsRefs
+    updateManifold.setBranchUpdate(hostname, balename, cpk, this)
+    // this.recaller.watch(name, () => {
+    //   updateManifold.setCommitAsRefs(this.hostname, this.balename, this.cpk, this.commitsAsRefs)
+    // })
   }
 
   get commitsAsRefs () {
@@ -132,18 +173,11 @@ export class BranchUpdate {
   }
 
   get length () {
-    this.recaller.reportKeyAccess(this, 'commitsAsRefs', 'get_index', this.name)
     return this.#commits.length
   }
 
   get index () {
-    this.recaller.reportKeyAccess(this, 'commitsAsRefs', 'get_index', this.name)
-    return this.#commitsAsRefs.length - 1
-  }
-
-  set index (index) {
-    this.recaller.reportKeyAccess(this, 'commitsAsRefs', 'set_index', this.name)
-    this.#commitsAsRefs.length = index + 1
+    return this.commitsAsRefs.length - 1
   }
 
   async truncate (index) {
@@ -154,23 +188,21 @@ export class BranchUpdate {
     this.recaller.reportKeyMutation(this, 'commitsAsRefs', 'truncate', this.name)
   }
 
-  getAvailableCommits () {
-    return new Set([...Object.keys(this.co)])
-  }
-
   async getShownCommits () {
-    return Object.keys(this.#commitsAsRefs)
+    return Object.keys(this.commitsAsRefs)
   }
 
   async getHead (index) {
     if (!this.commitsAsRefs[index]?.head && !this.#commits[index]?.head) return
-    this.#commits[index].head ??= await this.updateManifold.dictionary.lookup(this.#commitsAsRefs[index].head)
+    this.#commits[index] ??= {}
+    this.#commits[index].head ??= await this.updateManifold.getOpaqueUint8Array(this.#commitsAsRefs[index].head)
     return this.#commits[index].head
   }
 
   async getBody (index) {
     if (!this.commitsAsRefs[index]?.body && !this.#commits[index]?.body) return
-    this.#commits[index].body ??= await this.updateManifold.dictionary.lookup(this.#commitsAsRefs[index].body)
+    this.#commits[index] ??= {}
+    this.#commits[index].body ??= await this.updateManifold.getOpaqueUint8Array(this.#commitsAsRefs[index].body)
     return this.#commits[index].body
   }
 
@@ -179,7 +211,7 @@ export class BranchUpdate {
     if (commitAsRefs?.head) return
     const commit = this.#commits[index]
     if (!commit?.head) throw new Error('no head available')
-    commitAsRefs.head ??= this.updateManifold.dictionary.upsert(commit.head, [codec.getCodecType(OPAQUE_UINT8ARRAY)])
+    commitAsRefs.head ??= this.updateManifold.setOpaqueUint8Array(commit.head)
     this.#commitsAsRefs[index] = commitAsRefs
     this.#commitsAsRefs.length = this.#commits.length
     this.recaller.reportKeyMutation(this, 'commitsAsRefs', 'showHeadRef', this.name)
@@ -190,8 +222,8 @@ export class BranchUpdate {
     if (commitAsRefs?.head && commitAsRefs?.body) return
     const commit = this.#commits[index]
     if (!commit?.head || !commit?.body) throw new Error('no commit available')
-    commitAsRefs.head ??= this.updateManifold.dictionary.upsert(commit.head, [codec.getCodecType(OPAQUE_UINT8ARRAY)])
-    commitAsRefs.body ??= this.updateManifold.dictionary.upsert(commit.body, [codec.getCodecType(OPAQUE_UINT8ARRAY)])
+    commitAsRefs.head ??= this.updateManifold.setOpaqueUint8Array(commit.head)
+    commitAsRefs.body ??= this.updateManifold.setOpaqueUint8Array(commit.body)
     this.#commitsAsRefs[index] = commitAsRefs
     this.#commitsAsRefs.length = this.#commits.length
     this.recaller.reportKeyMutation(this, 'commitsAsRefs', 'showCommitRefs', this.name)
@@ -208,18 +240,23 @@ export class BranchUpdate {
     if (this.#commits[index]) throw new Error('can only setUint8Arry once for each index')
     const [body, head] = splitEncodedCommit(new U8aTurtle(uint8Array))
     this.#commits[index] = { head, body }
-    if (!this.#commitsAsRefs.length) return
+    if (this.#commitsAsRefs.length || this.#commitsAsRefs.length === this.#commits.length) return
+    this.#commitsAsRefs.length = this.#commits.length
+    if (this.lastThat?.index < index) {
+      this.showCommitRefs(index)
+    }
     this.recaller.reportKeyMutation(this, 'commitsAsRefs', 'setUint8Array', this.name)
   }
 
   async toString () {
-    return JSON.stringify({ name: this.name, length: this.length, index: this.index, commits: await this.getShownCommits(), '#commits': this.#commitsAsRefs })
+    return JSON.stringify({ name: this.name, length: this.length, index: this.index, shownCommits: await this.getShownCommits(), '#commitsAsRefs': this.#commitsAsRefs })
   }
 
   /**
    * @param {BranchUpdate} that
    */
   async combine (that) {
+    this.lastThat = that
     console.log('\n\n incoming', await that.toString())
     console.log('        +', await this.toString())
     // 1st handle any conflicts
@@ -233,20 +270,20 @@ export class BranchUpdate {
           break
         }
       }
-      if (this.index >= that.index) {
-        // 2nd send signature for their current index
-        await this.showHeadRef(that.index)
-      }
     }
-    // 3rd copy new Commits from that
+    // 2nd copy new Commits from that
     for (const index of await that.getShownCommits()) {
       if (+index === this.length) {
         await this.setUint8Array(this.length, await that.getUint8Array(this.length))
       }
     }
-    // 4th write out new Commits for that
+    // 3rd write out new Commits for that
     for (let index = that.index + 1; index <= this.length - 1; ++index) {
       await this.showCommitRefs(index)
+    }
+    // 4th send signature for that current index // shows this's interest and lets that check for conflicts
+    if (this.length && that.index !== -1 && this.length > that.index) {
+      await this.showHeadRef(that.index)
     }
     console.log('        =', await this.toString())
   }

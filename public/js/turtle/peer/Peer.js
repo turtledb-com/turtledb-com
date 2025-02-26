@@ -3,12 +3,6 @@ import { TurtleBranch } from '../TurtleBranch.js'
 import { proxyWithRecaller } from '../utils.js'
 import { Workspace } from '../Workspace.js'
 
-/**
- * @typedef Duplex
- * @property {ReadableStream} readableStream
- * @property {WritableStream} writableStream
- */
-
 export class Peer {
   /** @type {Array.<import('./AbstractConnection.js').AbstractConnection>} */
   connections
