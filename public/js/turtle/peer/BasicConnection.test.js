@@ -12,7 +12,7 @@ const tics = async (count, ticLabel = '') => {
   }
 }
 
-globalRunner.only.describe(urlToName(import.meta.url), suite => {
+globalRunner.describe(urlToName(import.meta.url), suite => {
   suite.it('handles basic duplication', async ({ assert }) => {
     const turtlename = 'workspaceA'
     const signer = new Signer('basic', 'test')

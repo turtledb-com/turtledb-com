@@ -14,13 +14,23 @@ import { combineUint8Arrays, compareUint8Arrays, cpkBaleHostToPath } from '../ut
  * @property {ReadableStream} readableStream
  * @property {WritableStream} writableStream
  *
+ * @typedef OpaqueUint8ArrayStorage
+ * @property {(Uint8Array) => number} set
+ * @property {(number) => Uint8Array} get
+ *
  * @typedef CommitAsRefs
  * @property {number} head
  * @property {number} body
  *
+ * @typedef CommitsAsRefs
+ * @type {Array.<CommitAsRefs}
+ *
  * @typedef Commit
  * @property {Uint8Array} head
  * @property {Uint8Array} body
+ *
+ * @typedef Commits
+ * @type {Array.<Commit>}
  *
  * @typedef BaleUpdate
  * @property {string} defaultCpk
@@ -73,7 +83,7 @@ export class UpdateManifold {
   }
 
   setOpaqueUint8Array (uint8Array) {
-    return this.#dictionary.upsert(uint8Array, [codec.getCodecType([OPAQUE_UINT8ARRAY])])
+    return this.#dictionary.upsert(uint8Array, [codec.getCodecType(OPAQUE_UINT8ARRAY)])
   }
 
   /**
