@@ -105,9 +105,9 @@ export class U8aTurtle {
     return codecVersion.decode(u8aTurtle, address, options)
   }
 
-  getCodecName (address = this.length - 1) {
+  getCodecType (address = this.length - 1) {
     const footer = this.findParentByAddress(address).getByte(address)
-    return codec.getCodecTypeVersion(footer)?.codecType?.name
+    return codec.getCodecTypeVersion(footer)?.codecType
   }
 
   /**

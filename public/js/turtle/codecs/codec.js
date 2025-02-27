@@ -228,7 +228,7 @@ export const TYPED_ARRAY_TYPE = new CodecType({
       for (let i = 0; i < wordsLength; ++i) {
         words[i] = dictionary.upsert(value.slice(i * maxWordLength, (i + 1) * maxWordLength), [codec.getCodecType(WORD)])
       }
-      address = dictionary.upsert(words, [codec.getCodecType(TREE_NODE)])
+      address = dictionary.upsert(words, [TREE_NODE])
     }
     return encodeAddress(TYPED_ARRAY_TYPE, address, minAddressBytes, typedArrayVersion)
   },
@@ -260,7 +260,7 @@ export const NONEMPTY_ARRAY_TYPE = new CodecType({
     }
     u8aTurtle = u8aTurtle.findParentByAddress(address)
     let refs
-    if (u8aTurtle.getCodecName(address) === TREE_NODE) {
+    if (u8aTurtle.getCodecType(address) === TREE_NODE) {
       const treeNode = u8aTurtle.lookup(address)
       refs = [...treeNode.inOrder(u8aTurtle)]
     } else {
@@ -282,7 +282,7 @@ export const NONEMPTY_ARRAY_TYPE = new CodecType({
       if (value.length === 1) {
         address = value[0]
       } else {
-        address = dictionary.upsert(value, [codec.getCodecType(TREE_NODE)])
+        address = dictionary.upsert(value, [TREE_NODE])
       }
     }
     return encodeAddress(NONEMPTY_ARRAY_TYPE, address, minAddressBytes, isSparse)
@@ -378,9 +378,8 @@ export const OBJECT_TYPE = new CodecType({
 })
 codec.addCodecType(OBJECT_TYPE)
 
-export const TREE_NODE = 'tree-node'
-export const TREE_NODE_TYPE = new CodecType({
-  name: TREE_NODE,
+export const TREE_NODE = new CodecType({
+  name: 'tree-node',
   test: value => Array.isArray(value) && value.length > 1,
   decode: (uint8Array, codecVersion) => {
     const [leftAddressLength] = codecVersion.versionArrays
@@ -392,17 +391,17 @@ export const TREE_NODE_TYPE = new CodecType({
     const leftLength = 2 ** (31 - Math.clz32(value.length - 1))
     let leftAddress
     if (leftLength === 1) leftAddress = encodeNumberToU8a(value[0], minAddressBytes)
-    else leftAddress = encodeNumberToU8a(dictionary.upsert(value.slice(0, leftLength), [codec.getCodecType(TREE_NODE)]), minAddressBytes)
+    else leftAddress = encodeNumberToU8a(dictionary.upsert(value.slice(0, leftLength), [TREE_NODE]), minAddressBytes)
     let rightAddress
     if (value.length === leftLength + 1) rightAddress = encodeNumberToU8a(value[value.length - 1], minAddressBytes)
-    else rightAddress = encodeNumberToU8a(dictionary.upsert(value.slice(leftLength), [codec.getCodecType(TREE_NODE)]), minAddressBytes)
-    const footer = codec.deriveFooter(TREE_NODE_TYPE, [leftAddress.length - minAddressBytes, rightAddress.length - minAddressBytes])
+    else rightAddress = encodeNumberToU8a(dictionary.upsert(value.slice(leftLength), [TREE_NODE]), minAddressBytes)
+    const footer = codec.deriveFooter(TREE_NODE, [leftAddress.length - minAddressBytes, rightAddress.length - minAddressBytes])
     return combineUint8ArrayLikes([leftAddress, rightAddress, footer])
   },
   getWidth: codecVersion => codecVersion.versionArrays[0] + codecVersion.versionArrays[1] + 2 * (minAddressBytes),
   versionArrayCounts: [addressVersions, addressVersions]
 })
-codec.addCodecType(TREE_NODE_TYPE)
+codec.addCodecType(TREE_NODE)
 
 export const OPAQUE_UINT8ARRAY = new CodecType({
   name: 'opaque-uint8array',
