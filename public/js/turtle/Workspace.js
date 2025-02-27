@@ -56,7 +56,7 @@ export class Workspace extends TurtleDictionary {
     }
     const signature = await this.signer.sign(this.branch.name, combineUint8Arrays(uint8Arrays))
     const commit = new Commit(address, signature)
-    const encodedCommit = codec.encodeValue(commit, [codec.getCodecType(COMMIT)], null, AS_REFS)
+    const encodedCommit = codec.encodeValue(commit, [COMMIT], null, AS_REFS)
     this.branch.append(combineUint8Arrays([combinedNewUint8Array, encodedCommit.uint8Array]))
     this.u8aTurtle = this.branch.u8aTurtle
   }

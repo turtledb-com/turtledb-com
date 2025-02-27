@@ -53,7 +53,7 @@ export class Signer {
 export async function verifyTurtleCommit (u8aTurtle, publicKey) {
   const footer = u8aTurtle.getByte()
   const codecVersion = codec.getCodecTypeVersion(footer)
-  if (codecVersion.codecType !== codec.getCodecType(COMMIT)) {
+  if (codecVersion.codecType !== COMMIT) {
     throw new Error('last value must be Commit')
   }
   /** @type {import('./codecs/Commit.js').Commit} */
