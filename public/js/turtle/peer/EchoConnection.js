@@ -125,7 +125,7 @@ export class EchoConnection extends AbstractConnection {
           const u8aTurtle = new U8aTurtle(uint8Array)
           const encodedCommit = codec.extractEncodedValue(u8aTurtle)
           const turtlePart = turtleParts[index] ??= {}
-          turtlePart.commitAddress ??= this.outgoingDictionary.upsert(encodedCommit, [codec.getCodecType(OPAQUE_UINT8ARRAY)])
+          turtlePart.commitAddress ??= this.outgoingDictionary.upsert(encodedCommit, [OPAQUE_UINT8ARRAY])
         }
         // send them what they're missing
         for (let index = (indexOf(incomingBranchUpdate)) + 1; index <= indexOf(branch); ++index) {
@@ -133,9 +133,9 @@ export class EchoConnection extends AbstractConnection {
           const u8aTurtle = new U8aTurtle(uint8Array)
           const encodedCommit = codec.extractEncodedValue(u8aTurtle)
           const turtlePart = turtleParts[index] ??= {}
-          turtlePart.commitAddress ??= this.outgoingDictionary.upsert(encodedCommit, [codec.getCodecType(OPAQUE_UINT8ARRAY)])
+          turtlePart.commitAddress ??= this.outgoingDictionary.upsert(encodedCommit, [OPAQUE_UINT8ARRAY])
           const encodedData = uint8Array.slice(0, -encodedCommit.length)
-          turtlePart.dataAddress ??= this.outgoingDictionary.upsert(encodedData, [codec.getCodecType(OPAQUE_UINT8ARRAY)])
+          turtlePart.dataAddress ??= this.outgoingDictionary.upsert(encodedData, [OPAQUE_UINT8ARRAY])
           turtleParts[index] = turtlePart
         }
       }

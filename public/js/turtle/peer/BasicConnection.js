@@ -1,9 +1,9 @@
 import { Recaller } from '../../utils/Recaller.js'
-import { codec, OPAQUE_UINT8ARRAY, splitEncodedCommit } from '../codecs/codec.js'
+import { OPAQUE_UINT8ARRAY, splitEncodedCommit } from '../codecs/codec.js'
 import { TurtleBranch } from '../TurtleBranch.js'
 import { TurtleDictionary } from '../TurtleDictionary.js'
 import { U8aTurtle } from '../U8aTurtle.js'
-import { combineUint8Arrays, compareUint8Arrays, cpkBaleHostToPath } from '../utils.js'
+import { combineUint8Arrays, compareUint8Arrays } from '../utils.js'
 
 /**
  * @typedef {import('../../utils/Recaller.js').Recaller} Recaller
@@ -83,7 +83,7 @@ export class UpdateManifold {
   }
 
   setOpaqueUint8Array (uint8Array) {
-    return this.#dictionary.upsert(uint8Array, [codec.getCodecType(OPAQUE_UINT8ARRAY)])
+    return this.#dictionary.upsert(uint8Array, [OPAQUE_UINT8ARRAY])
   }
 
   /**

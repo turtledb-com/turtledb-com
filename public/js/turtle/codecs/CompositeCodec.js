@@ -18,7 +18,7 @@ export class CompositeCodec {
       console.error('no match', value)
       throw new Error('no encoder for value')
     }
-    const uint8Array = codecType.encode(value, codecType, dictionary, options)
+    const uint8Array = codecType.encode(value, dictionary, options)
     return { uint8Array, codecType }
   }
 
