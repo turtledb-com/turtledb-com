@@ -1,19 +1,32 @@
 import { globalRunner, urlToName } from '../../test/Runner.js'
 import { Signer, verifyTurtleCommit } from './Signer.js'
-import { TurtleBranch } from './TurtleBranch.js'
-import { Workspace } from './Workspace.js'
+import { squashTurtle, U8aTurtle } from './U8aTurtle.js'
+import { OPAQUE_UINT8ARRAY } from './codecs/codec.js'
 
 globalRunner.describe(urlToName(import.meta.url), suite => {
-  suite.it('handles moving branches', async ({ assert }) => {
-    const commits = new TurtleBranch('commits')
-    const signer = new Signer('admin', 'secret')
-    const keys = await signer.makeKeysFor(commits.name)
-    const workspace = new Workspace(signer, 'branch', commits)
-    const value = { strings: ['test', 'commit'] }
-    await workspace.commit(value, 'commit message')
-    const verified = await verifyTurtleCommit(commits.u8aTurtle, keys.publicKey)
-    assert.equal(verified, true)
-    assert.equal(workspace.lastCommit.message, 'commit message')
-    assert.equal(workspace.lastCommitValue, value)
+  suite.it('signs and verifies commits', async ({ assert }) => {
+    const signer = new Signer('signer1', 'password1')
+    const name = 'branch1'
+    const u8Array = new Uint8Array([1, 2, 3])
+    let u8aTurtle = new U8aTurtle(OPAQUE_UINT8ARRAY.encode(u8Array))
+    const u8aAddress = u8aTurtle.length - 1
+    const signedCommit = await signer.signCommit(name, u8aAddress, u8aTurtle)
+    u8aTurtle = new U8aTurtle(signedCommit, u8aTurtle)
+    u8aTurtle = squashTurtle(u8aTurtle, 0)
+    const committedTurtle = u8aTurtle
+    assert.equal(committedTurtle.lookup().value, u8Array)
+    const keys = await signer.makeKeysFor(name)
+    const verification = await verifyTurtleCommit(committedTurtle, keys.publicKey)
+    assert.assert(verification)
+
+    const u8Array2 = new Uint8Array([4, 5, 6, 7])
+    u8aTurtle = new U8aTurtle(OPAQUE_UINT8ARRAY.encode(u8Array2), u8aTurtle)
+    const u8aAddress2 = u8aTurtle.length - 1
+    const signedCommit2 = await signer.signCommit(name, u8aAddress2, u8aTurtle, committedTurtle)
+    u8aTurtle = new U8aTurtle(signedCommit2, u8aTurtle)
+    u8aTurtle = squashTurtle(u8aTurtle, committedTurtle.index + 1)
+    assert.equal(u8aTurtle.lookup().value, u8Array2)
+    const verification2 = await verifyTurtleCommit(u8aTurtle, keys.publicKey)
+    assert.assert(verification2)
   })
 })

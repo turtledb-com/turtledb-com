@@ -1,8 +1,13 @@
 import { cryptoPromise, hashNameAndPassword } from '../utils/crypto.js'
 import { getPublicKey, signAsync, verify } from '../utils/noble-secp256k1.js'
-import { codec, COMMIT } from './codecs/codec.js'
+import { codec, COMMIT, splitEncodedCommit } from './codecs/codec.js'
 import { AS_REFS } from './codecs/CodecType.js'
+import { Commit } from './codecs/Commit.js'
 import { b36ToUint8Array, combineUint8Arrays, uint8ArrayToB36 } from './utils.js'
+
+/**
+ * @typedef {import('./U8aTurtle.js').U8aTurtle} U8aTurtle
+ */
 
 /**
  * @typedef KeyPair
@@ -44,10 +49,28 @@ export class Signer {
     const signature = await signAsync(hash, privateKey)
     return signature.toCompactRawBytes()
   }
+
+  /**
+   * @param {string} turtlename
+   * @param {number} commitAddress
+   * @param {U8aTurtle} u8aTurtle
+   * @param {U8aTurtle} committedTurtle
+   * @return {Uint8Array}
+   */
+  async signCommit (turtlename, commitAddress, u8aTurtle, committedTurtle) {
+    const uint8Arrays = u8aTurtle.exportUint8Arrays((committedTurtle?.index ?? -1) + 1)
+    if (committedTurtle) {
+      const previousEncodedCommit = splitEncodedCommit(committedTurtle)[1]
+      uint8Arrays.unshift(previousEncodedCommit)
+    }
+    const signature = await this.sign(turtlename, combineUint8Arrays(uint8Arrays))
+    const commit = new Commit(commitAddress, signature)
+    return COMMIT.encode(commit, undefined, AS_REFS)
+  }
 }
 
 /**
- * @param {import('./U8aTurtle.js').U8aTurtle} u8aTurtle
+ * @param {U8aTurtle} u8aTurtle
  * @param {string} publicKey
  */
 export async function verifyTurtleCommit (u8aTurtle, publicKey) {
@@ -58,11 +81,10 @@ export async function verifyTurtleCommit (u8aTurtle, publicKey) {
   }
   /** @type {import('./codecs/Commit.js').Commit} */
   const commit = codecVersion.decode(u8aTurtle, undefined, AS_REFS)
-  // console.log(commit, codecVersion.getWidth(u8aTurtle))
   let uint8Array = u8aTurtle.slice(undefined, -codecVersion.getWidth(u8aTurtle) - 1)
   if (u8aTurtle.parent) {
-    const parentCommit = u8aTurtle.parent.lookup(AS_REFS)
-    uint8Array = combineUint8Arrays([parentCommit.signature, uint8Array])
+    const previousEncodedCommit = splitEncodedCommit(u8aTurtle.parent)[1]
+    uint8Array = combineUint8Arrays([previousEncodedCommit, uint8Array])
   }
   const hash = await digestData(uint8Array)
   return verify(commit.signature, hash, b36ToUint8Array(publicKey))
