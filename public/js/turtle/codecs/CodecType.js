@@ -12,7 +12,7 @@ export class CodecType {
    *  name: string,
    *  test: (value:any) => boolean,
    *  decode: (uint8Array: Uint8Array, codecTypeVersion: import('./CodecTypeVersion.js').CodecTypeVersion, u8aTurtle: import('../U8aTurtle.js').U8aTurtle, options: CodecOptions) => any,
-   *  encode: (value: any, codec: CodecType, dictionary: import('../TurtleDictionary.js').TurtleDictionary, options: CodecOptions) => Uint8Array,
+   *  encode: (value: any, dictionary: import('../TurtleDictionary.js').TurtleDictionary, options: CodecOptions) => Uint8Array,
    *  getWidth: (codecTypeVersion: import('./CodecTypeVersion.js').CodecTypeVersion, u8aTurtle: import('../U8aTurtle.js').U8aTurtle, index: number) => number,
    *  versionArrayCounts: Array.<number>,
    *  isOpaque: boolean

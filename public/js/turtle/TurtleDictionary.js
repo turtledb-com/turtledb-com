@@ -20,6 +20,7 @@ export class TurtleDictionary extends TurtleBranch {
     const start = this.length
     super.append(uint8Array)
     this.lexicograph(start)
+    return this.length - 1
   }
 
   #cache = (uint8Array, address, codecType) => {
@@ -43,7 +44,7 @@ export class TurtleDictionary extends TurtleBranch {
           else string = [string]
           console.log(' -', address, ':', ...string)
         } else if (this.#valueByUint8Array.get(uint8Array) !== undefined) {
-          console.error({ address, footer: u8aTurtle.getByte(address), uint8Array })
+          // console.error({ address, footer: u8aTurtle.getByte(address), uint8Array })
           throw new Error('uint8Array already stored')
         }
         this.#cache(uint8Array, address, codecVersion.codecType)

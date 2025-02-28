@@ -93,7 +93,7 @@ export class S3Connection extends AbstractConnection {
    */
   async #putCommit (prefix, index, branch) {
     const key = toKey(prefix, index)
-    const commit = branch.u8aTurtle.findParentByIndex(index).uint8Array
+    const commit = branch.u8aTurtle.getAncestorByIndex(index).uint8Array
     await this.s3Client.send(new PutObjectCommand({ Bucket: this.bucket, Key: key, Body: commit }))
     console.log('#putCommit', prefix, index)
   }

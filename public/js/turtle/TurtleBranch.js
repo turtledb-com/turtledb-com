@@ -27,6 +27,13 @@ export class TurtleBranch {
 
   set u8aTurtle (u8aTurtle) {
     if (u8aTurtle === this.#u8aTurtle) return
+    if (u8aTurtle.hasAncestor(this.#u8aTurtle)) {
+      const uint8Arrays = u8aTurtle.exportUint8Arrays((this.index ?? -1) + 1)
+      uint8Arrays.forEach(uint8Array => this.#broadcast(uint8Array))
+    } else {
+      console.log(this.#u8aTurtle, '->', u8aTurtle)
+      console.warn(`TurtleBranch, ${this.name}.u8aTurtle set to non-descendant (any ReadableStreams are broken now)`)
+    }
     this.recaller.reportKeyMutation(this, 'u8aTurtle', 'set', this.name)
     this.#u8aTurtle = u8aTurtle
   }
@@ -36,11 +43,16 @@ export class TurtleBranch {
       throw new Error('bad Uint8Array')
     }
     this.u8aTurtle = new U8aTurtle(uint8Array, this.u8aTurtle)
+    return this.length - 1
+  }
+
+  #broadcast (uint8Array) {
     const controllers = this.#readableByteStreamControllers
     const encodedLength = new Uint32Array([uint8Array.length])
+    const encodedUint8Array = combineUint8ArrayLikes([encodedLength, uint8Array])
     controllers.forEach(controller => {
       console.log(` >>>> sending ${this.name} 4 + ${uint8Array.length} bytes`)
-      controller.enqueue(combineUint8ArrayLikes([encodedLength, uint8Array]))
+      controller.enqueue(encodedUint8Array)
     })
   }
 
@@ -73,15 +85,16 @@ export class TurtleBranch {
   makeWritableStream () {
     let inProgress = new Uint8Array()
     let totalLength
-    const appender = this
+    const turtleBranch = this
     return new WritableStream({
       write (chunk) {
-        // console.log(appender.name, chunk)
+        // console.log(turtleBranch.name, chunk)
         inProgress = combineUint8Arrays([inProgress, chunk])
         if (inProgress.length < 4) return
         totalLength = new Uint32Array(inProgress.slice(0, 4).buffer)[0]
         if (inProgress.length < totalLength + 4) return
-        appender.append(inProgress.slice(4, totalLength + 4))
+        console.log(inProgress.slice(4, totalLength + 4))
+        turtleBranch.append(inProgress.slice(4, totalLength + 4))
         inProgress = inProgress.slice(totalLength + 4)
       }
     })
@@ -89,8 +102,8 @@ export class TurtleBranch {
 
   get length () { return this.u8aTurtle?.length }
   get index () { return this.u8aTurtle?.index }
-  getByte (address) { return this.u8aTurtle?.findParentByAddress?.(address)?.getByte?.(address) }
-  slice (start, end) { return this.u8aTurtle?.findParentByAddress?.(start)?.slice?.(start, end) }
+  getByte (address) { return this.u8aTurtle?.getAncestorByAddress?.(address)?.getByte?.(address) }
+  slice (start, end) { return this.u8aTurtle?.getAncestorByAddress?.(start)?.slice?.(start, end) }
   squash (downToIndex) { this.u8aTurtle = squashTurtle(this.u8aTurtle, downToIndex) }
   /**
    * @param  {[optional_address:number, ...path:Array.<string>, optional_options:import('./codecs/CodecType.js').CodecOptions]} path

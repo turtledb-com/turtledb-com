@@ -104,7 +104,7 @@ export class EchoConnection extends AbstractConnection {
 
     if (this.selfUpdater) return
     this.selfUpdater = async () => {
-      logUpdates(this.incomingBranch, `  ↓↓  ${this.name}, incoming`)
+      // logUpdates(this.incomingBranch, `  ↓↓  ${this.name}, incoming`)
       const lastOutgoingBranchUpdate = this.outgoingUpdate?.hostUpdates?.[hostname]?.baleUpdates?.[balename]?.branchUpdates?.[cpk] ?? {}
       const incomingUpdate = this.incomingUpdate
       const incomingBranchUpdate = incomingUpdate?.hostUpdates?.[hostname]?.baleUpdates?.[balename]?.branchUpdates?.[cpk]
@@ -121,7 +121,7 @@ export class EchoConnection extends AbstractConnection {
         // so they can check their turtle against ours
         if (indexOf(incomingBranchUpdate) >= 0) {
           const index = incomingBranchUpdate.index
-          const uint8Array = branch.u8aTurtle.findParentByIndex(index).uint8Array
+          const uint8Array = branch.u8aTurtle.getAncestorByIndex(index).uint8Array
           const u8aTurtle = new U8aTurtle(uint8Array)
           const encodedCommit = codec.extractEncodedValue(u8aTurtle)
           const turtlePart = turtleParts[index] ??= {}
@@ -129,7 +129,7 @@ export class EchoConnection extends AbstractConnection {
         }
         // send them what they're missing
         for (let index = (indexOf(incomingBranchUpdate)) + 1; index <= indexOf(branch); ++index) {
-          const uint8Array = branch.u8aTurtle.findParentByIndex(index).uint8Array
+          const uint8Array = branch.u8aTurtle.getAncestorByIndex(index).uint8Array
           const u8aTurtle = new U8aTurtle(uint8Array)
           const encodedCommit = codec.extractEncodedValue(u8aTurtle)
           const turtlePart = turtleParts[index] ??= {}
@@ -149,7 +149,7 @@ export class EchoConnection extends AbstractConnection {
           this.outgoingDictionary.squash(indexOf(this.outgoingBranch) + 1)
           this.outgoingBranch.append(this.outgoingDictionary.u8aTurtle.uint8Array)
           this.outgoingDictionary.u8aTurtle = this.outgoingBranch.u8aTurtle
-          logUpdates(this.outgoingBranch, `  ⬆  ${this.name}, outgoing`)
+          // logUpdates(this.outgoingBranch, `  ⬆  ${this.name}, outgoing`)
         }
       }
       // copy any new data
@@ -158,13 +158,13 @@ export class EchoConnection extends AbstractConnection {
         const encodedCommit = this.incomingBranch.lookup(turtlePart.commitAddress)
         const encodedData = this.incomingBranch.lookup(turtlePart.dataAddress)
         const uint8Array = combineUint8Arrays([encodedData, encodedCommit])
-        console.log(new U8aTurtle(uint8Array, branch.u8aTurtle))
+        // console.log(new U8aTurtle(uint8Array, branch.u8aTurtle))
         const verified = verifyTurtleCommit(new U8aTurtle(uint8Array, branch.u8aTurtle), cpk)
         // await new Promise(resolve => setTimeout(resolve))
-        console.log({ verified })
+        // console.log({ verified })
         branch.append(uint8Array)
         const verified2 = verifyTurtleCommit(branch.u8aTurtle, cpk)
-        console.log({ verified2 })
+        // console.log({ verified2 })
         outgoingBranchUpdate.index = indexOf(branch)
         updateOutgoingBranch()
       }
@@ -184,7 +184,7 @@ export class EchoConnection extends AbstractConnection {
     if (!incomingBranchUpdate.turtleParts) return
     for (const index in incomingBranchUpdate.turtleParts) {
       const i = +index
-      const u8aTurtle = branch.u8aTurtle.findParentByIndex(i)
+      const u8aTurtle = branch.u8aTurtle.getAncestorByIndex(i)
       if (!u8aTurtle) break
       const turtlePart = incomingBranchUpdate.turtleParts[i]
       /** @type {Uint8Array} */

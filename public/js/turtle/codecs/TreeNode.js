@@ -14,7 +14,7 @@ export class TreeNode {
    * @param {import('../U8aTurtle.js').U8aTurtle} u8aTurtle
    */
   * inOrder (u8aTurtle) {
-    const leftTurtle = u8aTurtle.findParentByAddress(this.leftAddress)
+    const leftTurtle = u8aTurtle.getAncestorByAddress(this.leftAddress)
     const leftFooter = leftTurtle.getByte(this.leftAddress)
     if (codec.getCodecTypeVersion(leftFooter).codecType === TREE_NODE) {
       const left = leftTurtle.lookup(this.leftAddress)
@@ -22,7 +22,7 @@ export class TreeNode {
     } else {
       yield this.leftAddress
     }
-    const rightTurtle = u8aTurtle.findParentByAddress(this.rightAddress)
+    const rightTurtle = u8aTurtle.getAncestorByAddress(this.rightAddress)
     const rightFooter = rightTurtle.getByte(this.rightAddress)
     if (codec.getCodecTypeVersion(rightFooter).codecType === TREE_NODE) {
       const right = rightTurtle.lookup(this.rightAddress)

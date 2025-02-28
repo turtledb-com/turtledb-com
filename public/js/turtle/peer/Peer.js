@@ -20,7 +20,6 @@ export class Peer {
     this.defaultCpk = defaultCpk
     this.defaultBale = defaultBale
     this.defaultHost = defaultHost
-    this.connections = proxyWithRecaller([], recaller)
     this.branchesByHostBaleCpk = proxyWithRecaller({}, recaller)
   }
 

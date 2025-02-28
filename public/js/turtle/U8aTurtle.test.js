@@ -12,8 +12,8 @@ globalRunner.describe(urlToName(import.meta.url), suite => {
     assert.equal(b.index, 1, 'b.index')
     assert.equal(b.length, 8, 'b.length')
 
-    assert.equal(b.findParentByAddress(1), a, 'a is correct b.parent')
-    assert.equal(b.findParentByIndex(0), a, 'a is correct b.parent')
+    assert.equal(b.getAncestorByAddress(1), a, 'a is correct b.parent')
+    assert.equal(b.getAncestorByIndex(0), a, 'a is correct b.parent')
     assert.equal(b.getByte(6), 6, '6th byte is 6')
     assert.equal(b.getByte(7), 7, '7th byte is 7')
     assert.equal(b.getByte(), 7, 'last byte is 7')
@@ -22,9 +22,9 @@ globalRunner.describe(urlToName(import.meta.url), suite => {
     }, 'no out of range bytes')
 
     const c = new U8aTurtle(new Uint8Array([8, 9]), b)
-    assert.equal(c.findParentByAddress(1), a, 'a is correct c.parent')
-    assert.equal(c.findParentByIndex(0), a, 'a is correct c.parent')
-    assert.equal(c.findParentByAddress(6).getByte(6), 6, '6th byte is 6')
+    assert.equal(c.getAncestorByAddress(1), a, 'a is correct c.parent')
+    assert.equal(c.getAncestorByIndex(0), a, 'a is correct c.parent')
+    assert.equal(c.getAncestorByAddress(6).getByte(6), 6, '6th byte is 6')
 
     assert.equal(b.slice(7, 8), new Uint8Array([7]))
     assert.equal(b.slice(4, 7), new Uint8Array([4, 5, 6]))

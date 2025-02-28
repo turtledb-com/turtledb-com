@@ -24,7 +24,7 @@ globalRunner.describe(urlToName(import.meta.url), suite => {
     assert.equal(indices, [undefined, 0, 1, 2, 1])
     assert.equal(branch.u8aTurtle.uint8Array, new Uint8Array([3, 4, 5, 6, 7, 8]))
   })
-  suite.it('streams', async ({ assert }) => {
+  suite.it('streams append', async ({ assert }) => {
     const primary = new TurtleBranch('primary')
     const secondary = new TurtleBranch('secondary')
     const readableStream = primary.makeReadableStream()
@@ -33,5 +33,28 @@ globalRunner.describe(urlToName(import.meta.url), suite => {
     primary.append(new Uint8Array([1, 2, 3]))
     await new Promise(resolve => setTimeout(resolve))
     assert.equal(secondary.u8aTurtle.exportUint8Arrays(), [new Uint8Array([1, 2, 3])])
+  })
+  suite.it('streams set u8aTurtle', async ({ assert }) => {
+    const primary = new TurtleBranch('primary')
+    const secondary = new TurtleBranch('secondary')
+    const readableStream = primary.makeReadableStream()
+    const writableStream = secondary.makeWritableStream()
+    readableStream.pipeTo(writableStream)
+    primary.append(new Uint8Array([1, 2, 3]))
+    await new Promise(resolve => setTimeout(resolve))
+    assert.equal(secondary.u8aTurtle.exportUint8Arrays(), [new Uint8Array([1, 2, 3])])
+
+    const primaryBranched = new TurtleBranch('branched', undefined, primary.u8aTurtle)
+    primary.append(new Uint8Array([4, 5, 6]))
+    primary.append(new Uint8Array([7, 8, 9]))
+    primary.u8aTurtle = primaryBranched.u8aTurtle
+    await new Promise(resolve => setTimeout(resolve))
+    console.log(primary.u8aTurtle.exportUint8Arrays())
+    console.log(secondary.u8aTurtle.exportUint8Arrays())
+    assert.equal(secondary.u8aTurtle.exportUint8Arrays(), [
+      new Uint8Array([1, 2, 3]),
+      new Uint8Array([4, 5, 6]),
+      new Uint8Array([7, 8, 9])
+    ])
   })
 })

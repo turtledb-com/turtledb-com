@@ -54,7 +54,11 @@ export class Recaller {
     this.#nameFunction(f, name)
     if (this.debug) console.group(`watching --- ${JSON.stringify(name)}`)
     this.#stack.unshift(f)
-    f(this)
+    try {
+      f(this)
+    } catch (error) {
+      console.error(error)
+    }
     this.#stack.shift()
     if (this.debug) console.groupEnd()
   }

@@ -36,12 +36,12 @@ export class U8aTurtle {
    * @param {number} tooHigh
    * @returns {U8aTurtle}
    */
-  findParentByIndex (index, tooHigh) {
+  getAncestorByIndex (index, tooHigh) {
     if (index < 0) index += this.index
     if (index === this.index) return this
     if (index < this.index) {
       for (const seekLayer of this.seekLayers.filter(seekLayer => seekLayer !== tooHigh)) {
-        const found = seekLayer.findParentByIndex(index, tooHigh)
+        const found = seekLayer.getAncestorByIndex(index, tooHigh)
         if (found) return found
         tooHigh = seekLayer
       }
@@ -49,16 +49,25 @@ export class U8aTurtle {
   }
 
   /**
+   * @param {U8aTurtle} u8aTurtle
+   * @returns {boolean}
+   */
+  hasAncestor (u8aTurtle) {
+    if (u8aTurtle === undefined) return true
+    return this.getAncestorByIndex(u8aTurtle.index) === u8aTurtle
+  }
+
+  /**
    * @param {number} address
    * @param {number} tooHigh
    * @returns {U8aTurtle}
    */
-  findParentByAddress (address, tooHigh) {
+  getAncestorByAddress (address, tooHigh) {
     if (address < 0) address += this.length
     if (address >= this.offset && address < this.length) return this
     if (address < this.offset) {
       for (const seekLayer of this.seekLayers.filter(seekLayer => seekLayer !== tooHigh)) {
-        const found = seekLayer.findParentByAddress(address, tooHigh)
+        const found = seekLayer.getAncestorByAddress(address, tooHigh)
         if (found) return found
         tooHigh = seekLayer
       }
@@ -93,20 +102,24 @@ export class U8aTurtle {
     if (/object|undefined/.test(typeof path[path.length - 1])) options = path.pop()
     let u8aTurtle = this
     while (path.length) {
-      u8aTurtle = u8aTurtle.findParentByAddress(address)
+      u8aTurtle = u8aTurtle.getAncestorByAddress(address)
       const codecVersion = codec.getCodecTypeVersion(u8aTurtle.getByte(address))
       const ref = codecVersion.decode(u8aTurtle, address, AS_REFS)
       if (!Object.hasOwn(ref, path[0])) return
       address = ref[path.shift()]
     }
     if (address instanceof Uint8Array) return address
-    u8aTurtle = u8aTurtle.findParentByAddress(address)
+    u8aTurtle = u8aTurtle.getAncestorByAddress(address)
     const codecVersion = codec.getCodecTypeVersion(u8aTurtle.getByte(address))
+    if (!codecVersion) {
+      console.error(this)
+      throw new Error(`no CodecVersion found at #${address}, found: (${u8aTurtle.getByte(address)})`)
+    }
     return codecVersion.decode(u8aTurtle, address, options)
   }
 
   getCodecType (address = this.length - 1) {
-    const footer = this.findParentByAddress(address).getByte(address)
+    const footer = this.getAncestorByAddress(address).getByte(address)
     return codec.getCodecTypeVersion(footer)?.codecType
   }
 
@@ -119,7 +132,7 @@ export class U8aTurtle {
     if (start > this.index || start < 0) throw new Error('start out of range')
     if (end > this.index || end < 0) throw new Error('end out of range')
     const uint8Arrays = new Array(1 + end - start)
-    let index = this.findParentByIndex(end)
+    let index = this.getAncestorByIndex(end)
     while (index && index.index >= start) {
       uint8Arrays[index.index - start] = index.uint8Array
       index = index.parent
@@ -136,6 +149,6 @@ export class U8aTurtle {
 export function squashTurtle (u8aTurtle, downToIndex = 0) {
   return new U8aTurtle(
     combineUint8Arrays(u8aTurtle.exportUint8Arrays(downToIndex)),
-    u8aTurtle.findParentByIndex(downToIndex).parent
+    u8aTurtle.getAncestorByIndex(downToIndex).parent
   )
 }

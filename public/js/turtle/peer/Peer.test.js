@@ -16,12 +16,11 @@ globalRunner.describe(urlToName(import.meta.url), suite => {
     const peerA = new Peer('a')
     const peerB = new Peer('b')
     const connectionAB = new EchoConnection('A-TO-B', peerA)
-    peerA.connections.push(connectionAB)
     const connectionBA = new EchoConnection('b-to-a', peerB, false, connectionAB.duplex)
-    peerB.connections.push(connectionBA)
     const aWorkspace = await peerA.getWorkspace(signer, 'simpleWorkspace')
     // aWorkspace.recaller.debug = true
     await aWorkspace.commit('abcd')
+    console.log(bWorkspace.lastCommitValue)
     await tics(4) // tics needed found through trial and error (TODO: better visibility)
     // aWorkspace.recaller.debug = false
     const bWorkspace = await peerA.getWorkspace(signer, 'simpleWorkspace')
@@ -34,9 +33,7 @@ globalRunner.describe(urlToName(import.meta.url), suite => {
     await aWorkspace.commit('first value', 'first commit message')
     const peerB = new Peer('b')
     const connectionAB = new EchoConnection('A-TO-SHIFTY_B', peerA)
-    peerA.connections.push(connectionAB)
     const connectionBA = new EchoConnection('shifty_b-to-a', peerB, false, connectionAB.duplex)
-    peerB.connections.push(connectionBA)
     // const badSigner = new Signer('testuser', '1234')
     const aBadWorkspace = await peerA.getWorkspace(signer, 'simpleWorkspace')
     // aBadWorkspace.signer = badSigner
@@ -49,15 +46,11 @@ globalRunner.describe(urlToName(import.meta.url), suite => {
 
     const peerA = new Peer('a')
     const connectionOriginA = new EchoConnection('ORIGIN-TO-A', peerOrigin, true)
-    peerOrigin.connections.push(connectionOriginA)
     const connectionAOrigin = new EchoConnection('A-TO-ORIGIN', peerA, false, connectionOriginA.duplex)
-    peerA.connections.push(connectionAOrigin)
 
     const peerB = new Peer('b')
     const connectionOriginB = new EchoConnection('origin-to-b', peerOrigin, true)
-    peerOrigin.connections.push(connectionOriginB)
     const connectionBOrigin = new EchoConnection('b-to-origin', peerB, false, connectionOriginB.duplex)
-    peerB.connections.push(connectionBOrigin)
 
     // peerOrigin.recaller.debug = true
     const originWorkspace = await peerOrigin.getWorkspace(signer, 'conflictedWorkspace')
@@ -70,6 +63,7 @@ globalRunner.describe(urlToName(import.meta.url), suite => {
     const bWorkspace = await peerB.getWorkspace(signer, 'conflictedWorkspace')
     assert.equal(originWorkspace.lastCommit, aWorkspace.lastCommit)
     assert.equal(aWorkspace.lastCommit, bWorkspace.lastCommit)
+    await tics(60, ',,')
 
     await Promise.all([
       aWorkspace.commit('a', 'commit 2'),

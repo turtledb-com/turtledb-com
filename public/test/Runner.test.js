@@ -12,13 +12,13 @@ globalRunner.describe(urlToName(import.meta.url), suite => {
       _suite = suite
       suite.it('xy', async (assert) => {
         await new Promise(resolve => setTimeout(resolve, 100))
-        assert.assert.equal(1, 1, '1==1')
+        assert.assert.equal(1, 1, '1 === 1')
         await new Promise(resolve => setTimeout(resolve, 100))
-        assert.assert.equal(2, 2, '2==2')
+        assert.assert.equal(2, 2, '2 === 2')
       })
       suite.it('z', async (assert) => {
         await new Promise(resolve => setTimeout(resolve, 100))
-        assert.assert.equal(3, 3, '3==3')
+        assert.assert.equal(3, 3, '3 === 3')
       })
     })
 
@@ -52,13 +52,13 @@ globalRunner.describe(urlToName(import.meta.url), suite => {
               runState: PASS,
               children: [
                 {
-                  name: '1==1',
+                  name: '1 === 1',
                   type: ASSERTION,
                   runState: PASS,
                   children: []
                 },
                 {
-                  name: '2==2',
+                  name: '2 === 2',
                   type: ASSERTION,
                   runState: PASS,
                   children: []
@@ -71,7 +71,7 @@ globalRunner.describe(urlToName(import.meta.url), suite => {
               runState: PASS,
               children: [
                 {
-                  name: '3==3',
+                  name: '3 === 3',
                   type: ASSERTION,
                   runState: PASS,
                   children: []
@@ -85,13 +85,13 @@ globalRunner.describe(urlToName(import.meta.url), suite => {
 
     _suite.it('m', async (assert) => {
       await new Promise(resolve => setTimeout(resolve, 100))
-      assert.assert.equal(4, 5, '4!=5', false)
+      assert.assert.equal(4, 5, '4 !== 5', false)
       await new Promise(resolve => setTimeout(resolve, 100))
     })
 
     runner.describe('n', async (assert) => {
       await new Promise(resolve => setTimeout(resolve, 100))
-      assert.assert.equal(5, 5, '5==5')
+      assert.assert.equal(5, 5, '5 === 5')
       await new Promise(resolve => setTimeout(resolve, 100))
     })
 
@@ -111,13 +111,13 @@ globalRunner.describe(urlToName(import.meta.url), suite => {
               runState: PASS,
               children: [
                 {
-                  name: '1==1',
+                  name: '1 === 1',
                   type: ASSERTION,
                   runState: PASS,
                   children: []
                 },
                 {
-                  name: '2==2',
+                  name: '2 === 2',
                   type: ASSERTION,
                   runState: PASS,
                   children: []
@@ -130,7 +130,7 @@ globalRunner.describe(urlToName(import.meta.url), suite => {
               runState: PASS,
               children: [
                 {
-                  name: '3==3',
+                  name: '3 === 3',
                   type: ASSERTION,
                   runState: PASS,
                   children: []
@@ -172,13 +172,13 @@ globalRunner.describe(urlToName(import.meta.url), suite => {
               runState: PASS,
               children: [
                 {
-                  name: '1==1',
+                  name: '1 === 1',
                   type: ASSERTION,
                   runState: PASS,
                   children: []
                 },
                 {
-                  name: '2==2',
+                  name: '2 === 2',
                   type: ASSERTION,
                   runState: PASS,
                   children: []
@@ -191,7 +191,7 @@ globalRunner.describe(urlToName(import.meta.url), suite => {
               runState: PASS,
               children: [
                 {
-                  name: '3==3',
+                  name: '3 === 3',
                   type: ASSERTION,
                   runState: PASS,
                   children: []
@@ -204,7 +204,7 @@ globalRunner.describe(urlToName(import.meta.url), suite => {
               runState: FAIL,
               children: [
                 {
-                  name: '4!=5',
+                  name: '4 !== 5',
                   type: ASSERTION,
                   runState: FAIL,
                   children: []
@@ -219,7 +219,7 @@ globalRunner.describe(urlToName(import.meta.url), suite => {
           runState: PASS,
           children: [
             {
-              name: '5==5',
+              name: '5 === 5',
               type: ASSERTION,
               runState: PASS,
               children: []

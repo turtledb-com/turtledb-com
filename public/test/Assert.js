@@ -1,6 +1,18 @@
 import { ASSERTION, FAIL } from './constants.js'
 import { RunnerError } from './Runner.js'
 
+const TON = {
+  replacer: function (_key, value) {
+    if (value instanceof Object.getPrototypeOf(Uint8Array)) return { [value.constructor.name]: [...value.values()] }
+    if (typeof value === 'bigint') return { BigInt: value.toString() }
+    if (value instanceof Date) return { Date: value.toISOString() }
+    return value
+  },
+  stringify: function (value, space = 2) {
+    return JSON.stringify(TON.replacer(undefined, value), TON.replacer, space)
+  }
+}
+
 export class Assert {
   /**
    *
@@ -10,7 +22,7 @@ export class Assert {
     this.runner = runner
   }
 
-  async isTruthy (valueToCheck, passMessage = 'true', failMessage = `NOT ${passMessage}`, cause) {
+  async assert (valueToCheck, passMessage = 'truthy', failMessage = `NOT ${passMessage}`, cause) {
     if (valueToCheck) {
       return this.runner.appendChild(passMessage, () => cause, ASSERTION)
     } else {
@@ -19,16 +31,16 @@ export class Assert {
   }
 
   async equal (actual, expected, message, debug = true) {
-    const passMessage = message ?? 'expected === actual'
-    const failMessage = message ?? 'expected !== actual'
-    if (actual === expected) return this.isTruthy(true, passMessage)
+    const passMessage = `${TON.stringify(actual)} === ${TON.stringify(expected)}`
+    if (actual === expected) return this.assert(true, passMessage)
     const expectedAddress = this.runner.upserter.upsert(expected)
     const actualAddress = this.runner.upserter.upsert(actual)
-    const isEqual = await this.isTruthy(
+    const failMessage = message ?? `${TON.stringify(actual)} !== ${TON.stringify(expected)}`
+    const isEqual = await this.assert(
       expectedAddress === actualAddress,
       passMessage,
       failMessage,
-      { expectedAddress, actualAddress }
+      { runner: this.runner, expectedAddress, actualAddress }
     )
     if (isEqual.runState === FAIL) {
       printDiff(this.runner.upserter, expectedAddress, actualAddress)
@@ -37,25 +49,25 @@ export class Assert {
   }
 
   async notEqual (actual, expected, message) {
-    const passMessage = message ?? 'expected !== actual'
-    const failMessage = message ?? 'expected === actual'
-    if (expected === actual) this.isTruthy(false, null, failMessage)
+    const passMessage = `${TON.stringify(actual)} !== ${TON.stringify(expected)}`
+    const failMessage = message ?? `${TON.stringify(actual)} === ${TON.stringify(expected)}`
+    if (expected === actual) this.assert(false, null, failMessage)
     const expectedAddress = this.runner.upserter.upsert(expected)
     const actualAddress = this.runner.upserter.upsert(actual)
-    return this.isTruthy(
+    return this.assert(
       expectedAddress !== actualAddress,
       passMessage,
       failMessage,
-      { expectedAddress, actualAddress }
+      { runner: this.runner, expectedAddress, actualAddress }
     )
   }
 
   async isAbove (valueToCheck, valueToBeAbove, message) {
-    return this.isTruthy(valueToCheck > valueToBeAbove, message)
+    return this.assert(valueToCheck > valueToBeAbove, message)
   }
 
   async isBelow (valueToCheck, valueToBeBelow, message) {
-    return this.isTruthy(valueToCheck < valueToBeBelow, message)
+    return this.assert(valueToCheck < valueToBeBelow, message)
   }
 
   async throw (f, message) {
@@ -65,7 +77,7 @@ export class Assert {
     } catch (error) {
       threw = true
     }
-    return this.isTruthy(threw, message)
+    return this.assert(threw, message)
   }
 }
 
