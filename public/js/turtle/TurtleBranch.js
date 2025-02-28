@@ -93,7 +93,6 @@ export class TurtleBranch {
         if (inProgress.length < 4) return
         totalLength = new Uint32Array(inProgress.slice(0, 4).buffer)[0]
         if (inProgress.length < totalLength + 4) return
-        console.log(inProgress.slice(4, totalLength + 4))
         turtleBranch.append(inProgress.slice(4, totalLength + 4))
         inProgress = inProgress.slice(totalLength + 4)
       }
@@ -104,7 +103,12 @@ export class TurtleBranch {
   get index () { return this.u8aTurtle?.index }
   getByte (address) { return this.u8aTurtle?.getAncestorByAddress?.(address)?.getByte?.(address) }
   slice (start, end) { return this.u8aTurtle?.getAncestorByAddress?.(start)?.slice?.(start, end) }
-  squash (downToIndex) { this.u8aTurtle = squashTurtle(this.u8aTurtle, downToIndex) }
+  squash (downToIndex) {
+    if (this.index === downToIndex) return
+    this.#u8aTurtle = squashTurtle(this.u8aTurtle, downToIndex)
+    this.recaller.reportKeyMutation(this, 'u8aTurtle', 'squash', this.name)
+  }
+
   /**
    * @param  {[optional_address:number, ...path:Array.<string>, optional_options:import('./codecs/CodecType.js').CodecOptions]} path
    * @returns {any}

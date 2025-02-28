@@ -5,11 +5,16 @@ import { Commit } from './codecs/Commit.js'
 import { TurtleDictionary } from './TurtleDictionary.js'
 import { combineUint8Arrays } from './utils.js'
 
+/**
+ * @typedef {import('./Signer.js').Signer} Signer
+ * @typedef {import('./TurtleBranch.js').TurtleBranch} TurtleBranch
+ */
+
 export class Workspace extends TurtleDictionary {
   /**
-   * @param {import('./Signer.js').Signer} signer
+   * @param {Signer} signer
    * @param {string} name
-   * @param {import('./TurtleBranch.js').TurtleBranch} committedBranch
+   * @param {TurtleBranch} committedBranch
    */
   constructor (signer, name, committedBranch, recaller = new Recaller(name)) {
     super(name, recaller, committedBranch.u8aTurtle)
@@ -53,6 +58,7 @@ export class Workspace extends TurtleDictionary {
         value
       })
     }, IGNORE_MUTATE)
+
     const uint8Arrays = this.u8aTurtle.exportUint8Arrays((this.committedBranch.index ?? -1) + 1)
     if (this.committedBranch.u8aTurtle) {
       const previousEncodedCommit = splitEncodedCommit(this.committedBranch.u8aTurtle)[1]
@@ -65,6 +71,10 @@ export class Workspace extends TurtleDictionary {
     if (u8aTurtle !== this.u8aTurtle) throw new Error(`who moved my workspace? -- ${this.name}`)
     const commit = new Commit(address, signature)
     this.upsert(commit, [COMMIT], AS_REFS)
+    console.log(this.u8aTurtle.uint8Array)
+
+    console.log(await this.signer.signCommit(this.name, address, this.u8aTurtle, this.committedBranch.u8aTurtle))
+
     console.log(this.lookup())
     this.squash((this.committedBranch?.index ?? -1) + 1)
     this.committedBranch.u8aTurtle = this.u8aTurtle

@@ -61,12 +61,10 @@ export class TurtleDictionary extends TurtleBranch {
    * @returns {number}
    */
   upsert (value, codecsArray, options = DEREFERENCE) {
-    const { uint8Array, codecType } = codec.encodeValue(value, codecsArray, this, options)
+    const { uint8Array } = codec.encodeValue(value, codecsArray, this, options)
     let address = this.#valueByUint8Array.get(uint8Array)
     if (address === undefined) {
-      super.append(uint8Array)
-      address = this.length - 1
-      this.#cache(uint8Array, address, codecType)
+      address = this.append(uint8Array)
     }
     return address
   }

@@ -45,12 +45,10 @@ globalRunner.describe(urlToName(import.meta.url), suite => {
     assert.equal(secondary.u8aTurtle.exportUint8Arrays(), [new Uint8Array([1, 2, 3])])
 
     const primaryBranched = new TurtleBranch('branched', undefined, primary.u8aTurtle)
-    primary.append(new Uint8Array([4, 5, 6]))
-    primary.append(new Uint8Array([7, 8, 9]))
+    primaryBranched.append(new Uint8Array([4, 5, 6]))
+    primaryBranched.append(new Uint8Array([7, 8, 9]))
     primary.u8aTurtle = primaryBranched.u8aTurtle
     await new Promise(resolve => setTimeout(resolve))
-    console.log(primary.u8aTurtle.exportUint8Arrays())
-    console.log(secondary.u8aTurtle.exportUint8Arrays())
     assert.equal(secondary.u8aTurtle.exportUint8Arrays(), [
       new Uint8Array([1, 2, 3]),
       new Uint8Array([4, 5, 6]),
