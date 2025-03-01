@@ -1,3 +1,6 @@
+/**
+ * @typedef {import('../utils/Recaller.js').Recaller} Recaller
+ */
 export const OWN_KEYS = Symbol('ownKeys')
 
 /**
@@ -194,7 +197,7 @@ export function uint8ArrayToB36 (uint8Array) {
 
 /**
  * @param {Object} target
- * @param {import('../utils/Recaller.js').Recaller} recaller
+ * @param {Recaller} recaller
  */
 export function proxyWithRecaller (target, recaller, name = '<unnamed proxyWithRecaller>') {
   if (!target || typeof target !== 'object') throw new Error('proxyWithRecaller can only proxy objects')

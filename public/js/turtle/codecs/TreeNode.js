@@ -1,5 +1,9 @@
 import { codec, TREE_NODE } from './codec.js'
 
+/**
+ * @typedef {import('../U8aTurtle.js').U8aTurtle} U8aTurtle
+ */
+
 export class TreeNode {
   /**
    * @param {number} leftAddress
@@ -11,7 +15,7 @@ export class TreeNode {
   }
 
   /**
-   * @param {import('../U8aTurtle.js').U8aTurtle} u8aTurtle
+   * @param {U8aTurtle} u8aTurtle
    */
   * inOrder (u8aTurtle) {
     const leftTurtle = u8aTurtle.getAncestorByAddress(this.leftAddress)

@@ -1,4 +1,10 @@
 /**
+ * @typedef {import('./CodecTypeVersion.js').CodecTypeVersion} CodecTypeVersion
+ * @typedef {import('../U8aTurtle.js').U8aTurtle} U8aTurtle
+ * @typedef {import('../TurtleDictionary.js').TurtleDictionary} TurtleDictionary
+ */
+
+/**
  * @typedef CodecOptions
  * @property {boolean} keysAsRefs
  * @property {boolean} valuesAsRefs
@@ -11,9 +17,9 @@ export class CodecType {
    * @param {{
    *  name: string,
    *  test: (value:any) => boolean,
-   *  decode: (uint8Array: Uint8Array, codecTypeVersion: import('./CodecTypeVersion.js').CodecTypeVersion, u8aTurtle: import('../U8aTurtle.js').U8aTurtle, options: CodecOptions) => any,
-   *  encode: (value: any, dictionary: import('../TurtleDictionary.js').TurtleDictionary, options: CodecOptions) => Uint8Array,
-   *  getWidth: (codecTypeVersion: import('./CodecTypeVersion.js').CodecTypeVersion, u8aTurtle: import('../U8aTurtle.js').U8aTurtle, index: number) => number,
+   *  decode: (uint8Array: Uint8Array, codecTypeVersion: CodecTypeVersion, u8aTurtle: U8aTurtle, options: CodecOptions) => any,
+   *  encode: (value: any, dictionary: TurtleDictionary, options: CodecOptions) => Uint8Array,
+   *  getWidth: (codecTypeVersion: CodecTypeVersion, u8aTurtle: U8aTurtle, index: number) => number,
    *  versionArrayCounts: Array.<number>,
    *  isOpaque: boolean
    * }}

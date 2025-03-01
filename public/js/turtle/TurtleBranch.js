@@ -2,6 +2,10 @@ import { Recaller } from '../utils/Recaller.js'
 import { squashTurtle, U8aTurtle } from './U8aTurtle.js'
 import { combineUint8ArrayLikes, combineUint8Arrays } from './utils.js'
 
+/**
+ * @typedef {import('./codecs/CodecType.js').CodecOptions} CodecOptions
+ */
+
 export class TurtleBranch {
   /** @type {U8aTurtle} */
   #u8aTurtle
@@ -10,7 +14,7 @@ export class TurtleBranch {
   /**
    * @param {string} name
    * @param {Recaller} recaller
-   * @param {import('./U8aTurtle.js').U8aTurtle} u8aTurtle
+   * @param {U8aTurtle} u8aTurtle
    */
   constructor (name, recaller = new Recaller(name), u8aTurtle) {
     if (!name) throw new Error('please name your branches')
@@ -110,7 +114,7 @@ export class TurtleBranch {
   }
 
   /**
-   * @param  {[optional_address:number, ...path:Array.<string>, optional_options:import('./codecs/CodecType.js').CodecOptions]} path
+   * @param  {[optional_address:number, ...path:Array.<string>, optional_options:CodecOptions]} path
    * @returns {any}
    */
   lookup (...path) { return this.u8aTurtle?.lookup?.(...path) }

@@ -7,6 +7,7 @@ import { b36ToUint8Array, combineUint8Arrays, uint8ArrayToB36 } from './utils.js
 
 /**
  * @typedef {import('./U8aTurtle.js').U8aTurtle} U8aTurtle
+ * @typedef {import('./codecs/Commit.js').Commit} Commit
  */
 
 /**
@@ -79,7 +80,7 @@ export async function verifyTurtleCommit (u8aTurtle, publicKey) {
   if (codecVersion.codecType !== COMMIT) {
     throw new Error('last value must be Commit')
   }
-  /** @type {import('./codecs/Commit.js').Commit} */
+  /** @type {Commit} */
   const commit = codecVersion.decode(u8aTurtle, undefined, AS_REFS)
   let uint8Array = u8aTurtle.slice(undefined, -codecVersion.getWidth(u8aTurtle) - 1)
   if (u8aTurtle.parent) {

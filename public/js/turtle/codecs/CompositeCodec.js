@@ -2,14 +2,19 @@ import { toCombinedVersion, toVersionCount } from '../utils.js'
 import { DEREFERENCE } from './CodecType.js'
 import { CodecTypeVersion } from './CodecTypeVersion.js'
 
+/**
+ * @typedef {import('./CodecType.js').CodecType} CodecType
+ * @typedef {import('../U8aTurtle.js').U8aTurtle} U8aTurtle
+ */
+
 export class CompositeCodec {
-  /** @type {Array.<import('./CodecType.js').CodecType>} */
+  /** @type {Array.<CodecType>} */
   codecTypes = []
-  /** @type {Object.<string, import('./CodecType.js').CodecType>} */
+  /** @type {Object.<string, CodecType>} */
   codecTypesByName = {}
   /** @type {Array.<CodecTypeVersion>} */
   codecTypeVersionsByFooter = []
-  /** @type {Map.<import('./CodecType.js').CodecType, Array} */
+  /** @type {Map.<CodecType, Array} */
   footerByCodecTypeAndCombinedVersions = new Map()
 
   encodeValue (value, codecsArray = this.codecTypes, dictionary, options = DEREFERENCE) {
@@ -31,7 +36,7 @@ export class CompositeCodec {
   }
 
   /**
-   * @param {import('../U8aTurtle.js').U8aTurtle} u8aTurtle
+   * @param {U8aTurtle} u8aTurtle
    * @param {number} address
    */
   extractEncodedValue (u8aTurtle, address = u8aTurtle.length - 1) {
@@ -45,7 +50,7 @@ export class CompositeCodec {
   }
 
   /**
-   * @param {import('../U8aTurtle.js').U8aTurtle} u8aTurtle
+   * @param {U8aTurtle} u8aTurtle
    * @param {number} address
    */
   extractCodecTypeVersion (u8aTurtle, address = u8aTurtle.length - 1) {
@@ -54,7 +59,7 @@ export class CompositeCodec {
   }
 
   /**
-   * @param {import('./CodecType.js').CodecType} codecType
+   * @param {CodecType} codecType
    */
   addCodecType (codecType) {
     const versionCount = toVersionCount(codecType.versionArrayCounts)

@@ -3,6 +3,8 @@ import { AbstractConnection } from './AbstractConnection.js'
 
 /**
  * @typedef {import('./AbstractConnection.js').Update} Update
+ * @typedef {import('../../utils/Recaller.js').Recaller} Recaller
+ * @typedef {import('../TurtleBranch.js').TurtleBranch} TurtleBranch
  */
 
 const toKey = (prefix, index) => `${prefix}/${index.toString(36).padStart(8, '0')}`
@@ -30,7 +32,7 @@ export class S3Connection extends AbstractConnection {
   get outgoingUpdate () { return undefined }
 
   /**
-   * @param {import('../../utils/Recaller.js').Recaller} recaller
+   * @param {Recaller} recaller
    */
   sync (recaller) {
     recaller.watch(this.name, () => {
@@ -39,7 +41,7 @@ export class S3Connection extends AbstractConnection {
   }
 
   /**
-   * @param {import('../TurtleBranch.js').TurtleBranch} branch
+   * @param {TurtleBranch} branch
    * @param {BranchUpdate} [incomingBranchUpdate]
    * @param {BranchUpdate} [lastOutgoingBranchUpdate]
    * @param {string} cpk
@@ -69,7 +71,7 @@ export class S3Connection extends AbstractConnection {
   /**
    * @param {string} prefix
    * @param {number} index
-   * @param {import('../TurtleBranch.js').TurtleBranch} branch
+   * @param {TurtleBranch} branch
    */
   async #getCommit (prefix, index, branch) {
     const key = toKey(prefix, index)
@@ -89,7 +91,7 @@ export class S3Connection extends AbstractConnection {
   /**
    * @param {string} prefix
    * @param {number} index
-   * @param {import('../TurtleBranch.js').TurtleBranch} branch
+   * @param {TurtleBranch} branch
    */
   async #putCommit (prefix, index, branch) {
     const key = toKey(prefix, index)

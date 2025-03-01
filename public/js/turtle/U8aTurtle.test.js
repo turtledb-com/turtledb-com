@@ -1,5 +1,5 @@
 import { globalRunner, urlToName } from '../../test/Runner.js'
-import { squashTurtle, U8aTurtle } from './U8aTurtle.js'
+import { findCommonAncestor, squashTurtle, U8aTurtle } from './U8aTurtle.js'
 
 globalRunner.describe(urlToName(import.meta.url), suite => {
   suite.it('constructs correctly', ({ assert }) => {
@@ -38,5 +38,12 @@ globalRunner.describe(urlToName(import.meta.url), suite => {
 
     assert.equal(squashTurtle(head).uint8Array, new Uint8Array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9]))
     assert.equal(squashTurtle(head, 1).uint8Array, new Uint8Array([4, 5, 6, 7, 8, 9]))
+
+    assert.equal(findCommonAncestor(a, b), a)
+    assert.equal(findCommonAncestor(a, c), a)
+    assert.equal(findCommonAncestor(b, c), b)
+
+    const d = new U8aTurtle(new Uint8Array([8, 9]), b)
+    assert.equal(findCommonAncestor(d, c), b)
   })
 })

@@ -3,8 +3,13 @@ import { TurtleBranch } from '../TurtleBranch.js'
 import { proxyWithRecaller } from '../utils.js'
 import { Workspace } from '../Workspace.js'
 
+/**
+ * @typedef {import('./AbstractConnection.js').AbstractConnection} AbstractConnection
+ * @typedef {import('../Signer.js').Signer} Signer
+ */
+
 export class Peer {
-  /** @type {Array.<import('./AbstractConnection.js').AbstractConnection>} */
+  /** @type {Array.<AbstractConnection>} */
   connections
 
   /** @type {Object.<string, Object.<string, Object.<string, TurtleBranch>>>} */
@@ -39,7 +44,7 @@ export class Peer {
   }
 
   /**
-   * @param {import('../Signer.js').Signer} signer
+   * @param {Signer} signer
    * @param {string} name
    * @param {string} bale
    * @param {string} hostname

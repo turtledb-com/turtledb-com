@@ -1,7 +1,7 @@
 import { Upserter } from '../js/dataModel/Upserter.js'
 import { Recaller } from '../js/utils/Recaller.js'
 import { Assert } from './Assert.js'
-import { FAIL, ONLY, PASS, RUNNER, RUNNING, SUITE, TEST, WAIT } from './constants.js'
+import { ERROR, FAIL, ONLY, PASS, RUNNER, RUNNING, SUITE, TEST, WAIT } from './constants.js'
 
 export function urlToName (url) {
   if (typeof window !== 'undefined' && window?.location?.origin && url.startsWith(window.location.origin)) {
@@ -76,7 +76,7 @@ export class Runner {
         if (this.verbose) console.error(error)
         if (!(error instanceof RunnerError)) {
           console.error(error)
-          this.it(`run error: ${error.message}`, () => { throw new RunnerError(`${this.name}.run`, { cause: error }) })
+          this.caught(`caught error: ${error.message}`, () => { throw new RunnerError(`${this.name}.run`, { cause: error }) })
         }
         this.runState = FAIL
       }
@@ -212,6 +212,15 @@ export class Runner {
    */
   async test (name, f) {
     return this.appendChild(name, f, TEST)
+  }
+
+  /**
+   * @param {string} name
+   * @param {(test: Runner) => any} f
+   * @returns {Runner}
+   */
+  async caught (name, f) {
+    return this.appendChild(name, f, ERROR)
   }
 }
 

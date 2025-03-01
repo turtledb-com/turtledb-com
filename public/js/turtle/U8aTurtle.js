@@ -2,6 +2,10 @@ import { codec } from './codecs/codec.js'
 import { AS_REFS } from './codecs/CodecType.js'
 import { combineUint8Arrays, zabacaba } from './utils.js'
 
+/**
+ * @typedef {import('./codecs/CodecType.js').CodecOptions} CodecOptions
+ */
+
 export class U8aTurtle {
   /** @type {Array.<U8aTurtle>} */
   seekLayers = []
@@ -91,13 +95,13 @@ export class U8aTurtle {
   }
 
   /**
-   * @param  {[optional_address:number, ...path:Array.<string>, optional_options:import('./codecs/CodecType.js').CodecOptions]} path
+   * @param  {[optional_address:number, ...path:Array.<string>, optional_options:CodecOptions]} path
    * @returns {any}
    */
   lookup (...path) {
     let address = this.length - 1
     if (typeof path[0] === 'number') address = path.shift()
-    /** @type {import('./codecs/CodecType.js').CodecOptions} */
+    /** @type {CodecOptions} */
     let options
     if (/object|undefined/.test(typeof path[path.length - 1])) options = path.pop()
     let u8aTurtle = this
@@ -151,4 +155,21 @@ export function squashTurtle (u8aTurtle, downToIndex = 0) {
     combineUint8Arrays(u8aTurtle.exportUint8Arrays(downToIndex)),
     u8aTurtle.getAncestorByIndex(downToIndex).parent
   )
+}
+
+/**
+ * @param {U8aTurtle} a
+ * @param {U8aTurtle} b
+ * @returns {U8aTurtle}
+ */
+export function findCommonAncestor (a, b) {
+  if (!a || !b) return
+  const minIndex = Math.min(a.index, b.index)
+  a = a.getAncestorByIndex(minIndex)
+  b = b.getAncestorByIndex(minIndex)
+  while (a !== b) {
+    a = a.parent
+    b = b.parent
+  }
+  return a
 }
