@@ -1,7 +1,7 @@
 import { globalRunner, urlToName } from '../../test/Runner.js'
 import { handleNextTick } from '../utils/nextTick.js'
 import { Recaller } from '../utils/Recaller.js'
-import { b36ToUint8Array, bigIntToUint8Array, combineUint8ArrayLikes, combineUint8Arrays, cpkBaleHostToPath, decodeNumberFromU8a, encodeNumberToU8a, parseB36, pathToCpkBaleHost, proxyWithRecaller, softSet, toCombinedVersion, toSubVersions, toVersionCount, uint8ArrayToB36, uint8ArrayToBigInt, ValueByUint8Array, zabacaba } from './utils.js'
+import { b36ToBigInt, b36ToUint8Array, bigIntToUint8Array, combineUint8ArrayLikes, combineUint8Arrays, cpkBaleHostToPath, decodeNumberFromU8a, encodeNumberToU8a, pathToCpkBaleHost, proxyWithRecaller, softSet, toCombinedVersion, toSubVersions, toVersionCount, uint8ArrayToB36, uint8ArrayToBigInt, ValueByUint8Array, zabacaba } from './utils.js'
 
 globalRunner.describe(urlToName(import.meta.url), suite => {
   suite.it('goes from path to host/bale/cpk and back', ({ assert }) => {
@@ -105,7 +105,7 @@ globalRunner.describe(urlToName(import.meta.url), suite => {
   suite.it('translates big ints', ({ assert }) => {
     const bigInt = 1234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890n
     const b36BigInt = bigInt.toString(36)
-    const recoveredBigInt = parseB36(b36BigInt)
+    const recoveredBigInt = b36ToBigInt(b36BigInt)
     assert.equal(bigInt, recoveredBigInt)
     const uint8Array = bigIntToUint8Array(bigInt)
     const recoveredFromUint8Array = uint8ArrayToBigInt(uint8Array)

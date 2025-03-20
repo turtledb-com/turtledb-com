@@ -154,7 +154,7 @@ export function zabacaba (i) {
  * @param {string} b36
  * @returns {bigint}
  */
-export function parseB36 (b36) {
+export function b36ToBigInt (b36) {
   return b36.split('').reduce(
     (acc, char) => acc * 36n + BigInt(parseInt(char, 36)),
     0n
@@ -184,7 +184,7 @@ export function uint8ArrayToBigInt (uint8Array) {
  * @returns {Uint8Array}
  */
 export function b36ToUint8Array (b36) {
-  return bigIntToUint8Array(parseB36(b36))
+  return bigIntToUint8Array(b36ToBigInt(b36))
 }
 
 /**

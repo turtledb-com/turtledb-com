@@ -42,8 +42,9 @@ export class Recaller {
     if (typeof f !== 'function') throw new Error('can only hide functions')
     const previousIgnore = this.#ignore
     this.#ignore = ignore
-    f(this)
+    const v = f(this)
     this.#ignore = previousIgnore
+    return v
   }
 
   watch (name, f) {

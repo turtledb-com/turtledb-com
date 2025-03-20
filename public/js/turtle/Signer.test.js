@@ -3,7 +3,7 @@ import { Signer, verifyTurtleCommit } from './Signer.js'
 import { squashTurtle, U8aTurtle } from './U8aTurtle.js'
 import { OPAQUE_UINT8ARRAY } from './codecs/codec.js'
 
-globalRunner.describe(urlToName(import.meta.url), suite => {
+globalRunner.only.describe(urlToName(import.meta.url), suite => {
   suite.it('signs and verifies commits', async ({ assert }) => {
     const signer = new Signer('signer1', 'password1')
     const name = 'branch1'
@@ -11,8 +11,10 @@ globalRunner.describe(urlToName(import.meta.url), suite => {
     let u8aTurtle = new U8aTurtle(OPAQUE_UINT8ARRAY.encode(u8Array))
     const u8aAddress = u8aTurtle.length - 1
     const signedCommit = await signer.signCommit(name, u8aAddress, u8aTurtle)
+
     u8aTurtle = new U8aTurtle(signedCommit, u8aTurtle)
     u8aTurtle = squashTurtle(u8aTurtle, 0)
+    console.log(u8aTurtle.lookup())
     const committedTurtle = u8aTurtle
     assert.equal(committedTurtle.lookup().value, u8Array)
     const keys = await signer.makeKeysFor(name)

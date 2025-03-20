@@ -103,8 +103,8 @@ export class TurtleBranch {
     })
   }
 
-  get length () { return this.u8aTurtle?.length }
-  get index () { return this.u8aTurtle?.index }
+  get length () { return this.u8aTurtle?.length ?? 0 }
+  get index () { return this.u8aTurtle?.index ?? -1 }
   getByte (address) { return this.u8aTurtle?.getAncestorByAddress?.(address)?.getByte?.(address) }
   slice (start, end) { return this.u8aTurtle?.getAncestorByAddress?.(start)?.slice?.(start, end) }
   squash (downToIndex) {

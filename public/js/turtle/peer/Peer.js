@@ -44,14 +44,14 @@ export class Peer {
   }
 
   /**
-   * @param {Signer} signer
    * @param {string} name
+   * @param {Signer} signer
    * @param {string} bale
    * @param {string} hostname
    * @returns {Workspace}
    */
-  async getWorkspace (signer, name, bale, hostname) {
+  async getWorkspace (name, signer, bale, hostname) {
     const keys = await signer.makeKeysFor(name)
-    return new Workspace(signer, name, this.getBranch(keys.publicKey, bale, hostname))
+    return new Workspace(name, signer, this.getBranch(keys.publicKey, bale, hostname))
   }
 }

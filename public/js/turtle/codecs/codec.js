@@ -321,23 +321,18 @@ export const COMMIT = new CodecType({
   test: value => value instanceof Commit,
   decode: (uint8Array, codecVersion, u8aTurtle, options) => {
     const address = decodeNumberFromU8a(uint8Array.slice(0, codecVersion.versionArrays[0] + minAddressBytes))
-    let signature
-    if (codecVersion.versionArrays[1]) {
-      signature = uint8Array.slice(-64)
-    }
+    const signature = uint8Array.slice(-64)
     const value = options.valuesAsRefs ? address : u8aTurtle.lookup(address)
     return new Commit(value, signature)
   },
   encode: (value, dictionary, options) => {
     const address = options.valuesAsRefs ? value.value : dictionary.upsert(value.value)
-    if (value.signature) {
-      const u8aAddress = encodeNumberToU8a(address, minAddressBytes)
-      return combineUint8ArrayLikes([u8aAddress, value.signature, codec.deriveFooter(COMMIT, [u8aAddress.length - minAddressBytes, 1])])
-    }
-    return encodeAddress(COMMIT, address, minAddressBytes, 0)
+    const u8aAddress = encodeNumberToU8a(address, minAddressBytes)
+    const footer = codec.deriveFooter(COMMIT, [u8aAddress.length - minAddressBytes])
+    return combineUint8ArrayLikes([u8aAddress, value.signature, footer])
   },
-  getWidth: codecVersion => codecVersion.versionArrays[0] + minAddressBytes + codecVersion.versionArrays[1] * 64,
-  versionArrayCounts: [addressVersions, 2],
+  getWidth: codecVersion => codecVersion.versionArrays[0] + minAddressBytes + 64,
+  versionArrayCounts: [addressVersions],
   isOpaque: true
 })
 codec.addCodecType(COMMIT)
@@ -387,6 +382,28 @@ export const TREE_NODE = new CodecType({
 })
 codec.addCodecType(TREE_NODE)
 
+export const ATOMIC_UINT8ARRAY = new CodecType({
+  name: 'atomic-uintarray',
+  test: value => value instanceof Uint8Array,
+  decode: (uint8Array, codecTypeVersion) => {
+    const valueLengthLength = codecTypeVersion.versionArrays[0] + 1
+    return uint8Array.slice(0, -valueLengthLength)
+  },
+  encode: (value) => {
+    const encodedValueLength = encodeNumberToU8a(value.length, 1)
+    const footer = codec.deriveFooter(OPAQUE_UINT8ARRAY, [encodedValueLength.length - 1])
+    return combineUint8ArrayLikes([value, encodedValueLength, footer])
+  },
+  getWidth: (codecVersion, u8aTurtle, index) => {
+    const valueLengthLength = codecVersion.versionArrays[0] + 1
+    const encodedValueLength = u8aTurtle.slice(index - valueLengthLength, index)
+    const valueLength = decodeNumberFromU8a(encodedValueLength)
+    return valueLength + valueLengthLength
+  },
+  versionArrayCounts: [3]
+})
+codec.addCodecType(ATOMIC_UINT8ARRAY)
+
 export const OPAQUE_UINT8ARRAY = new CodecType({
   name: 'opaque-uint8array',
   test: value => value instanceof Uint8Array,
@@ -410,4 +427,4 @@ export const OPAQUE_UINT8ARRAY = new CodecType({
 })
 codec.addCodecType(OPAQUE_UINT8ARRAY)
 
-// console.log(codec.codecTypeVersionsByFooter.map((codecVersion, index) => `${index}: { name: "${codecVersion.codecType.name}", versionArrays: ${JSON.stringify(codecVersion.versionArrays)} }`).join('\n'))
+console.log(codec.codecTypeVersionsByFooter.map((codecVersion, index) => `${index}: { name: "${codecVersion.codecType.name}", versionArrays: ${JSON.stringify(codecVersion.versionArrays)} }`).join('\n'))

@@ -1,7 +1,9 @@
 import { globalRunner, urlToName } from '../../test/Runner.js'
-import { OPAQUE_UINT8ARRAY } from './codecs/codec.js'
+import { ATOMIC_UINT8ARRAY, OPAQUE_UINT8ARRAY } from './codecs/codec.js'
 import { AS_REFS } from './codecs/CodecType.js'
 import { Commit } from './codecs/Commit.js'
+import { CompactPublicKey } from './codecs/CompactPublicKey.js'
+import { Signer } from './Signer.js'
 import { TurtleDictionary } from './TurtleDictionary.js'
 
 globalRunner.describe(urlToName(import.meta.url), suite => {
@@ -70,7 +72,7 @@ globalRunner.describe(urlToName(import.meta.url), suite => {
   suite.it('handles commits', ({ assert }) => {
     const dictionary = new TurtleDictionary('array ref test')
     const aAddress = dictionary.upsert('a')
-    const commit = new Commit('a')
+    const commit = new Commit('a', new Uint8Array(64))
     const commitAddressA = dictionary.upsert(commit)
     const commitAddressB = dictionary.upsert(commit)
     assert.notEqual(commitAddressA, commitAddressB)
@@ -101,6 +103,14 @@ globalRunner.describe(urlToName(import.meta.url), suite => {
     assert.notEqual(address1, address2)
     assert.equal(u8a, u8a1)
     assert.equal(u8a, u8a2)
+  })
+  suite.it('handles CPKs', async ({ assert }) => {
+    const signer = new Signer('cpk', 'test')
+    const { publicKey } = await signer.makeKeysFor('a')
+    const cpk = new CompactPublicKey(publicKey)
+    const dictionary = new TurtleDictionary('atomic')
+    const address1 = dictionary.upsert(cpk.uint8Array, [ATOMIC_UINT8ARRAY])
+    assert.equal(dictionary.lookup(address1), cpk.uint8Array)
   })
 })
 
