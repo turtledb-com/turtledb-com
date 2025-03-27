@@ -82,8 +82,8 @@ export function combineUint8Arrays (uint8Arrays) {
  * @param {Uint8Array} b
  * @returns boolean
  */
-export function compareUint8Arrays (a, b) {
-  return a.length === b.length && a.every((value, index) => value === b[index])
+export function deepEqualUint8Arrays (a, b) {
+  return a === b || (a.length === b.length && a.every((value, index) => value === b[index]))
 }
 
 export const encodeNumberToU8a = (number, minimumLength = 2) => {
@@ -252,7 +252,7 @@ export function softSet (a, b) {
           a[i] = b[i]
           changed = true
         } if (a[i] instanceof Uint8Array && b[i] instanceof Uint8Array) {
-          changed = compareUint8Arrays(a[i], b[i]) && changed
+          changed = deepEqualUint8Arrays(a[i], b[i]) && changed
         } else if (
           typeof a[i] === 'object' && typeof b[i] === 'object' &&
           Array.isArray(a[i]) === Array.isArray(b[i])

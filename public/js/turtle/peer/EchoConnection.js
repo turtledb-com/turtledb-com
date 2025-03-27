@@ -3,7 +3,7 @@ import { verifyTurtleCommit } from '../Signer.js'
 import { TurtleBranch } from '../TurtleBranch.js'
 import { TurtleDictionary } from '../TurtleDictionary.js'
 import { U8aTurtle } from '../U8aTurtle.js'
-import { combineUint8Arrays, compareUint8Arrays } from '../utils.js'
+import { combineUint8Arrays, deepEqualUint8Arrays } from '../utils.js'
 import { AbstractConnection, AbstractPeerState } from './AbstractConnection.js'
 
 /**
@@ -190,7 +190,7 @@ export class EchoConnection extends AbstractConnection {
       /** @type {Uint8Array} */
       const incomingEncodedCommit = this.incomingBranch.lookup(turtlePart.commitAddress)
       const actualEncodedCommit = splitEncodedCommit(u8aTurtle)[1]
-      if (!compareUint8Arrays(incomingEncodedCommit, actualEncodedCommit)) {
+      if (!deepEqualUint8Arrays(incomingEncodedCommit, actualEncodedCommit)) {
         console.error('incoming conflict', {
           index,
           'branch.name': branch.name,

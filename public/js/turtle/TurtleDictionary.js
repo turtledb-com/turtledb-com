@@ -58,7 +58,7 @@ export class TurtleDictionary extends TurtleBranch {
           else string = [string]
           console.log(' -', address, ':', ...string)
         } else if (this.#valueByUint8Array?.get?.(uint8Array) !== undefined) {
-          console.error({ address, footer: u8aTurtle.getByte(address), uint8Array, value: u8aTurtle.lookup(address) })
+          console.error({ name: this.name, address, footer: u8aTurtle.getByte(address), uint8Array, value: u8aTurtle.lookup(address) })
           throw new Error('uint8Array already stored')
         }
         this.#cache(uint8Array, address, codecVersion.codecType)

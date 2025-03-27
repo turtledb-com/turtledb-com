@@ -3,7 +3,7 @@ import { OPAQUE_UINT8ARRAY, splitEncodedCommit } from '../codecs/codec.js'
 import { TurtleBranch } from '../TurtleBranch.js'
 import { TurtleDictionary } from '../TurtleDictionary.js'
 import { U8aTurtle } from '../U8aTurtle.js'
-import { combineUint8Arrays, compareUint8Arrays } from '../utils.js'
+import { combineUint8Arrays, deepEqualUint8Arrays } from '../utils.js'
 
 /**
  * @typedef {import('../../utils/Recaller.js').Recaller} Recaller
@@ -252,7 +252,7 @@ export class BranchUpdate {
     if (this.index >= 0 && that.index >= 0) {
       for (const index of await this.getShownCommits()) {
         const i = +index
-        if (!compareUint8Arrays(await this.getHead(i), await that.getHead(i))) {
+        if (!deepEqualUint8Arrays(await this.getHead(i), await that.getHead(i))) {
           console.error('incoming conflict', { i, cpk: this.cpk, trusted: this.trusted })
           if (this.trusted) await that.truncate(i)
           else await this.truncate(i)

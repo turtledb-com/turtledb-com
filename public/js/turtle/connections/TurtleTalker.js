@@ -1,8 +1,10 @@
-import { IGNORE, Recaller } from '../../utils/Recaller.js'
+import { Recaller } from '../../utils/Recaller.js'
 import { OPAQUE_UINT8ARRAY } from '../codecs/codec.js'
+import { verifyTurtleCommit } from '../Signer.js'
 import { TurtleBranch } from '../TurtleBranch.js'
 import { TurtleDictionary } from '../TurtleDictionary.js'
-import { compareUint8Arrays } from '../utils.js'
+import { findCommonAncestor, U8aTurtle } from '../U8aTurtle.js'
+import { deepEqualUint8Arrays } from '../utils.js'
 
 /**
  * @typedef {{ts: Date, uint8ArrayAddresses: Array.<number>}} TurtleTalk
@@ -15,15 +17,18 @@ export class AbstractTurtleTalker {
   #previousOutgoingAddressesAddress
   /**
    * @param {string} name
+   * @param {string} publicKey
    * @param {boolean} [isTrusted=false]
    * @param {Recaller} [recaller=new Recaller(`${name}.recaller`)]
    */
   constructor (
     name,
+    publicKey,
     isTrusted = false,
     recaller = new Recaller(`${name}.recaller`)
   ) {
     this.name = name
+    this.publicKey = publicKey
     this.isTrusted = isTrusted
     this.recaller = recaller
     this.outgoingDictionary = new TurtleDictionary(`${name}.outgoingDictionary`, recaller)
@@ -32,7 +37,10 @@ export class AbstractTurtleTalker {
   }
 
   start () {
-    this.recaller.watch(`${this.name}.watcher`, () => this.update())
+    this.recaller.watch(`${JSON.stringify(this.name)}.watcher`, () => {
+      const incomingUint8ArrayAddresses = this.incomingBranch.lookup()?.uint8ArrayAddresses // trigger key access reporter
+      this.update(incomingUint8ArrayAddresses)
+    })
   }
 
   /** @param {TurtleBranch} connection */
@@ -46,49 +54,72 @@ export class AbstractTurtleTalker {
 
   async getUint8ArraysLength () { throw new Error('class extending AbstractTurtleTalker must implement getUint8ArraysLength') }
   async getUint8Array (index) { throw new Error('class extending AsyncTurtleBranchInterface must implement getUint8Array') }
-  async appendUint8Array (uint8Array) { throw new Error('class extending AsyncTurtleBranchInterface must implement appendUint8Array') }
+  async pushUint8Array (uint8Array) { throw new Error('class extending AsyncTurtleBranchInterface must implement pushUint8Array') }
+  async popUint8Array () { throw new Error('class extending AsyncTurtleBranchInterface must implement popUint8Array') }
 
-  update = async () => {
-    if (this.#isUpdating) return this.recaller.reportKeyAccess(this, '#isUpdating', 'update', this.name) // try again when when it's done updating
-    /** @type {TurtleTalk} */
-    const incomingTurtleTalk = this.incomingBranch.lookup() // trigger key access reporter before any awaits!
-    console.log(`${this.name} incoming[${this.incomingBranch.index}]:`, incomingTurtleTalk)
+  /**
+   * @param {Array.<number>} incomingUint8ArrayAddresses
+   */
+  update = async (incomingUint8ArrayAddresses) => {
+    if (this.#isUpdating) return this.recaller.reportKeyAccess(this, '#isUpdating', 'update', JSON.stringify(this.name)) // try again when when it's done updating
+    this.#isUpdating = true
     let length = await this.getUint8ArraysLength()
-    const outgoingTurtleTalk = this.recaller.call(() => this.outgoingBranch.lookup(), IGNORE) ?? { ts: new Date(), uint8ArrayAddresses: [] }
-    if (incomingTurtleTalk?.uint8ArrayAddresses) { // they're ready
-      this.#isUpdating = true
-      // 1st handle incoming message (if any exist)
-      for (const index in incomingTurtleTalk.uint8ArrayAddresses) {
-        const incomingAddress = incomingTurtleTalk.uint8ArrayAddresses[index]
+    const outgoingTurtleTalk = { uint8ArrayAddresses: [], ts: new Date().getTime() }
+    if (incomingUint8ArrayAddresses) { // they're ready
+      // handle incoming message (if any exist)
+      for (const indexString in incomingUint8ArrayAddresses) {
+        const i = +indexString
+        const incomingAddress = incomingUint8ArrayAddresses[i]
         const incomingUint8Array = this.incomingBranch.lookup(incomingAddress)
-        if (+index < length) { // we should already have this one
-          const ourUint8Array = await this.getUint8Array(+index)
+        if (i < length) { // we should already have this one
+          const ourUint8Array = await this.getUint8Array(i)
           if (this.#incomingUint8ArraysByAddress[incomingAddress] === undefined) {
-            if (!compareUint8Arrays(ourUint8Array, incomingUint8Array)) { // collision!
-              if (this.isTrusted) incomingTurtleTalk.uint8ArrayAddresses.length = +index
-              else length = +index
+            if (!deepEqualUint8Arrays(ourUint8Array, incomingUint8Array)) { // collision!
+              if (this.isTrusted) incomingUint8ArrayAddresses.length = i
+              else length = i
               break
             } else {
               this.#incomingUint8ArraysByAddress[incomingAddress] = ourUint8Array
             }
           }
         }
-        if (length === +index) { // let's add a new one
-          console.log('<== check signature here')
-          await this.appendUint8Array(incomingUint8Array)
-          length = +index + 1
+        if (i === length) { // we don't have this one yet
+          if (this.publicKey) {
+            const nextTurtle = new U8aTurtle(
+              incomingUint8Array,
+              i && new U8aTurtle(await this.getUint8Array(i - 1))
+            )
+            if (!(await verifyTurtleCommit(nextTurtle, this.publicKey))) {
+              if (this.isTrusted) {
+                incomingUint8ArrayAddresses.length = Math.max(i - 1, 0)
+              } else {
+                if (incomingUint8ArrayAddresses[i - 1]) {
+                  console.error(`${JSON.stringify(this.name)} received incorrectly signed incomingBranch`)
+                } else {
+                  await this.popUint8Array()
+                  console.log(`${JSON.stringify(this.name)} received bad signature, new length: ${length}`)
+                }
+              }
+              break
+            }
+          }
+          await this.pushUint8Array(incomingUint8Array)
+          length = await this.getUint8ArraysLength()
         }
       }
-      // send them what they're missing
-      for (let index = incomingTurtleTalk.uint8ArrayAddresses.length; index < length; ++index) {
-        const uint8Array = await this.getUint8Array(index)
-        console.log(index, uint8Array)
+      let startingIndex = incomingUint8ArrayAddresses.length
+      if (startingIndex > 0 && !incomingUint8ArrayAddresses[startingIndex - 1]) {
+        --startingIndex // let's make sure their latest is also correct
+      }
+      for (let i = startingIndex; i < length; ++i) { // send them what they're missing
+        const uint8Array = await this.getUint8Array(i)
         if (this.#outgoingAddressesByUint8Array.get(uint8Array) === undefined) {
           this.#outgoingAddressesByUint8Array.set(uint8Array, this.outgoingDictionary.upsert(uint8Array, [OPAQUE_UINT8ARRAY]))
         }
-        outgoingTurtleTalk.uint8ArrayAddresses[index] = this.#outgoingAddressesByUint8Array.get(uint8Array)
+        outgoingTurtleTalk.uint8ArrayAddresses[i] = this.#outgoingAddressesByUint8Array.get(uint8Array)
       }
     }
+
     outgoingTurtleTalk.uint8ArrayAddresses.length = length
     const outgoingAddressesAddress = this.outgoingDictionary.upsert(outgoingTurtleTalk.uint8ArrayAddresses)
     if (this.#previousOutgoingAddressesAddress !== outgoingAddressesAddress) {
@@ -99,38 +130,7 @@ export class AbstractTurtleTalker {
     }
 
     this.#isUpdating = false
-    this.recaller.reportKeyMutation(this, '#isUpdating', 'update', this.name)
-
-    // // 1st handle any conflicts
-    // const uint8ArraysLength = await this.getUint8ArraysLength()
-    // const incomingLength = incomingUint8ArrayAddresses?.uint8Arrays?.length
-    // if (uint8ArraysLength > 0 && incomingLength > 0) {
-    //   /*
-    //     for (const index of await this.outgoingBranch.getShownCommits()) {
-    //       const i = +index
-    //       if (!compareUint8Arrays(await this.outgoingBranch.getHead(i), await this.incomingBranch.getHead(i))) {
-    //         console.error('incoming conflict', { i, cpk: this.outgoingBranch.cpk, trusted: this.outgoingBranch.trusted })
-    //         if (this.outgoingBranch.trusted) await this.incomingBranch.truncate(i)
-    //         else await this.outgoingBranch.truncate(i)
-    //         break
-    //       }
-    //     }
-    //     */
-    // }
-    // // 2nd copy new Commits from this.incomingBranch
-    // for (const index of await incomingUint8ArrayAddresses) {
-    //   if (+index === this.outgoingBranch.length) {
-    //     await this.outgoingBranch.setUint8Array(this.outgoingBranch.length, await this.incomingBranch.getUint8Array(this.outgoingBranch.length))
-    //   }
-    // }
-    // // 3rd write out new Commits for this.incomingBranch
-    // for (let index = this.incomingBranch.index + 1; index <= this.outgoingBranch.length - 1; ++index) {
-    //   await this.outgoingBranch.showCommitRefs(index)
-    // }
-    // // 4th send signature for this.incomingBranch current index // shows this.outgoingBranch's interest and lets this.incomingBranch check for conflicts
-    // if (this.outgoingBranch.length && this.incomingBranch.index !== -1 && this.outgoingBranch.length > this.incomingBranch.index) {
-    //   await this.outgoingBranch.showHeadRef(this.incomingBranch.index)
-    // }
+    this.recaller.reportKeyMutation(this, '#isUpdating', 'update', JSON.stringify(this.name))
   }
 }
 
@@ -138,15 +138,35 @@ export class TurtleBranchTurtleTalker extends AbstractTurtleTalker {
   /**
    * @param {string} name
    * @param {TurtleBranch} turtleBranch
+   * @param {string} publicKey
    * @param {boolean} [isTrusted=false]
    * @param {Recaller} [recaller=new Recaller(`${name}.recaller`)]
    */
-  constructor (name, turtleBranch, isTrusted, recaller = turtleBranch.recaller) {
-    super(name, isTrusted, recaller)
+  constructor (name, turtleBranch, publicKey, isTrusted, recaller = new Recaller(name)) {
+    super(name, publicKey, isTrusted, recaller)
     this.turtleBranch = turtleBranch
+    /** @type {U8aTurtle} */
+    let lastU8aTurtle
+    this.turtleBranch.recaller.watch(name, () => {
+      if (this.turtleBranch.u8aTurtle !== lastU8aTurtle) {
+        const incomingUint8ArrayAddresses = this.incomingBranch.lookup()?.uint8ArrayAddresses
+        if (incomingUint8ArrayAddresses?.length && !this.turtleBranch.u8aTurtle.hasAncestor(lastU8aTurtle)) {
+          const commonAncestor = findCommonAncestor(lastU8aTurtle, this.turtleBranch.u8aTurtle)
+          if (commonAncestor) {
+            incomingUint8ArrayAddresses.length = Math.min(incomingUint8ArrayAddresses.length, commonAncestor.index + 1)
+          } else {
+            incomingUint8ArrayAddresses.length = 0
+          }
+        }
+        this.update(incomingUint8ArrayAddresses)
+        lastU8aTurtle = this.turtleBranch.u8aTurtle
+      }
+    })
   }
 
   async getUint8ArraysLength () { return this.turtleBranch.index + 1 }
   async getUint8Array (index) { return this.turtleBranch.u8aTurtle?.getAncestorByIndex?.(index)?.uint8Array }
-  async appendUint8Array (uint8Array) { return this.turtleBranch.append(uint8Array) }
+  async pushUint8Array (uint8Array) { return this.turtleBranch.append(uint8Array) }
+
+  async popUint8Array () { this.turtleBranch.u8aTurtle = this.turtleBranch.u8aTurtle.parent }
 }

@@ -25,7 +25,7 @@ pointer.recaller.watch('load-tests', async () => {
     // globalRunner.clearChildren()
     for (const path of paths) {
       // await Promise.all(paths.map(async path => {
-      const importPath = `/${path}?address=${fsRefs[path]}&cpk=${defaultCPK}&head=${pointer.length - 1}`
+      const importPath = `/${path}?address=${fsRefs[path]}&cpk=${defaultCPK}&head=${pointer.length - 1}` // include head in path so that all tests rerun on any change
       try {
         await import(importPath)
         // console.log({ importPath })
