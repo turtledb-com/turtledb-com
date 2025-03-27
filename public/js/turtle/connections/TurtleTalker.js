@@ -63,6 +63,7 @@ export class AbstractTurtleTalker {
   update = async (incomingUint8ArrayAddresses) => {
     if (this.#isUpdating) return this.recaller.reportKeyAccess(this, '#isUpdating', 'update', JSON.stringify(this.name)) // try again when when it's done updating
     this.#isUpdating = true
+    // console.log(`${JSON.stringify(this.name)} receiving uint8ArrayAddresses`, incomingUint8ArrayAddresses)
     let length = await this.getUint8ArraysLength()
     const outgoingTurtleTalk = { uint8ArrayAddresses: [], ts: new Date().getTime() }
     if (incomingUint8ArrayAddresses) { // they're ready
@@ -108,7 +109,7 @@ export class AbstractTurtleTalker {
         }
       }
       let startingIndex = incomingUint8ArrayAddresses.length
-      if (startingIndex > 0 && !incomingUint8ArrayAddresses[startingIndex - 1]) {
+      if (startingIndex > 0) {
         --startingIndex // let's make sure their latest is also correct
       }
       for (let i = startingIndex; i < length; ++i) { // send them what they're missing

@@ -23,7 +23,6 @@ export class Workspace extends TurtleDictionary {
       if (this.committedBranch.u8aTurtle && this.u8aTurtle) {
         if (this.u8aTurtle.hasAncestor(this.committedBranch.u8aTurtle)) return // uncommitted changes
       }
-      console.log(this.u8aTurtle, this.committedBranch.u8aTurtle)
       this.u8aTurtle = this.committedBranch.u8aTurtle
       this.lexicograph()
     })
@@ -50,7 +49,6 @@ export class Workspace extends TurtleDictionary {
   }
 
   async commit (value, message) {
-    console.log(this.name, 'commit', { message })
     this._queuedCommit = this.#queueCommit(value, message, this._queuedCommit)
     await this._queuedCommit
   }

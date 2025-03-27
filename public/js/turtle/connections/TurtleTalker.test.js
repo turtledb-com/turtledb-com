@@ -5,12 +5,13 @@ import { TurtleBranch } from '../TurtleBranch.js'
 import { Workspace } from '../Workspace.js'
 import { TurtleBranchTurtleTalker } from './TurtleTalker.js'
 
+const commitSettle = async () => {
+  // console.log(' -- commit settle')
+  await tics(10) // , 'a sending, b verifying and updating')
+}
+
 globalRunner.only.describe(urlToName(import.meta.url), suite => {
   suite.it('syncs SimpleAsyncTurtleBranch', async ({ assert }) => {
-    const commitSettle = async () => {
-      // console.log(' -- commit settle')
-      await tics(9) // , 'a sending, b verifying and updating')
-    }
     const signer = new Signer('test-user', 'p@$$w0rd')
     const aWorkspace = new Workspace('test', signer)
     const keys = await signer.makeKeysFor(aWorkspace.name)
@@ -48,5 +49,22 @@ globalRunner.only.describe(urlToName(import.meta.url), suite => {
     aTalker.turtleBranch.u8aTurtle = unbrokenWorkspace.u8aTurtle
     await commitSettle()
     assert.equal(b.lookup()?.value?.value, 4)
+
+    const a2 = new TurtleBranch('a2', undefined, aWorkspace.committedBranch.u8aTurtle)
+    const a2Workspace = new Workspace('test', signer, a2)
+    const aTalker2 = new TurtleBranchTurtleTalker('aTalker2', a2)
+    const b2 = new TurtleBranch('b2', undefined, b.u8aTurtle)
+    const bTalker2 = new TurtleBranchTurtleTalker('bTalker2', b2, keys.publicKey)
+    aTalker2.connect(bTalker2)
+    aTalker2.start()
+    bTalker2.start()
+    await tics(1) //, 'talkers icebreaking')
+    assert.equal(b2.lookup()?.value?.value, 4)
+    assert.isAbove(b2.length, bTalker2.outgoingBranch.length) // we have more data than we received
+
+    a2Workspace.commit(5, 'five')
+    await commitSettle()
+    assert.equal(b2.lookup()?.value?.value, 5)
+    assert.isAbove(b2.length, bTalker2.outgoingBranch.length) // we have more data than we received
   })
 })
