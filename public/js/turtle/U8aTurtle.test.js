@@ -1,5 +1,5 @@
 import { globalRunner, urlToName } from '../../test/Runner.js'
-import { findCommonAncestor, squashTurtle, U8aTurtle } from './U8aTurtle.js'
+import { findCommonAncestor, fromUint8Arrays, squashTurtle, U8aTurtle } from './U8aTurtle.js'
 
 globalRunner.describe(urlToName(import.meta.url), suite => {
   suite.it('constructs correctly', ({ assert }) => {
@@ -45,5 +45,17 @@ globalRunner.describe(urlToName(import.meta.url), suite => {
 
     const d = new U8aTurtle(new Uint8Array([8, 9]), b)
     assert.equal(findCommonAncestor(d, c), b)
+  })
+  suite.it('clones from exported Uint8Arrays', ({ assert }) => {
+    let u8aTurtle = new U8aTurtle(new Uint8Array([0, 1, 2]))
+    u8aTurtle = new U8aTurtle(new Uint8Array([3, 4, 5]), u8aTurtle)
+    u8aTurtle = new U8aTurtle(new Uint8Array([6, 7]), u8aTurtle)
+    const copy = fromUint8Arrays(u8aTurtle.exportUint8Arrays())
+    const clone = u8aTurtle.clone()
+    assert.equal(u8aTurtle.exportUint8Arrays(), copy.exportUint8Arrays())
+    assert.equal(u8aTurtle.exportUint8Arrays(), clone.exportUint8Arrays())
+    copy.parent.uint8Array[1] = 9
+    assert.equal(u8aTurtle.exportUint8Arrays(), copy.exportUint8Arrays())
+    assert.notEqual(u8aTurtle.exportUint8Arrays(), clone.exportUint8Arrays())
   })
 })

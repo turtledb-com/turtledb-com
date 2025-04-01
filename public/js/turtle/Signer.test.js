@@ -3,7 +3,7 @@ import { Signer, verifyTurtleCommit } from './Signer.js'
 import { squashTurtle, U8aTurtle } from './U8aTurtle.js'
 import { OPAQUE_UINT8ARRAY } from './codecs/codec.js'
 
-globalRunner.only.describe(urlToName(import.meta.url), suite => {
+globalRunner.describe(urlToName(import.meta.url), suite => {
   suite.it('signs and verifies commits', async ({ assert }) => {
     const signer = new Signer('signer1', 'password1')
     const name = 'branch1'

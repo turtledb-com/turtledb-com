@@ -31,12 +31,15 @@ export class TurtleBranch {
 
   set u8aTurtle (u8aTurtle) {
     if (u8aTurtle === this.#u8aTurtle) return
-    if (u8aTurtle.hasAncestor(this.#u8aTurtle)) {
-      const uint8Arrays = u8aTurtle.exportUint8Arrays((this.index ?? -1) + 1)
-      uint8Arrays.forEach(uint8Array => this.#broadcast(uint8Array))
-    } else {
-      console.log(this.#u8aTurtle, '->', u8aTurtle)
-      console.warn(`TurtleBranch, ${this.name}.u8aTurtle set to non-descendant (any ReadableStreams are broken now)`)
+    if (u8aTurtle !== undefined) {
+      if (u8aTurtle.hasAncestor(this.#u8aTurtle)) {
+        const uint8Arrays = u8aTurtle.exportUint8Arrays((this.index ?? -1) + 1)
+        uint8Arrays.forEach(uint8Array => this.#broadcast(uint8Array))
+      } else {
+        console.log('old', JSON.stringify(this.name), this.#u8aTurtle)
+        console.log('new', JSON.stringify(this.name), u8aTurtle)
+        console.warn(`TurtleBranch, ${this.name}.u8aTurtle set to non-descendant (any ReadableStreams are broken now)`)
+      }
     }
     this.recaller.reportKeyMutation(this, 'u8aTurtle', 'set', this.name)
     this.#u8aTurtle = u8aTurtle

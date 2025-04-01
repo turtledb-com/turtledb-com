@@ -10,7 +10,7 @@ const commitSettle = async () => {
   await tics(10) // , 'a sending, b verifying and updating')
 }
 
-globalRunner.only.describe(urlToName(import.meta.url), suite => {
+globalRunner.describe(urlToName(import.meta.url), suite => {
   suite.it('syncs SimpleAsyncTurtleBranch', async ({ assert }) => {
     const signer = new Signer('test-user', 'p@$$w0rd')
     const aWorkspace = new Workspace('test', signer)
@@ -65,6 +65,37 @@ globalRunner.only.describe(urlToName(import.meta.url), suite => {
     a2Workspace.commit(5, 'five')
     await commitSettle()
     assert.equal(b2.lookup()?.value?.value, 5)
-    assert.isAbove(b2.length, bTalker2.outgoingBranch.length) // we have more data than we received
+    assert.isAbove(b2.length, bTalker2.outgoingBranch.length) // we have more data than we received from this connection
+  })
+
+  suite.it('handles bigger changes', async ({ assert }) => {
+    const signer = new Signer('username', 'password')
+    const aWorkspace = new Workspace('test', signer)
+    const keys = await signer.makeKeysFor(aWorkspace.name)
+    await aWorkspace.commit(1, 'one')
+    await aWorkspace.commit(2, 'two')
+    await aWorkspace.commit(3, 'three')
+    const clone = new TurtleBranch('clone', undefined, aWorkspace.u8aTurtle.clone())
+
+    const originalTalker = new TurtleBranchTurtleTalker('originalTalker', aWorkspace.committedBranch, keys.publicKey, true)
+    const cloneTalker = new TurtleBranchTurtleTalker('cloneTalker', clone, keys.publicKey)
+
+    cloneTalker.connect(originalTalker)
+    await commitSettle()
+    originalTalker.start()
+    cloneTalker.start()
+    await commitSettle()
+    assert.equal(originalTalker.turtleBranch.lookup(), cloneTalker.turtleBranch.lookup())
+    await aWorkspace.commit(4, 'four')
+    await commitSettle()
+    assert.equal(originalTalker.turtleBranch.lookup(), cloneTalker.turtleBranch.lookup())
+
+    const bWorkspace = new Workspace('test', signer)
+    await bWorkspace.commit(5, 'five')
+    await bWorkspace.commit(6, 'six')
+    await bWorkspace.commit(7, 'seven')
+    originalTalker.turtleBranch.u8aTurtle = bWorkspace.u8aTurtle
+    await commitSettle()
+    assert.equal(originalTalker.turtleBranch.lookup(), cloneTalker.turtleBranch.lookup())
   })
 })

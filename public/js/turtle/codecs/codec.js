@@ -62,7 +62,7 @@ export function splitEncodedCommit (u8aTurtle) {
     throw new Error('non-commit found where commit is expected')
   }
   const encodedCommit = codec.extractEncodedValue(u8aTurtle)
-  const encodedData = u8aTurtle.uint8Array.slice(0, -encodedCommit.length)
+  const encodedData = u8aTurtle.uint8Array.subarray(0, -encodedCommit.length)
   return [encodedData, encodedCommit]
 }
 
@@ -122,7 +122,7 @@ codec.addCodecType(TRUE)
 export const NUMBER = new CodecType({
   name: 'number',
   test: value => typeof value === 'number',
-  decode: (uint8Array) => new Float64Array(uint8Array.buffer)[0],
+  decode: (uint8Array) => new Float64Array(new Uint8Array(uint8Array).buffer)[0],
   encode: (value) => combineUint8ArrayLikes([new Float64Array([value]), codec.deriveFooter(NUMBER, [0])]),
   getWidth: () => 8,
   versionArrayCounts: [1]
@@ -149,7 +149,7 @@ codec.addCodecType(STRING)
 export const DATE = new CodecType({
   name: 'date',
   test: value => value instanceof Date,
-  decode: (uint8Array) => new Date(new Float64Array(uint8Array.buffer)[0]),
+  decode: (uint8Array) => new Date(new Float64Array(new Uint8Array(uint8Array).buffer)[0]),
   encode: (value) => combineUint8ArrayLikes([new Float64Array([value.getTime()]), codec.deriveFooter(DATE, [0])]),
   getWidth: () => 8,
   versionArrayCounts: [1]
@@ -320,8 +320,8 @@ export const COMMIT = new CodecType({
   name: 'commit',
   test: value => value instanceof Commit,
   decode: (uint8Array, codecVersion, u8aTurtle, options) => {
-    const address = decodeNumberFromU8a(uint8Array.slice(0, codecVersion.versionArrays[0] + minAddressBytes))
-    const signature = uint8Array.slice(-64)
+    const address = decodeNumberFromU8a(uint8Array.subarray(0, codecVersion.versionArrays[0] + minAddressBytes))
+    const signature = uint8Array.subarray(-64)
     const value = options.valuesAsRefs ? address : u8aTurtle.lookup(address)
     return new Commit(value, signature)
   },
@@ -362,8 +362,8 @@ export const TREE_NODE = new CodecType({
   test: value => Array.isArray(value) && value.length > 1,
   decode: (uint8Array, codecVersion) => {
     const [leftAddressLength] = codecVersion.versionArrays
-    const leftAddress = decodeNumberFromU8a(uint8Array.slice(0, leftAddressLength + minAddressBytes))
-    const rightAddress = decodeNumberFromU8a(uint8Array.slice(leftAddressLength + minAddressBytes))
+    const leftAddress = decodeNumberFromU8a(uint8Array.subarray(0, leftAddressLength + minAddressBytes))
+    const rightAddress = decodeNumberFromU8a(uint8Array.subarray(leftAddressLength + minAddressBytes))
     return new TreeNode(leftAddress, rightAddress)
   },
   encode: (value, dictionary) => {
@@ -387,7 +387,7 @@ export const ATOMIC_UINT8ARRAY = new CodecType({
   test: value => value instanceof Uint8Array,
   decode: (uint8Array, codecTypeVersion) => {
     const valueLengthLength = codecTypeVersion.versionArrays[0] + 1
-    return uint8Array.slice(0, -valueLengthLength)
+    return uint8Array.subarray(0, -valueLengthLength)
   },
   encode: (value) => {
     const encodedValueLength = encodeNumberToU8a(value.length, 1)
@@ -409,7 +409,7 @@ export const OPAQUE_UINT8ARRAY = new CodecType({
   test: value => value instanceof Uint8Array,
   decode: (uint8Array, codecTypeVersion) => {
     const valueLengthLength = codecTypeVersion.versionArrays[0] + 1
-    return uint8Array.slice(0, -valueLengthLength)
+    return uint8Array.subarray(0, -valueLengthLength)
   },
   encode: (value) => {
     const encodedValueLength = encodeNumberToU8a(value.length, 1)

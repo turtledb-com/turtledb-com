@@ -91,7 +91,7 @@ export class U8aTurtle {
   }
 
   slice (start = this.offset, end = this.length) {
-    return this.uint8Array.slice(this.#remapAddress(start), this.#remapAddress(end, true))
+    return this.uint8Array.subarray(this.#remapAddress(start), this.#remapAddress(end, true))
   }
 
   /**
@@ -143,6 +143,8 @@ export class U8aTurtle {
     }
     return uint8Arrays
   }
+
+  clone () { return fromUint8Arrays(this.exportUint8Arrays().map(uint8Array => new Uint8Array(uint8Array))) }
 }
 
 /**
@@ -172,4 +174,13 @@ export function findCommonAncestor (a, b) {
     b = b.parent
   }
   return a
+}
+
+/**
+ * @param {Array.<Uint8Array>} uint8Arrays
+ * @returns {U8aTurtle}
+ */
+export function fromUint8Arrays (uint8Arrays) {
+  if (!uint8Arrays?.length) throw new Error('empty uint8Arrays')
+  return uint8Arrays.reduce((u8aTurtle, uint8Array) => new U8aTurtle(uint8Array, u8aTurtle), undefined)
 }
