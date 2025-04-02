@@ -1,5 +1,5 @@
 import { globalRunner, urlToName } from '../../test/Runner.js'
-import { handleNextTick } from '../utils/nextTick.js'
+import { handleNextTick, tics } from '../utils/nextTick.js'
 import { TurtleBranch } from './TurtleBranch.js'
 
 globalRunner.describe(urlToName(import.meta.url), suite => {
@@ -49,6 +49,20 @@ globalRunner.describe(urlToName(import.meta.url), suite => {
     primaryBranched.append(new Uint8Array([7, 8, 9]))
     primary.u8aTurtle = primaryBranched.u8aTurtle
     await new Promise(resolve => setTimeout(resolve))
+    assert.equal(secondary.u8aTurtle.exportUint8Arrays(), [
+      new Uint8Array([1, 2, 3]),
+      new Uint8Array([4, 5, 6]),
+      new Uint8Array([7, 8, 9])
+    ])
+  })
+  suite.it('streams established U8aTurtles', async ({ assert }) => {
+    const primary = new TurtleBranch('primary')
+    primary.append(new Uint8Array([1, 2, 3]))
+    primary.append(new Uint8Array([4, 5, 6]))
+    primary.append(new Uint8Array([7, 8, 9]))
+    const secondary = new TurtleBranch('secondary')
+    primary.makeReadableStream().pipeTo(secondary.makeWritableStream())
+    await tics(1)
     assert.equal(secondary.u8aTurtle.exportUint8Arrays(), [
       new Uint8Array([1, 2, 3]),
       new Uint8Array([4, 5, 6]),

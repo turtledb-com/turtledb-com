@@ -6,6 +6,11 @@ import { combineUint8ArrayLikes, combineUint8Arrays } from './utils.js'
  * @typedef {import('./codecs/CodecType.js').CodecOptions} CodecOptions
  */
 
+const _encodeUint8Array = uint8Array => {
+  const encodedLength = new Uint32Array([uint8Array.length])
+  return combineUint8ArrayLikes([encodedLength, uint8Array])
+}
+
 export class TurtleBranch {
   /** @type {U8aTurtle} */
   #u8aTurtle
@@ -55,11 +60,9 @@ export class TurtleBranch {
 
   #broadcast (uint8Array) {
     const controllers = this.#readableByteStreamControllers
-    const encodedLength = new Uint32Array([uint8Array.length])
-    const encodedUint8Array = combineUint8ArrayLikes([encodedLength, uint8Array])
     controllers.forEach(controller => {
       console.log(` >>>> sending ${this.name} 4 + ${uint8Array.length} bytes`)
-      controller.enqueue(encodedUint8Array)
+      controller.enqueue(_encodeUint8Array(uint8Array))
     })
   }
 
@@ -75,7 +78,7 @@ export class TurtleBranch {
         _controller = controller
         controllers.add(_controller)
         uint8Arrays.forEach(uint8Array => {
-          _controller.enqueue(uint8Array)
+          _controller.enqueue(_encodeUint8Array(uint8Array))
         })
       },
       cancel (reason) {
@@ -95,12 +98,12 @@ export class TurtleBranch {
     const turtleBranch = this
     return new WritableStream({
       write (chunk) {
-        // console.log(turtleBranch.name, chunk)
         inProgress = combineUint8Arrays([inProgress, chunk])
         if (inProgress.length < 4) return
         totalLength = new Uint32Array(inProgress.slice(0, 4).buffer)[0]
         if (inProgress.length < totalLength + 4) return
-        turtleBranch.append(inProgress.slice(4, totalLength + 4))
+        const uint8Array = inProgress.slice(4, totalLength + 4)
+        turtleBranch.append(uint8Array)
         inProgress = inProgress.slice(totalLength + 4)
       }
     })

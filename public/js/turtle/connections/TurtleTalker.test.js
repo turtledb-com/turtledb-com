@@ -3,7 +3,7 @@ import { tics } from '../../utils/nextTick.js'
 import { Signer } from '../Signer.js'
 import { TurtleBranch } from '../TurtleBranch.js'
 import { Workspace } from '../Workspace.js'
-import { TurtleBranchTurtleTalker } from './TurtleTalker.js'
+import { TurtleBranchUpdater } from './TurtleBranchUpdater.js'
 
 const commitSettle = async () => {
   // console.log(' -- commit settle')
@@ -15,9 +15,9 @@ globalRunner.describe(urlToName(import.meta.url), suite => {
     const signer = new Signer('test-user', 'p@$$w0rd')
     const aWorkspace = new Workspace('test', signer)
     const keys = await signer.makeKeysFor(aWorkspace.name)
-    const aTalker = new TurtleBranchTurtleTalker('aTalker', aWorkspace.committedBranch)
+    const aTalker = new TurtleBranchUpdater('aTalker', aWorkspace.committedBranch)
     const b = new TurtleBranch('b')
-    const bTalker = new TurtleBranchTurtleTalker('bTalker', b, keys.publicKey)
+    const bTalker = new TurtleBranchUpdater('bTalker', b, keys.publicKey)
 
     aTalker.connect(bTalker)
     aTalker.start()
@@ -52,9 +52,9 @@ globalRunner.describe(urlToName(import.meta.url), suite => {
 
     const a2 = new TurtleBranch('a2', undefined, aWorkspace.committedBranch.u8aTurtle)
     const a2Workspace = new Workspace('test', signer, a2)
-    const aTalker2 = new TurtleBranchTurtleTalker('aTalker2', a2)
+    const aTalker2 = new TurtleBranchUpdater('aTalker2', a2)
     const b2 = new TurtleBranch('b2', undefined, b.u8aTurtle)
-    const bTalker2 = new TurtleBranchTurtleTalker('bTalker2', b2, keys.publicKey)
+    const bTalker2 = new TurtleBranchUpdater('bTalker2', b2, keys.publicKey)
     aTalker2.connect(bTalker2)
     aTalker2.start()
     bTalker2.start()
@@ -77,8 +77,8 @@ globalRunner.describe(urlToName(import.meta.url), suite => {
     await aWorkspace.commit(3, 'three')
     const clone = new TurtleBranch('clone', undefined, aWorkspace.u8aTurtle.clone())
 
-    const originalTalker = new TurtleBranchTurtleTalker('originalTalker', aWorkspace.committedBranch, keys.publicKey, true)
-    const cloneTalker = new TurtleBranchTurtleTalker('cloneTalker', clone, keys.publicKey)
+    const originalTalker = new TurtleBranchUpdater('originalTalker', aWorkspace.committedBranch, keys.publicKey, true)
+    const cloneTalker = new TurtleBranchUpdater('cloneTalker', clone, keys.publicKey)
 
     cloneTalker.connect(originalTalker)
     await commitSettle()
