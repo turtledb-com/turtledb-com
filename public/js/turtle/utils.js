@@ -1,83 +1,4 @@
 /**
- * @typedef {import('../utils/Recaller.js').Recaller} Recaller
- */
-export const OWN_KEYS = Symbol('ownKeys')
-
-/**
- * @param {Array.<number>} versionArrayCounts
- * @return number
- */
-export const toVersionCount = versionArrayCounts => versionArrayCounts.reduce((acc, value) => acc * value, 1)
-
-/**
- * @param {number} combinedVersion
- * @param {Array.<number>} versionArrayCounts
- * @return {Array.<number}
- */
-export const toSubVersions = (combinedVersion, versionArrayCounts) => {
-  const versionArrays = new Array(versionArrayCounts.length)
-  for (let i = versionArrays.length - 1; i >= 0; --i) {
-    const versionArrayCount = versionArrayCounts[i]
-    versionArrays[i] = combinedVersion % versionArrayCount
-    combinedVersion = Math.floor(combinedVersion / versionArrayCount)
-  }
-  return versionArrays
-}
-
-/**
- * @param {Array.<number>} versionArrays
- * @param {Array.<number>} versionArrayCounts
- * @return number
- */
-export const toCombinedVersion = (versionArrays, versionArrayCounts) => {
-  if (versionArrays.length !== versionArrayCounts.length) throw new Error('versionArrays/versionArrayCounts mismatch')
-  let combinedVersion = 0
-  for (let i = 0; i < versionArrays.length; ++i) {
-    combinedVersion *= versionArrayCounts[i]
-    combinedVersion += versionArrays[i]
-  }
-  return combinedVersion
-}
-
-/**
- * @param {Array.<any>} uint8ArrayLikes
- * @returns {Uint8Array}
- */
-export function combineUint8ArrayLikes (uint8ArrayLikes) {
-  if (!Array.isArray(uint8ArrayLikes)) throw new Error('friendly reminder... combineUint8ArrayLikes accepts an array of Uint8ArrayLikes')
-  const uint8Arrays = uint8ArrayLikes.map(uint8ArrayLike => {
-    if (uint8ArrayLike instanceof Uint8Array) return uint8ArrayLike
-    if (uint8ArrayLike instanceof Object.getPrototypeOf(Uint8Array)) return new Uint8Array(uint8ArrayLike.buffer)
-    if (Number.isInteger(uint8ArrayLike) && uint8ArrayLike <= 0xff) return new Uint8Array([uint8ArrayLike])
-    console.error(uint8ArrayLikes)
-    throw new Error('can\'t convert to Uint8Array')
-  })
-  return combineUint8Arrays(uint8Arrays)
-}
-
-/**
- * @param {Array.<Uint8Array>} uint8Arrays
- * @returns {Uint8Array}
- */
-export function combineUint8Arrays (uint8Arrays) {
-  if (!Array.isArray(uint8Arrays)) throw new Error('friendly reminder... combineUint8Arrays accepts an array of Uint8Arrays')
-  const combinedLength = uint8Arrays.reduce((length, uint8Array) => length + (uint8Array?.length ?? 0), 0)
-  const collapsedUint8Array = new Uint8Array(combinedLength)
-  let address = 0
-  for (const uint8Array of uint8Arrays) {
-    if (!(uint8Array instanceof Uint8Array)) {
-      console.error('not Uint8Array', uint8Array)
-      throw new Error('combineUint8Arrays can only combine Uint8Arrays')
-    }
-    if (uint8Array?.length) {
-      collapsedUint8Array.set(uint8Array, address)
-      address += uint8Array.length
-    }
-  }
-  return collapsedUint8Array
-}
-
-/**
  * @param {Uint8Array} a
  * @param {Uint8Array} b
  * @returns boolean
@@ -130,27 +51,6 @@ export class ValueByUint8Array {
 }
 
 /**
- *                                                                 |                                                               |
- *                                 |                               |                               |                               |
- *                 |               |               |               |               |               |               |               |
- *         |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |
- *     |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |
- *   | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | |
- *  ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
- * zabacabadabacabaeabacabadabacabafabacabadabacabaeabacabadabacabagabacabadabacabaeabacabadabacabafabacabadabacabaeabacabadabacaba
- * like the "ruler function" (abacaba) but with numbers for binary-tree-like jumping
- * @param {number} i
- * @returns {number}
- */
-export function zabacaba (i) {
-  if (i === 0) return 0
-  if (i === 1) return 1
-  const j = ~(i - 1)
-  const b = Math.clz32(j & -j) // 31 - b is right zeros
-  return 32 - b
-}
-
-/**
  * @param {string} b36
  * @returns {bigint}
  */
@@ -193,49 +93,6 @@ export function b36ToUint8Array (b36) {
  */
 export function uint8ArrayToB36 (uint8Array) {
   return uint8ArrayToBigInt(uint8Array).toString(36)
-}
-
-/**
- * @param {Object} target
- * @param {Recaller} recaller
- */
-export function proxyWithRecaller (target, recaller, name = '<unnamed proxyWithRecaller>') {
-  if (!target || typeof target !== 'object') throw new Error('proxyWithRecaller can only proxy objects')
-  return new Proxy(target, {
-    has: (target, propertyKey) => {
-      recaller.reportKeyAccess(target, propertyKey, 'get', name)
-      return Reflect.has(target, propertyKey)
-    },
-    get: (target, propertyKey) => {
-      recaller.reportKeyAccess(target, propertyKey, 'get', name)
-      if (propertyKey === 'length' && Array.isArray(target)) return target.length
-      return Reflect.get(target, propertyKey)
-    },
-    set: (target, propertyKey, value) => {
-      const length = target.length
-      if (value !== target[propertyKey]) {
-        recaller.reportKeyMutation(target, propertyKey, 'set', name)
-      }
-      if (!Object.hasOwn(target, propertyKey)) {
-        recaller.reportKeyMutation(target, OWN_KEYS, 'set', name)
-      }
-      const result = Reflect.set(target, propertyKey, value)
-      if (Array.isArray(target) && length !== target.length) {
-        recaller.reportKeyMutation(target, 'length', 'set', name)
-      }
-      return result
-    },
-    deleteProperty: (target, propertyKey) => {
-      if (Object.hasOwn(target, propertyKey)) {
-        recaller.reportKeyMutation(target, OWN_KEYS, 'delete', name)
-      }
-      return Reflect.deleteProperty(target, propertyKey)
-    },
-    ownKeys: target => {
-      recaller.reportKeyAccess(target, OWN_KEYS, 'ownKeys', name)
-      return Reflect.ownKeys(target)
-    }
-  })
 }
 
 /**

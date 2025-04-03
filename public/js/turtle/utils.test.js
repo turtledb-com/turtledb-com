@@ -1,7 +1,14 @@
 import { globalRunner, urlToName } from '../../test/Runner.js'
 import { handleNextTick } from '../utils/nextTick.js'
+import { proxyWithRecaller } from '../utils/proxyWithRecaller.js'
 import { Recaller } from '../utils/Recaller.js'
-import { b36ToBigInt, b36ToUint8Array, bigIntToUint8Array, combineUint8ArrayLikes, combineUint8Arrays, cpkBaleHostToPath, decodeNumberFromU8a, encodeNumberToU8a, pathToCpkBaleHost, proxyWithRecaller, softSet, toCombinedVersion, toSubVersions, toVersionCount, uint8ArrayToB36, uint8ArrayToBigInt, ValueByUint8Array, zabacaba } from './utils.js'
+import { b36ToBigInt, b36ToUint8Array, bigIntToUint8Array, cpkBaleHostToPath, decodeNumberFromU8a, encodeNumberToU8a, pathToCpkBaleHost, softSet, uint8ArrayToB36, uint8ArrayToBigInt, ValueByUint8Array } from './utils.js'
+import { combineUint8Arrays } from '../utils/combineUint8Arrays.js'
+import { combineUint8ArrayLikes } from '../utils/combineUint8ArrayLikes.js'
+import { toCombinedVersion } from '../utils/toCombinedVersion.js'
+import { toSubVersions } from '../utils/toSubVersions.js'
+import { toVersionCount } from '../utils/toVersionCount.js'
+import { zabacaba } from '../utils/zabacaba.js'
 
 globalRunner.describe(urlToName(import.meta.url), suite => {
   suite.it('goes from path to host/bale/cpk and back', ({ assert }) => {

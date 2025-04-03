@@ -28,7 +28,7 @@ export class Workspace extends TurtleDictionary {
     })
   }
 
-  get lastCommit () { return this.committedBranch.lookup()?.value }
+  get lastCommit () { return this.committedBranch.lookup()?.document }
   get lastCommitValue () { return this.lastCommit?.value }
 
   async #queueCommit (value, message, lastQueuedCommit) {

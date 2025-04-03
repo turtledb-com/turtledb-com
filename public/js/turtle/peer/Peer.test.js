@@ -20,7 +20,6 @@ globalRunner.describe(urlToName(import.meta.url), suite => {
     const aWorkspace = await peerA.getWorkspace('simpleWorkspace', signer)
     // aWorkspace.recaller.debug = true
     await aWorkspace.commit('abcd')
-    console.log(bWorkspace.lastCommitValue)
     await tics(4) // tics needed found through trial and error (TODO: better visibility)
     // aWorkspace.recaller.debug = false
     const bWorkspace = await peerA.getWorkspace('simpleWorkspace', signer)

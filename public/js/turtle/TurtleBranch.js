@@ -1,6 +1,7 @@
 import { Recaller } from '../utils/Recaller.js'
 import { squashTurtle, U8aTurtle } from './U8aTurtle.js'
-import { combineUint8ArrayLikes, combineUint8Arrays } from './utils.js'
+import { combineUint8Arrays } from '../utils/combineUint8Arrays.js'
+import { combineUint8ArrayLikes } from '../utils/combineUint8ArrayLikes.js'
 
 /**
  * @typedef {import('./codecs/CodecType.js').CodecOptions} CodecOptions

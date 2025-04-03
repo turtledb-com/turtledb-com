@@ -1,9 +1,10 @@
+import { combineUint8Arrays } from '../../utils/combineUint8Arrays.js'
 import { codec, OPAQUE_UINT8ARRAY, splitEncodedCommit } from '../codecs/codec.js'
 import { verifyTurtleCommit } from '../Signer.js'
 import { TurtleBranch } from '../TurtleBranch.js'
 import { TurtleDictionary } from '../TurtleDictionary.js'
 import { U8aTurtle } from '../U8aTurtle.js'
-import { combineUint8Arrays, deepEqualUint8Arrays } from '../utils.js'
+import { deepEqualUint8Arrays } from '../utils.js'
 import { AbstractConnection, AbstractPeerState } from './AbstractConnection.js'
 
 /**

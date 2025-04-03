@@ -1,6 +1,6 @@
+import { combineUint8Arrays } from '../../utils/combineUint8Arrays.js'
 import { splitEncodedCommit } from '../codecs/codec.js'
 import { U8aTurtle } from '../U8aTurtle.js'
-import { combineUint8Arrays } from '../utils.js'
 
 /**
  * @typedef {import('./OpaqueUint8ArrayStorage.js').OpaqueUint8ArrayStorage}

@@ -1,10 +1,10 @@
 export class Commit {
   /**
-   * @param {Object} value
+   * @param {Object} document
    * @param {Uint8Array} signature
    */
-  constructor (value, signature) {
-    this.value = value
+  constructor (document, signature) {
+    this.document = document
     this.signature = signature
   }
 }

@@ -26,15 +26,15 @@ globalRunner.describe(urlToName(import.meta.url), suite => {
 
     await aWorkspace.commit(42, 'everything')
     await commitSettle()
-    assert.equal(b.lookup()?.value?.value, 42)
+    assert.equal(b.lookup()?.document?.value, 42)
 
     await aWorkspace.commit(Math.E, 'euler')
     await commitSettle()
-    assert.equal(b.lookup()?.value?.value, Math.E)
+    assert.equal(b.lookup()?.document?.value, Math.E)
 
     await aWorkspace.commit(Math.PI, 'pi')
     await commitSettle()
-    assert.equal(b.lookup()?.value?.value, Math.PI)
+    assert.equal(b.lookup()?.document?.value, Math.PI)
 
     const unbrokenBranch = new TurtleBranch('unbroken', undefined, aWorkspace.committedBranch.u8aTurtle)
 
@@ -42,13 +42,13 @@ globalRunner.describe(urlToName(import.meta.url), suite => {
     // const brokenKeys = await signer.makeKeysFor(brokenWorkspace.name)
     await brokenWorkspace.commit(2, 'two')
     await commitSettle()
-    assert.equal(b.lookup()?.value?.value, Math.PI)
+    assert.equal(b.lookup()?.document?.value, Math.PI)
 
     const unbrokenWorkspace = new Workspace('test', signer, unbrokenBranch)
     await unbrokenWorkspace.commit(4, 'four')
     aTalker.turtleBranch.u8aTurtle = unbrokenWorkspace.u8aTurtle
     await commitSettle()
-    assert.equal(b.lookup()?.value?.value, 4)
+    assert.equal(b.lookup()?.document?.value, 4)
 
     const a2 = new TurtleBranch('a2', undefined, aWorkspace.committedBranch.u8aTurtle)
     const a2Workspace = new Workspace('test', signer, a2)
@@ -59,12 +59,12 @@ globalRunner.describe(urlToName(import.meta.url), suite => {
     aTalker2.start()
     bTalker2.start()
     await tics(1) //, 'talkers icebreaking')
-    assert.equal(b2.lookup()?.value?.value, 4)
+    assert.equal(b2.lookup()?.document?.value, 4)
     assert.isAbove(b2.length, bTalker2.outgoingBranch.length) // we have more data than we received
 
     a2Workspace.commit(5, 'five')
     await commitSettle()
-    assert.equal(b2.lookup()?.value?.value, 5)
+    assert.equal(b2.lookup()?.document?.value, 5)
     assert.isAbove(b2.length, bTalker2.outgoingBranch.length) // we have more data than we received from this connection
   })
 

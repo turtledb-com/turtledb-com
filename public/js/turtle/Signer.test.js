@@ -16,7 +16,7 @@ globalRunner.describe(urlToName(import.meta.url), suite => {
     u8aTurtle = squashTurtle(u8aTurtle, 0)
     console.log(u8aTurtle.lookup())
     const committedTurtle = u8aTurtle
-    assert.equal(committedTurtle.lookup().value, u8Array)
+    assert.equal(committedTurtle.lookup().document, u8Array)
     const keys = await signer.makeKeysFor(name)
     const verification = await verifyTurtleCommit(committedTurtle, keys.publicKey)
     assert.assert(verification)
@@ -27,7 +27,7 @@ globalRunner.describe(urlToName(import.meta.url), suite => {
     const signedCommit2 = await signer.signCommit(name, u8aAddress2, u8aTurtle, committedTurtle)
     u8aTurtle = new U8aTurtle(signedCommit2, u8aTurtle)
     u8aTurtle = squashTurtle(u8aTurtle, committedTurtle.index + 1)
-    assert.equal(u8aTurtle.lookup().value, u8Array2)
+    assert.equal(u8aTurtle.lookup().document, u8Array2)
     const verification2 = await verifyTurtleCommit(u8aTurtle, keys.publicKey)
     assert.assert(verification2)
   })

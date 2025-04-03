@@ -78,15 +78,15 @@ globalRunner.describe(urlToName(import.meta.url), suite => {
     assert.notEqual(commitAddressA, commitAddressB)
     assert.equal(dictionary.lookup(commitAddressA), dictionary.lookup(commitAddressB))
     const commitRefs = dictionary.lookup(commitAddressA, AS_REFS)
-    assert.equal(commitRefs.value, aAddress)
+    assert.equal(commitRefs.document, aAddress)
     const signature = new Uint8Array([...new Array(64)].map((_, i) => i))
     const bAddress = dictionary.upsert('b')
-    commit.value = bAddress
+    commit.document = bAddress
     commit.signature = signature
     const signedAddress = dictionary.upsert(commit, undefined, AS_REFS)
     const recoveredSigned = dictionary.lookup(signedAddress)
     assert.equal(recoveredSigned.signature, signature)
-    assert.equal(recoveredSigned.value, 'b')
+    assert.equal(recoveredSigned.document, 'b')
   })
   suite.it('handles opaque uint8arrays', ({ assert }) => {
     const dictionary = new TurtleDictionary('opaque uint8arrays')

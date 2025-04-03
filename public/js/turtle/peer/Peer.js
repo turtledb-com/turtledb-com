@@ -1,6 +1,6 @@
+import { proxyWithRecaller } from '../../utils/proxyWithRecaller.js'
 import { Recaller } from '../../utils/Recaller.js'
 import { TurtleBranch } from '../TurtleBranch.js'
-import { proxyWithRecaller } from '../utils.js'
 import { Workspace } from '../Workspace.js'
 
 /**

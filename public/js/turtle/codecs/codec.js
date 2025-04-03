@@ -1,4 +1,6 @@
-import { combineUint8ArrayLikes, combineUint8Arrays, decodeNumberFromU8a, encodeNumberToU8a } from '../utils.js'
+import { decodeNumberFromU8a, encodeNumberToU8a } from '../utils.js'
+import { combineUint8Arrays } from '../../utils/combineUint8Arrays.js'
+import { combineUint8ArrayLikes } from '../../utils/combineUint8ArrayLikes.js'
 import { CodecType } from './CodecType.js'
 import { Commit } from './Commit.js'
 import { CompositeCodec } from './CompositeCodec.js'
@@ -326,7 +328,7 @@ export const COMMIT = new CodecType({
     return new Commit(value, signature)
   },
   encode: (value, dictionary, options) => {
-    const address = options.valuesAsRefs ? value.value : dictionary.upsert(value.value)
+    const address = options.valuesAsRefs ? value.document : dictionary.upsert(value.document)
     const u8aAddress = encodeNumberToU8a(address, minAddressBytes)
     const footer = codec.deriveFooter(COMMIT, [u8aAddress.length - minAddressBytes])
     return combineUint8ArrayLikes([u8aAddress, value.signature, footer])

@@ -1,6 +1,7 @@
 import { codec } from './codecs/codec.js'
 import { AS_REFS } from './codecs/CodecType.js'
-import { combineUint8Arrays, zabacaba } from './utils.js'
+import { combineUint8Arrays } from '../utils/combineUint8Arrays.js'
+import { zabacaba } from '../utils/zabacaba.js'
 
 /**
  * @typedef {import('./codecs/CodecType.js').CodecOptions} CodecOptions

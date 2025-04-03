@@ -3,7 +3,8 @@ import { getPublicKey, signAsync, verify } from '../utils/noble-secp256k1.js'
 import { codec, COMMIT, splitEncodedCommit } from './codecs/codec.js'
 import { AS_REFS } from './codecs/CodecType.js'
 import { Commit } from './codecs/Commit.js'
-import { b36ToUint8Array, combineUint8Arrays, uint8ArrayToB36 } from './utils.js'
+import { b36ToUint8Array, uint8ArrayToB36 } from './utils.js'
+import { combineUint8Arrays } from '../utils/combineUint8Arrays.js'
 
 /**
  * @typedef {import('./U8aTurtle.js').U8aTurtle} U8aTurtle

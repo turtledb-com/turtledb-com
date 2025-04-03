@@ -1,4 +1,5 @@
-import { toCombinedVersion, toVersionCount } from '../utils.js'
+import { toCombinedVersion } from '../../utils/toCombinedVersion.js'
+import { toVersionCount } from '../../utils/toVersionCount.js'
 import { DEREFERENCE } from './CodecType.js'
 import { CodecTypeVersion } from './CodecTypeVersion.js'
 
