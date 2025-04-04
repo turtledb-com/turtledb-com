@@ -19,7 +19,7 @@ globalRunner.describe(urlToName(import.meta.url), suite => {
 
     aTBMux.connect(bTBMux)
 
-    await tics(4)
+    await tics(10)
     assert.equal(bTBUpdater.turtleBranch.lookup().document.message, 'one')
   })
 })

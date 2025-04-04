@@ -1,6 +1,6 @@
 import { watch } from 'chokidar'
 import { readFile, unlink, writeFile } from 'fs/promises'
-import { dirname, join, parse, relative } from 'path'
+import { join, relative } from 'path'
 import { AS_REFS } from '../public/js/turtle/codecs/CodecType.js'
 
 /** @typedef {import('../public/js/turtle/Workspace.js').Workspace} Workspace */
@@ -41,7 +41,7 @@ export function fsSync (workspace, root = workspace.name, jspath = 'fs') {
             delete jsobj[relativePath]
           } else {
             const file = workspace.committedBranch.lookup('document', 'value', jspath, relativePath)
-            await writeFile(file, 'utf8')
+            await writeFile(path, file, 'utf8')
             jsobj[relativePath] = newAddress
           }
         }
@@ -54,42 +54,25 @@ export function fsSync (workspace, root = workspace.name, jspath = 'fs') {
       const valueAddress = workspace.upsert(valueAsRefs, undefined, AS_REFS)
       await workspace.commit(valueAddress, 'chokidar.watch', true)
     }
-    // if (event.match(/add|change/)) update(relativePath)
-    // else if (event.match(/unlink/)) remove(relativePath)
   }
   watch(root, { ignored })
     .on('add', getPathHandlerFor(UPDATED_FILE))
     .on('change', getPathHandlerFor(UPDATED_FILE))
     .on('unlink', getPathHandlerFor(REMOVED_FILE))
   workspace.committedBranch.recaller.watch(`fsSync"${root}"`, () => {
-    // const addresses = workspace.committedBranch.lookup('document', 'value', AS_REFS)
     const paths = workspace.committedBranch.lookup('document', 'value', jspath, AS_REFS)
     if (!paths) return
     for (const path in jsobj) {
       if (!paths[path]) {
         const removedValueHandler = getPathHandlerFor(UPDATED_VALUE)
-        removedValueHandler(path)
+        removedValueHandler(join(root, path))
       }
     }
     for (const path in paths) {
       if (paths[path] !== jsobj[path]) {
         const updatedValueHandler = getPathHandlerFor(UPDATED_VALUE)
-        updatedValueHandler(path)
+        updatedValueHandler(join(root, path))
       }
     }
   })
 }
-
-/*
-  const handleAddChangeUnlink = async (event, path) => {
-    const relativePath = relative(root, path)
-    console.log(workspace.name, event, relativePath)
-    // if (event.match(/add|change/)) update(relativePath)
-    // else if (event.match(/unlink/)) remove(relativePath)
-  }
-  watch(root, { ignored })
-    .on('add', handleAddChangeUnlink)
-    .on('change', handleAddChangeUnlink)
-    .on('unlink', handleAddChangeUnlink)
-}
-    */

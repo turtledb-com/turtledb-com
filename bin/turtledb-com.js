@@ -31,13 +31,18 @@ program
   .option('-p, --port <number>', 'web server port number', x => +x, 8080)
   .option('-o, --origin-host <path>', 'path to server to sync with', '')
   .option('-q, --origin-port <number>', 'port of server to sync with', x => +x, 80)
+  .option('--https', 'use https', false)
+  .option('--insecure', '(local dev) allow unauthorized', false)
+  .option('--certpath <string>', '(local dev) path to self-cert', 'dev/cert.json')
   .option('-i, --interactive', 'flag to start repl')
   .parse()
 
 const options = program.opts()
 options.username ??= question('username: ')
 options.password ??= question('password: ', { hideEchoBack: true })
-const { username, password, s3EndPoint, s3Region, s3Bucket, s3AccessKeyId, s3SecretAccessKey, fsdir, fsname, jspath, turtle, root, port, originHost, originPort, interactive } = options
+const { username, password, s3EndPoint, s3Region, s3Bucket, s3AccessKeyId, s3SecretAccessKey, fsdir, fsname, jspath, turtle, root, port, originHost, originPort, https, insecure, certpath, interactive } = options
+
+console.log(https)
 
 const turtleRegistry = proxyWithRecaller({})
 
@@ -71,38 +76,41 @@ if (s3EndPoint || s3Region || s3Bucket || s3AccessKeyId || s3SecretAccessKey) {
   // const connectionToS3 = new S3Connection('connectionToS3', peer, s3EndPoint, s3Region, s3Bucket, s3AccessKeyId, s3SecretAccessKey)
 }
 
-// if (port) {
-//   const app = express()
-//   app.use((req, _res, next) => {
-//     console.log(req.method, req.url)
-//     next()
-//   })
-//   let server
-//   if (https || insecure) {
-//     if (insecure) process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0'
-//     const fullcertpath = join(process.cwd(), certpath)
-//     const certOptions = await manageCert(fullcertpath)
-//     server = createHttpsServer(certOptions, app)
-//   } else {
-//     server = createHttpServer(app)
-//   }
+if (port) {
+  const app = express()
+  app.use((req, _res, next) => {
+    console.log(req.method, req.url)
+    next()
+  })
+  let server
+  if (https || insecure) {
+    if (insecure) process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0'
+    const fullcertpath = join(process.cwd(), certpath)
+    const certOptions = await manageCert(fullcertpath)
+    server = createHttpsServer(certOptions, app)
+  } else {
+    server = createHttpServer(app)
+  }
 
-//   const wss = new WebSocketServer({ server })
-//   const recaller = new Recaller('webserver')
-//   let count = 0
+  const wss = new WebSocketServer({ server })
+  // const recaller = new Recaller('webserver')
+  // let count = 0
 
-//   wss.on('connection', ws => {
-//     const peer = new Peer(`[webserver.js to wss-connection#${count++}]`, recaller)
-//     const connectionCycle = (receive, setSend) => new Promise((resolve, reject) => {
-//       ws.on('message', buffer => receive(new Uint8Array(buffer)))
-//       ws.onclose = resolve
-//       ws.onerror = reject
-//       setSend(uint8Array => ws.send(uint8Array.buffer))
-//     })
-//     attachPeerToCycle(peer, connectionCycle)
-//   })
+  wss.on('connection', ws => {
+    console.log('new connection attempt')
+    /*
+    const peer = new Peer(`[webserver.js to wss-connection#${count++}]`, recaller)
+    const connectionCycle = (receive, setSend) => new Promise((resolve, reject) => {
+      ws.on('message', buffer => receive(new Uint8Array(buffer)))
+      ws.onclose = resolve
+      ws.onerror = reject
+      setSend(uint8Array => ws.send(uint8Array.buffer))
+    })
+    attachPeerToCycle(peer, connectionCycle)
+    */
+  })
 
-//   server.listen(port, () => {
-//     console.log(`webserver started: ${(https || insecure) ? 'https' : 'http'}://localhost:${port}`)
-//   })
-// }
+  server.listen(port, () => {
+    console.log(`webserver started: ${(https || insecure) ? 'https' : 'http'}://localhost:${port}`)
+  })
+}
