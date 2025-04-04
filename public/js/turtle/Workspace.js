@@ -1,4 +1,5 @@
 import { IGNORE_MUTATE, Recaller } from '../utils/Recaller.js'
+import { AS_REFS } from './codecs/CodecType.js'
 import { TurtleBranch } from './TurtleBranch.js'
 import { TurtleDictionary } from './TurtleDictionary.js'
 
@@ -31,25 +32,26 @@ export class Workspace extends TurtleDictionary {
   get lastCommit () { return this.committedBranch.lookup()?.document }
   get lastCommitValue () { return this.lastCommit?.value }
 
-  async #queueCommit (value, message, lastQueuedCommit) {
+  async #queueCommit (value, message, asRef, lastQueuedCommit) {
     await lastQueuedCommit
     if (this.u8aTurtle && !this.u8aTurtle.hasAncestor(this.committedBranch.u8aTurtle)) {
       throw new Error('committedBranch must be ancestor of workspace (merge required)')
     }
+
     const address = this.recaller.call(() => this.upsert({
-      message,
-      name: this.name,
-      username: this.signer.username,
-      ts: new Date(),
-      value
-    }), IGNORE_MUTATE)
+      message: this.upsert(message),
+      name: this.upsert(this.name),
+      username: this.upsert(this.signer.username),
+      ts: this.upsert(new Date()),
+      value: asRef ? value : this.upsert(value)
+    }, undefined, AS_REFS), IGNORE_MUTATE)
     this.append(await this.signer.signCommit(this.name, address, this.u8aTurtle, this.committedBranch.u8aTurtle))
     this.squash((this.committedBranch?.index ?? -1) + 1)
     this.committedBranch.u8aTurtle = this.u8aTurtle
   }
 
-  async commit (value, message) {
-    this._queuedCommit = this.#queueCommit(value, message, this._queuedCommit)
+  async commit (value, message, asRef = false) {
+    this._queuedCommit = this.#queueCommit(value, message, asRef, this._queuedCommit)
     await this._queuedCommit
   }
 }

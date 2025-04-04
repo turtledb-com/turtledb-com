@@ -1,6 +1,7 @@
 import { watch } from 'chokidar'
-import { readFile } from 'fs/promises'
+import { readFile, unlink, writeFile } from 'fs/promises'
 import { dirname, join, parse, relative } from 'path'
+import { AS_REFS } from '../public/js/turtle/codecs/CodecType.js'
 
 /** @typedef {import('../public/js/turtle/Workspace.js').Workspace} Workspace */
 
@@ -8,15 +9,16 @@ export const ignored = /(?:\/node_modules\b|\/\..*|.*\.ico$|\.lock$|~$)/i
 
 const UPDATED_FILE = 'updated file'
 const REMOVED_FILE = 'removed file'
+const UPDATED_VALUE = 'updated value'
 
 /**
  * @param {Workspace} workspace
  * @param {string} [root=workspace.name]
  * @param {string} [jspath='']
  */
-export function fsSync (workspace, root = workspace.name, jspath = '') {
+export function fsSync (workspace, root = workspace.name, jspath = 'fs') {
   const nextActionByPath = {}
-  const jsobj = workspace.lastCommitValue ?? {}
+  const jsobj = workspace.lastCommitValue?.[jspath] ?? {}
   const getPathHandlerFor = action => async path => {
     const relativePath = relative(root, path)
     console.log(workspace.name, action, relativePath)
@@ -28,15 +30,29 @@ export function fsSync (workspace, root = workspace.name, jspath = '') {
       nextActionByPath[relativePath] = null
       if (action === UPDATED_FILE) {
         const file = await readFile(path, 'utf8')
-        jsobj[relativePath] = file
+        jsobj[relativePath] = workspace.upsert(file)
       } else if (action === REMOVED_FILE) {
         delete jsobj[relativePath]
+      } else if (action === UPDATED_VALUE) {
+        const newAddress = workspace.committedBranch.lookup('document', 'value', jspath, AS_REFS)?.[relativePath]
+        if (newAddress !== jsobj[relativePath]) {
+          if (!newAddress) {
+            await unlink(path)
+            delete jsobj[relativePath]
+          } else {
+            const file = workspace.committedBranch.lookup('document', 'value', jspath, relativePath)
+            await writeFile(file, 'utf8')
+            jsobj[relativePath] = newAddress
+          }
+        }
       }
     }
-    delete nextActionByPath[relativePathj
+    delete nextActionByPath[relativePath]
     if (!Object.keys(nextActionByPath).length) {
-      console.log('done')
-      await workspace.commit(jsobj, 'chokidar.watch')
+      const valueAsRefs = workspace.lookup('document', 'value', AS_REFS) || {}
+      valueAsRefs[jspath] = workspace.upsert(jsobj, undefined, AS_REFS)
+      const valueAddress = workspace.upsert(valueAsRefs, undefined, AS_REFS)
+      await workspace.commit(valueAddress, 'chokidar.watch', true)
     }
     // if (event.match(/add|change/)) update(relativePath)
     // else if (event.match(/unlink/)) remove(relativePath)
@@ -45,6 +61,23 @@ export function fsSync (workspace, root = workspace.name, jspath = '') {
     .on('add', getPathHandlerFor(UPDATED_FILE))
     .on('change', getPathHandlerFor(UPDATED_FILE))
     .on('unlink', getPathHandlerFor(REMOVED_FILE))
+  workspace.committedBranch.recaller.watch(`fsSync"${root}"`, () => {
+    // const addresses = workspace.committedBranch.lookup('document', 'value', AS_REFS)
+    const paths = workspace.committedBranch.lookup('document', 'value', jspath, AS_REFS)
+    if (!paths) return
+    for (const path in jsobj) {
+      if (!paths[path]) {
+        const removedValueHandler = getPathHandlerFor(UPDATED_VALUE)
+        removedValueHandler(path)
+      }
+    }
+    for (const path in paths) {
+      if (paths[path] !== jsobj[path]) {
+        const updatedValueHandler = getPathHandlerFor(UPDATED_VALUE)
+        updatedValueHandler(path)
+      }
+    }
+  })
 }
 
 /*
