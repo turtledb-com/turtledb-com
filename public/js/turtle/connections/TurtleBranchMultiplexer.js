@@ -9,9 +9,6 @@ import { TurtleTalker } from './TurtleTalker.js'
  */
 
 export class TurtleBranchMultiplexer extends TurtleTalker {
-  /** @type {Object.<string, Object.<string, TurtleBranchUpdater>>} */
-  #updatersByCpkAndName = {}
-
   /** @type {Object.<string, TurtleBranchUpdater>} */
   #updatersByCpk = {}
 
@@ -58,9 +55,9 @@ export class TurtleBranchMultiplexer extends TurtleTalker {
    * @param {string} publicKey
    * @returns {TurtleBranchUpdater}
    */
-  getTurtleBranchUpdater (name = '', publicKey = '') {
+  getTurtleBranchUpdater (name = '', publicKey = '', turtleBranch) {
     if (!this.#updatersByCpk[publicKey]) {
-      const turtleBranch = new TurtleBranch(name)
+      turtleBranch ??= new TurtleBranch(name)
       const updater = new TurtleBranchUpdater(name, turtleBranch, publicKey, this.isTrusted)
       let lastIndex = -1
       updater.outgoingBranch.recaller.watch(`TBMux"${this.name}(${publicKey} ${name})`, () => {
@@ -72,6 +69,8 @@ export class TurtleBranchMultiplexer extends TurtleTalker {
         }
       })
       this.#updatersByCpk[publicKey] = updater
+    } else if (turtleBranch && this.#updatersByCpk[publicKey] !== turtleBranch) {
+      throw new Error('trying to start existing updater with different turtle')
     }
     this.#updatersByCpk[publicKey].start()
     return this.#updatersByCpk[publicKey]

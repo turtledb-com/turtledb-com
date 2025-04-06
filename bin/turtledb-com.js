@@ -13,6 +13,7 @@ import { join, extname } from 'path'
 import { manageCert } from '../src/manageCert.js'
 import { Workspace } from '../public/js/turtle/Workspace.js'
 import { fsSync } from '../src/fsSync.js'
+import { TurtleBranchMultiplexer } from '../public/js/turtle/connections/TurtleBranchMultiplexer.js'
 
 /**
  * @typedef {import('../public/js/turtle/TurtleBranch.js').TurtleBranch} TurtleBranch
@@ -149,6 +150,16 @@ if (port) {
 
   wss.on('connection', ws => {
     console.log('new connection attempt')
+    const tbMux = new TurtleBranchMultiplexer('server tbMux to ws')
+    tbMux.getTurtleBranchUpdater('public', basekey.publicKey, turtleRegistry[basekey.publicKey])
+    ws.on('message', buffer => tbMux.incomingBranch.append(new Uint8Array(buffer)))
+    let lastIndex = -1
+    tbMux.recaller.watch('webclient tbMux to ws', () => {
+      while (tbMux.outgoingBranch.index > lastIndex) {
+        ++lastIndex
+        ws.send(tbMux.outgoingBranch.u8aTurtle.getAncestorByIndex(lastIndex).uint8Array.buffer)
+      }
+    })
     /*
     const peer = new Peer(`[webserver.js to wss-connection#${count++}]`, recaller)
     const connectionCycle = (receive, setSend) => new Promise((resolve, reject) => {
