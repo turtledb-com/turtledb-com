@@ -1,10 +1,9 @@
 import { globalRunner, urlToName } from '../../../test/Runner.js'
-import { tics } from '../../utils/nextTick.js'
 import { Signer } from '../Signer.js'
 import { Workspace } from '../Workspace.js'
 import { TurtleBranchMultiplexer } from './TurtleBranchMultiplexer.js'
 
-globalRunner.describe(urlToName(import.meta.url), suite => {
+globalRunner.only.describe(urlToName(import.meta.url), suite => {
   suite.it('syncs multiple SimpleAsyncTurtleBranch', async ({ assert }) => {
     const signer = new Signer('username', 'password')
     const name = 'test'
@@ -19,7 +18,8 @@ globalRunner.describe(urlToName(import.meta.url), suite => {
 
     aTBMux.connect(bTBMux)
 
-    await tics(10)
+    await bTBUpdater.settle
+
     assert.equal(bTBUpdater.turtleBranch.lookup().document.message, 'one')
   })
 })
