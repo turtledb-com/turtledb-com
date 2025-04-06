@@ -9,10 +9,14 @@ import { createServer as createHttpsServer } from 'https'
 import { createServer as createHttpServer } from 'http'
 import { WebSocketServer } from 'ws'
 import express from 'express'
-import { join } from 'path'
+import { join, extname } from 'path'
 import { manageCert } from '../src/manageCert.js'
 import { Workspace } from '../public/js/turtle/Workspace.js'
 import { fsSync } from '../src/fsSync.js'
+
+/**
+ * @typedef {import('../public/js/turtle/TurtleBranch.js').TurtleBranch} TurtleBranch
+ */
 
 program
   .name('turtledb-com')
@@ -27,6 +31,7 @@ program
   .option('-n, --fsname <name...>', 'names of directories to sync from', [])
   .option('-j, --jspath <path...>', 'JSONpaths of javascript object properties to sync to', [])
   .option('-t, --turtle <name...>', 'names of turtles to sync to', [])
+  .option('-b, --base <name>', 'base directory for otherwise unspecified assets', 'public')
   .option('-r, --root <path>', 'root directory of web server static assets', '')
   .option('-p, --port <number>', 'web server port number', x => +x, 8080)
   .option('-o, --origin-host <path>', 'path to server to sync with', '')
@@ -40,10 +45,11 @@ program
 const options = program.opts()
 options.username ??= question('username: ')
 options.password ??= question('password: ', { hideEchoBack: true })
-const { username, password, s3EndPoint, s3Region, s3Bucket, s3AccessKeyId, s3SecretAccessKey, fsdir, fsname, jspath, turtle, root, port, originHost, originPort, https, insecure, certpath, interactive } = options
+const { username, password, s3EndPoint, s3Region, s3Bucket, s3AccessKeyId, s3SecretAccessKey, fsdir, fsname, jspath, turtle, base, root, port, originHost, originPort, https, insecure, certpath, interactive } = options
 
 console.log(https)
 
+/** @type {Object.<string, TurtleBranch>} */
 const turtleRegistry = proxyWithRecaller({})
 
 const signer = new Signer(username, password)
@@ -64,8 +70,9 @@ if (interactive) {
 for (let i = 0; i < Math.max(fsdir.length, fsname.length); ++i) {
   const path = fsdir[i] ?? fsname[i]
   const name = fsname[i] ?? fsdir[i]
+  const { publicKey } = await signer.makeKeysFor(name)
   const workspace = new Workspace(name, signer)
-  turtleRegistry[name] = workspace.committedBranch
+  turtleRegistry[publicKey] = workspace.committedBranch
   fsSync(workspace, path, jspath[i])
 }
 
@@ -82,6 +89,50 @@ if (port) {
     console.log(req.method, req.url)
     next()
   })
+  const basekey = await signer.makeKeysFor(base)
+  app.use((req, res, next) => {
+    const matchGroups = req.url.match(/\/(?<publiKey>[0-9A-Za-z]{41,51})\/(?<relativePath>.*)$/)?.groups
+    const type = extname(req.url)
+    if (matchGroups) {
+      const { publiKey, relativePath } = matchGroups
+      const turtle = turtleRegistry[publiKey]
+      if (!turtle) return next()
+      const body = turtle.lookup('document', 'value', 'fs', relativePath)
+      if (!body) return next()
+      res.type(type)
+      res.send(body)
+    } else if (req.url.match(/^\/$|^\/index.html?$/)) {
+      res.set('Content-Type', 'text/html')
+      res.send(
+`
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ALL YOUR TURTLE ARE BELONG TO US.</title>
+    <base href="${basekey.publicKey}/"/>
+    <script type="module" src="index.js"></script>
+    <link rel="manifest" href="index.webmanifest" />
+    <link rel="icon" href="svg/tinker.svg" />
+  </head>
+
+  <body style="margin: 0; background: dimgray;">
+    <p>
+      loading the turtle that will load the turtles that will load the
+      turtles...
+    </p>
+  </body>
+</html>
+`
+      )
+    } else {
+      next()
+    }
+  })
+  const fullpath = join(process.cwd(), 'public')
+  app.use(express.static(fullpath))
+
   let server
   if (https || insecure) {
     if (insecure) process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0'
