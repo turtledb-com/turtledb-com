@@ -50,7 +50,6 @@ export class TurtleBranchMultiplexer extends TurtleTalker {
   }
 
   /**
-   *
    * @param {string} name
    * @param {string} publicKey
    * @returns {TurtleBranchUpdater}

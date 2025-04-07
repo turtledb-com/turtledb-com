@@ -14,6 +14,9 @@ import { manageCert } from '../src/manageCert.js'
 import { Workspace } from '../public/js/turtle/Workspace.js'
 import { fsSync } from '../src/fsSync.js'
 import { TurtleBranchMultiplexer } from '../public/js/turtle/connections/TurtleBranchMultiplexer.js'
+import { webSync } from '../src/webSync.js'
+import { Recaller } from '../public/js/utils/Recaller.js'
+import { s3Sync } from '../src/s3Sync.js'
 
 /**
  * @typedef {import('../public/js/turtle/TurtleBranch.js').TurtleBranch} TurtleBranch
@@ -49,9 +52,11 @@ options.password ??= question('password: ', { hideEchoBack: true })
 const { username, password, s3EndPoint, s3Region, s3Bucket, s3AccessKeyId, s3SecretAccessKey, fsdir, fsname, jspath, turtle, base, root, port, originHost, originPort, https, insecure, certpath, interactive } = options
 
 console.log(https)
+console.log(options)
 
+const recaller = new Recaller('turtledb-com')
 /** @type {Object.<string, TurtleBranch>} */
-const turtleRegistry = proxyWithRecaller({})
+const turtleRegistry = proxyWithRecaller({}, recaller)
 
 const signer = new Signer(username, password)
 
@@ -81,98 +86,10 @@ if (s3EndPoint || s3Region || s3Bucket || s3AccessKeyId || s3SecretAccessKey) {
   if (!s3EndPoint || !s3Region || !s3Bucket || !s3AccessKeyId || !s3SecretAccessKey) {
     throw new Error('--s3-end-point, --s3-region, --s3-bucket, --s3-access-key-id, and --s3-secret-access-key must all be set to connect to s3')
   }
+  s3Sync(turtleRegistry, recaller)
   // const connectionToS3 = new S3Connection('connectionToS3', peer, s3EndPoint, s3Region, s3Bucket, s3AccessKeyId, s3SecretAccessKey)
 }
 
 if (port) {
-  const app = express()
-  app.use((req, _res, next) => {
-    console.log(req.method, req.url)
-    next()
-  })
-  const basekey = await signer.makeKeysFor(base)
-  app.use((req, res, next) => {
-    const matchGroups = req.url.match(/\/(?<publiKey>[0-9A-Za-z]{41,51})\/(?<relativePath>.*)$/)?.groups
-    const type = extname(req.url)
-    if (matchGroups) {
-      const { publiKey, relativePath } = matchGroups
-      const turtle = turtleRegistry[publiKey]
-      if (!turtle) return next()
-      const body = turtle.lookup('document', 'value', 'fs', relativePath)
-      if (!body) return next()
-      res.type(type)
-      res.send(body)
-    } else if (req.url.match(/^\/$|^\/index.html?$/)) {
-      res.set('Content-Type', 'text/html')
-      res.send(
-`
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>ALL YOUR TURTLE ARE BELONG TO US.</title>
-    <base href="${basekey.publicKey}/"/>
-    <script type="module" src="index.js"></script>
-    <link rel="manifest" href="index.webmanifest" />
-    <link rel="icon" href="svg/tinker.svg" />
-  </head>
-
-  <body style="margin: 0; background: dimgray;">
-    <p>
-      loading the turtle that will load the turtles that will load the
-      turtles...
-    </p>
-  </body>
-</html>
-`
-      )
-    } else {
-      next()
-    }
-  })
-  const fullpath = join(process.cwd(), 'public')
-  app.use(express.static(fullpath))
-
-  let server
-  if (https || insecure) {
-    if (insecure) process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0'
-    const fullcertpath = join(process.cwd(), certpath)
-    const certOptions = await manageCert(fullcertpath)
-    server = createHttpsServer(certOptions, app)
-  } else {
-    server = createHttpServer(app)
-  }
-
-  const wss = new WebSocketServer({ server })
-  // const recaller = new Recaller('webserver')
-  // let count = 0
-
-  wss.on('connection', ws => {
-    console.log('new connection attempt')
-    const tbMux = new TurtleBranchMultiplexer('server tbMux to ws')
-    tbMux.getTurtleBranchUpdater('public', basekey.publicKey, turtleRegistry[basekey.publicKey])
-    ws.on('message', buffer => tbMux.incomingBranch.append(new Uint8Array(buffer)))
-    let lastIndex = -1
-    tbMux.recaller.watch('webclient tbMux to ws', () => {
-      while (tbMux.outgoingBranch.index > lastIndex) {
-        ++lastIndex
-        ws.send(tbMux.outgoingBranch.u8aTurtle.getAncestorByIndex(lastIndex).uint8Array.buffer)
-      }
-    })
-    /*
-    const peer = new Peer(`[webserver.js to wss-connection#${count++}]`, recaller)
-    const connectionCycle = (receive, setSend) => new Promise((resolve, reject) => {
-      ws.on('message', buffer => receive(new Uint8Array(buffer)))
-      ws.onclose = resolve
-      ws.onerror = reject
-      setSend(uint8Array => ws.send(uint8Array.buffer))
-    })
-    attachPeerToCycle(peer, connectionCycle)
-    */
-  })
-
-  server.listen(port, () => {
-    console.log(`webserver started: ${(https || insecure) ? 'https' : 'http'}://localhost:${port}`)
-  })
+  webSync(port, signer, base, turtleRegistry, https, insecure, certpath)
 }
