@@ -23,7 +23,7 @@ export class TurtleTalker {
     this.incomingBranch = new TurtleBranch(`${name}.incomingBranch`, recaller)
   }
 
-  /** @param {TurtleBranch} connection */
+  /** @param {TurtleTalk|TurtleBranch} connection */
   connect (connection) {
     this.makeReadableStream().pipeTo(connection.makeWritableStream())
     connection.makeReadableStream().pipeTo(this.makeWritableStream())

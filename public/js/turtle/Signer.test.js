@@ -1,5 +1,5 @@
 import { globalRunner, urlToName } from '../../test/Runner.js'
-import { Signer, verifyTurtleCommit } from './Signer.js'
+import { Signer, verifyCommitU8a, verifyTurtleCommit } from './Signer.js'
 import { squashTurtle, U8aTurtle } from './U8aTurtle.js'
 import { OPAQUE_UINT8ARRAY } from './codecs/codec.js'
 
@@ -18,6 +18,8 @@ globalRunner.describe(urlToName(import.meta.url), suite => {
     const committedTurtle = u8aTurtle
     assert.equal(committedTurtle.lookup().document, u8Array)
     const keys = await signer.makeKeysFor(name)
+    const verification0 = await verifyCommitU8a(keys.publicKey, u8aTurtle.getAncestorByIndex(0).uint8Array)
+    assert.assert(verification0)
     const verification = await verifyTurtleCommit(committedTurtle, keys.publicKey)
     assert.assert(verification)
 
@@ -30,5 +32,8 @@ globalRunner.describe(urlToName(import.meta.url), suite => {
     assert.equal(u8aTurtle.lookup().document, u8Array2)
     const verification2 = await verifyTurtleCommit(u8aTurtle, keys.publicKey)
     assert.assert(verification2)
+
+    const verification3 = await verifyCommitU8a(keys.publicKey, u8aTurtle.uint8Array, u8aTurtle.parent.uint8Array)
+    assert.assert(verification3)
   })
 })

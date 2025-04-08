@@ -16,7 +16,9 @@ import { fsSync } from '../src/fsSync.js'
 import { TurtleBranchMultiplexer } from '../public/js/turtle/connections/TurtleBranchMultiplexer.js'
 import { webSync } from '../src/webSync.js'
 import { Recaller } from '../public/js/utils/Recaller.js'
-import { s3Sync } from '../src/s3Sync.js'
+import { s3Sync, S3Updater } from '../src/s3Sync.js'
+import { S3Client } from '@aws-sdk/client-s3'
+import { TurtleBranchUpdater } from '../public/js/turtle/connections/TurtleBranchUpdater.js'
 
 /**
  * @typedef {import('../public/js/turtle/TurtleBranch.js').TurtleBranch} TurtleBranch
@@ -86,8 +88,30 @@ if (s3EndPoint || s3Region || s3Bucket || s3AccessKeyId || s3SecretAccessKey) {
   if (!s3EndPoint || !s3Region || !s3Bucket || !s3AccessKeyId || !s3SecretAccessKey) {
     throw new Error('--s3-end-point, --s3-region, --s3-bucket, --s3-access-key-id, and --s3-secret-access-key must all be set to connect to s3')
   }
-  s3Sync(turtleRegistry, recaller)
-  // const connectionToS3 = new S3Connection('connectionToS3', peer, s3EndPoint, s3Region, s3Bucket, s3AccessKeyId, s3SecretAccessKey)
+  /** @type {import('@aws-sdk/client-s3').S3ClientConfig} */
+  const s3Client = new S3Client({
+    endpoint: s3EndPoint,
+    forcePathStyle: false,
+    region: s3Region,
+    credentials: {
+      accessKeyId: s3AccessKeyId,
+      secretAccessKey: s3SecretAccessKey
+    }
+  })
+  const s3UpdaterRegistry = {}
+  recaller.watch('s3', () => {
+    for (const publicKey in turtleRegistry) {
+      if (!s3UpdaterRegistry[publicKey]) {
+        const s3Updater = new S3Updater(publicKey, publicKey, recaller, s3Client, s3Bucket)
+        const branch = turtleRegistry[publicKey]
+        const tbUpdater = new TurtleBranchUpdater(publicKey, branch, publicKey, false, recaller)
+        s3Updater.connect(tbUpdater)
+        s3Updater.start()
+        tbUpdater.start()
+        s3UpdaterRegistry[publicKey] = { s3Updater, tbUpdater }
+      }
+    }
+  })
 }
 
 if (port) {

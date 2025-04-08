@@ -42,8 +42,8 @@ export class TurtleBranch {
         const uint8Arrays = u8aTurtle.exportUint8Arrays((this.index ?? -1) + 1)
         uint8Arrays.forEach(uint8Array => this.#broadcast(uint8Array))
       } else {
-        console.log('old', JSON.stringify(this.name), this.#u8aTurtle)
-        console.log('new', JSON.stringify(this.name), u8aTurtle)
+        // console.log('old', JSON.stringify(this.name), this.#u8aTurtle)
+        // console.log('new', JSON.stringify(this.name), u8aTurtle)
         console.warn(`TurtleBranch, ${this.name}.u8aTurtle set to non-descendant (any ReadableStreams are broken now)`)
       }
     }

@@ -1,8 +1,7 @@
 import { Recaller } from '../../utils/Recaller.js'
 import { OPAQUE_UINT8ARRAY } from '../codecs/codec.js'
-import { verifyTurtleCommit } from '../Signer.js'
+import { verifyCommitU8a } from '../Signer.js'
 import { TurtleDictionary } from '../TurtleDictionary.js'
-import { U8aTurtle } from '../U8aTurtle.js'
 import { deepEqualUint8Arrays } from '../utils.js'
 import { TurtleTalker } from './TurtleTalker.js'
 
@@ -76,11 +75,8 @@ export class AbstractUpdater extends TurtleTalker {
         }
         if (i === length) { // we don't have this one yet
           if (this.publicKey) {
-            const nextTurtle = new U8aTurtle(
-              incomingUint8Array,
-              i && new U8aTurtle(await this.getUint8Array(i - 1))
-            )
-            if (!(await verifyTurtleCommit(nextTurtle, this.publicKey))) {
+            const previousUint8Array = i && await this.getUint8Array(i - 1)
+            if (!(await verifyCommitU8a(this.publicKey, incomingUint8Array, previousUint8Array))) {
               if (this.isTrusted) {
                 incomingUint8ArrayAddresses.length = Math.max(i - 1, 0)
               }
@@ -92,7 +88,7 @@ export class AbstractUpdater extends TurtleTalker {
         }
       }
       const startingIndex = incomingUint8ArrayAddresses.length
-      if (startingIndex > 0 && this.isTrusted) {
+      if (length > 0 && startingIndex > 0 && this.isTrusted) {
         const uint8Array = await this.getUint8Array(startingIndex - 1)
         if (this.#outgoingAddressesByUint8Array.get(uint8Array) === undefined) {
           this.#outgoingAddressesByUint8Array.set(uint8Array, this.outgoingDictionary.upsert(uint8Array, [OPAQUE_UINT8ARRAY]))

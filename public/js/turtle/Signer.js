@@ -5,6 +5,7 @@ import { AS_REFS } from './codecs/CodecType.js'
 import { Commit } from './codecs/Commit.js'
 import { b36ToUint8Array, uint8ArrayToB36 } from './utils.js'
 import { combineUint8Arrays } from '../utils/combineUint8Arrays.js'
+import { U8aTurtle } from './U8aTurtle.js'
 
 /**
  * @typedef {import('./U8aTurtle.js').U8aTurtle} U8aTurtle
@@ -90,6 +91,20 @@ export async function verifyTurtleCommit (u8aTurtle, publicKey) {
   }
   const hash = await digestData(uint8Array)
   return verify(commit.signature, hash, b36ToUint8Array(publicKey))
+}
+
+/**
+ *
+ * @param {string} publicKey
+ * @param {Uint8Array} uint8Array
+ * @param {Uint8Array} [previousUint8Array]
+ */
+export function verifyCommitU8a (publicKey, uint8Array, previousUint8Array) {
+  const u8aTurtle = new U8aTurtle(
+    uint8Array,
+    previousUint8Array && new U8aTurtle(previousUint8Array)
+  )
+  return verifyTurtleCommit(u8aTurtle, publicKey)
 }
 
 const digestData = async uint8Array => {
