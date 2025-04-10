@@ -1,6 +1,5 @@
-import { GetObjectCommand, ListBucketsCommand, ListObjectsV2Command, PutObjectCommand, S3Client } from '@aws-sdk/client-s3'
+import { GetObjectCommand, ListObjectsV2Command, PutObjectCommand, S3Client } from '@aws-sdk/client-s3'
 import { AbstractUpdater } from '../public/js/turtle/connections/AbstractUpdater.js'
-import { TurtleTalker } from '../public/js/turtle/connections/TurtleTalker.js'
 import { TurtleBranchMultiplexer } from '../public/js/turtle/connections/TurtleBranchMultiplexer.js'
 import { verifyCommitU8a } from '../public/js/turtle/Signer.js'
 
@@ -25,7 +24,6 @@ export async function s3Sync (turtleRegistry, recaller, endpoint, region, access
       secretAccessKey
     }
   }
-  console.log('s3ClientConfig', s3ClientConfig)
   const s3Client = new S3Client(s3ClientConfig)
   const s3Mux = new S3Multiplexer('s3Sync', s3Client, bucket, recaller)
   recaller.watch('s3', () => {
@@ -52,9 +50,6 @@ export class S3Multiplexer extends TurtleBranchMultiplexer {
     super(name, true, recaller)
     this.s3Client = s3Client
     this.bucket = bucket
-    s3Client.send(new ListBucketsCommand({})).then(listBucketsResponse => {
-      console.log('listBucketsResponse', listBucketsResponse)
-    })
   }
 
   /**
@@ -82,7 +77,6 @@ export class S3Multiplexer extends TurtleBranchMultiplexer {
 export class S3Updater extends AbstractUpdater {
   #length
   #lengthPromise
-  #putPromises = []
   #getPromises = []
   /**
    * @param {string} name
@@ -98,6 +92,7 @@ export class S3Updater extends AbstractUpdater {
   }
 
   async getUint8ArraysLength () {
+    if (this.#length !== undefined) return this.#length
     const getExists = async index => {
       const listObjectsV2Response = await this.s3Client.send(new ListObjectsV2Command({
         ...(index ? { StartAfter: S3Updater.indexToKey(this.publicKey, index - 1) } : {}),
@@ -127,16 +122,15 @@ export class S3Updater extends AbstractUpdater {
             if (direction === 1) ++lengthGuess
           }
         }
+        this.#length = lengthGuess
+        resolve(this.#length)
       } catch (error) { reject(error) }
-      this.#length = lengthGuess
-      console.log(this.publicKey, { lengthGuess })
-      resolve(this.#length)
     }
     return this.#lengthPromise
   }
 
   async getUint8Array (index) {
-    if (this.#putPromises[index]) return this.#putPromises[index]
+    await this.getUint8ArraysLength()
     if (index >= this.#length) return
     if (!this.#getPromises[index]) {
       let resolve, reject
@@ -154,15 +148,15 @@ export class S3Updater extends AbstractUpdater {
   }
 
   async pushUint8Array (uint8Array) {
-    if (!this.#putPromises[this.#length]) {
+    await this.getUint8ArraysLength()
+    if (!this.#getPromises[this.#length]) {
       let resolve, reject
-      this.#putPromises[this.#length] = new Promise((...args) => { [resolve, reject] = args })
+      this.#getPromises[this.#length] = new Promise((...args) => { [resolve, reject] = args })
       let previousUint8Array
-      if (await this.getUint8ArraysLength() > 0) {
-        if (this.#putPromises[this.#length - 1]) await this.#putPromises[this.#length - 1]
+      if (this.#length > 0) {
         previousUint8Array = await this.getUint8Array(this.#length - 1)
       }
-      const verified = verifyCommitU8a(this.publicKey, uint8Array, previousUint8Array)
+      const verified = await verifyCommitU8a(this.publicKey, uint8Array, previousUint8Array)
       if (!verified) throw new Error('bad signature')
       try {
         await this.s3Client.send(new PutObjectCommand({
@@ -170,12 +164,11 @@ export class S3Updater extends AbstractUpdater {
           Body: uint8Array,
           Key: S3Updater.indexToKey(this.publicKey, this.#length)
         }))
+        ++this.#length
+        resolve(uint8Array)
       } catch (error) { reject(error) }
-      this.#getPromises[this.#length] = uint8Array
-      ++this.#length
-      resolve(uint8Array)
     }
-    return this.#putPromises[this.#length]
+    return this.#getPromises[this.#length]
   }
 
   static indexToKey = (compactPublicKey, index) => `${compactPublicKey}/${`000000${index.toString(32)}`.slice(-6)}`

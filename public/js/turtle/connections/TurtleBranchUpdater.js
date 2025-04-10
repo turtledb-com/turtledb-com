@@ -20,7 +20,7 @@ export class TurtleBranchUpdater extends AbstractUpdater {
     this.turtleBranch.recaller.watch(name, () => {
       if (this.turtleBranch.u8aTurtle !== lastU8aTurtle) {
         const incomingUint8ArrayAddresses = this.incomingBranch.lookup()?.uint8ArrayAddresses
-        if (incomingUint8ArrayAddresses?.length && !this.turtleBranch.u8aTurtle.hasAncestor(lastU8aTurtle)) {
+        if (incomingUint8ArrayAddresses?.length && !this.turtleBranch.u8aTurtle?.hasAncestor?.(lastU8aTurtle)) {
           const commonAncestor = findCommonAncestor(lastU8aTurtle, this.turtleBranch.u8aTurtle)
           if (commonAncestor) {
             incomingUint8ArrayAddresses.length = Math.min(incomingUint8ArrayAddresses.length, commonAncestor.index + 1)
