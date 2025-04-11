@@ -54,8 +54,7 @@ options.username ??= question('username: ')
 options.password ??= question('password: ', { hideEchoBack: true })
 const { username, password, s3EndPoint, s3Region, s3Bucket, s3AccessKeyId, s3SecretAccessKey, nos3, fsdir, fsname, jspath, turtle, base, root, port, originHost, originPort, https, insecure, certpath, interactive } = options
 
-console.log(https)
-console.log(options)
+// console.log(options)
 
 const recaller = new Recaller('turtledb-com')
 /** @type {Object.<string, TurtleBranch>} */

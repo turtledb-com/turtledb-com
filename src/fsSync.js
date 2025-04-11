@@ -22,7 +22,7 @@ export function fsSync (workspace, root = workspace.name, jspath = 'fs') {
   let commitDebounce
   const getPathHandlerFor = action => async path => {
     const relativePath = relative(root, path)
-    console.log(workspace.name, action, relativePath, jsobj)
+    // console.log(workspace.name, action, relativePath)
     const alreadyRunning = Object.hasOwn(nextActionByPath, relativePath)
     nextActionByPath[relativePath] = action
     if (alreadyRunning) return
@@ -55,6 +55,7 @@ export function fsSync (workspace, root = workspace.name, jspath = 'fs') {
         const valueAsRefs = workspace.lookup('document', 'value', AS_REFS) || {}
         valueAsRefs[jspath] = workspace.upsert(jsobj, undefined, AS_REFS)
         const valueAddress = workspace.upsert(valueAsRefs, undefined, AS_REFS)
+        console.log('fs commit from local changes debounce')
         await workspace.commit(valueAddress, 'chokidar.watch', true)
       }, 500) // delay should take longer than the commit
     }
@@ -66,6 +67,7 @@ export function fsSync (workspace, root = workspace.name, jspath = 'fs') {
   workspace.committedBranch.recaller.watch(`fsSync"${root}"`, () => {
     const paths = workspace.committedBranch.lookup('document', 'value', jspath, AS_REFS)
     if (!paths) return
+    console.log('fs update from workspace.committedBranch')
     for (const path in jsobj) {
       if (!paths[path]) {
         const handleRemovedValue = getPathHandlerFor(UPDATED_VALUE)

@@ -58,7 +58,7 @@ export class AbstractUpdater extends TurtleTalker {
         const i = +indexString
         const incomingAddress = incomingUint8ArrayAddresses[i]
         const incomingUint8Array = this.incomingBranch.lookup(incomingAddress)
-        console.log({ incomingUint8ArrayAddresses })
+        console.log(this.name, { incomingUint8ArrayAddresses })
         if (i < length) { // we should already have this one
           const ourUint8Array = await this.getUint8Array(i)
           if (this.#incomingUint8ArraysByAddress[incomingAddress] === undefined && deepEqualUint8Arrays(ourUint8Array, incomingUint8Array)) {
