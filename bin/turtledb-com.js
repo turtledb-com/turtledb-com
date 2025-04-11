@@ -19,6 +19,7 @@ import { Recaller } from '../public/js/utils/Recaller.js'
 import { s3Sync, S3Updater } from '../src/s3Sync.js'
 import { S3Client } from '@aws-sdk/client-s3'
 import { TurtleBranchUpdater } from '../public/js/turtle/connections/TurtleBranchUpdater.js'
+import { TurtleBranch } from '../public/js/turtle/TurtleBranch.js'
 
 /**
  * @typedef {import('../public/js/turtle/TurtleBranch.js').TurtleBranch} TurtleBranch
@@ -59,6 +60,12 @@ const { username, password, s3EndPoint, s3Region, s3Bucket, s3AccessKeyId, s3Sec
 const recaller = new Recaller('turtledb-com')
 /** @type {Object.<string, TurtleBranch>} */
 const turtleRegistry = proxyWithRecaller({}, recaller)
+const getSettledTurtleBranch = async (publicKey) => {
+  if (!turtleRegistry[publicKey]) {
+    turtleRegistry[publicKey] = new TurtleBranch(`turtledb-com publicKey: ${publicKey}`, recaller)
+  }
+  return turtleRegistry[publicKey]
+}
 
 const signer = new Signer(username, password)
 
@@ -102,9 +109,9 @@ if (!nos3 && (s3EndPoint || s3Region || s3Bucket || s3AccessKeyId || s3SecretAcc
   recaller.watch('s3', () => {
     for (const publicKey in turtleRegistry) {
       if (!s3UpdaterRegistry[publicKey]) {
-        const s3Updater = new S3Updater(publicKey, publicKey, recaller, s3Client, s3Bucket)
+        const s3Updater = new S3Updater(`s3Updater"${publicKey}"`, publicKey, recaller, s3Client, s3Bucket)
         const branch = turtleRegistry[publicKey]
-        const tbUpdater = new TurtleBranchUpdater(publicKey, branch, publicKey, false, recaller)
+        const tbUpdater = new TurtleBranchUpdater(`tbUpdater"${publicKey}"`, branch, publicKey, false, recaller)
         s3Updater.connect(tbUpdater)
         s3Updater.start()
         tbUpdater.start()

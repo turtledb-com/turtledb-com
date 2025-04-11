@@ -42,6 +42,10 @@ export function fsSync (workspace, root = workspace.name, jspath = 'fs') {
             delete jsobj[relativePath]
           } else {
             const file = workspace.committedBranch.lookup('document', 'value', jspath, relativePath)
+            if (!file) {
+              console.log(workspace.committedBranch.lookup('document', 'value', jspath))
+              throw new Error(`no file found at ${relativePath}`)
+            }
             await writeFile(path, file, 'utf8')
             jsobj[relativePath] = newAddress
           }
@@ -67,18 +71,21 @@ export function fsSync (workspace, root = workspace.name, jspath = 'fs') {
   workspace.committedBranch.recaller.watch(`fsSync"${root}"`, () => {
     const paths = workspace.committedBranch.lookup('document', 'value', jspath, AS_REFS)
     if (!paths) return
-    console.log('fs update from workspace.committedBranch')
+    let changed = false
     for (const path in jsobj) {
       if (!paths[path]) {
+        changed = true
         const handleRemovedValue = getPathHandlerFor(UPDATED_VALUE)
         handleRemovedValue(join(root, path))
       }
     }
     for (const path in paths) {
       if (paths[path] !== jsobj[path]) {
+        changed = true
         const handleUpdatedValue = getPathHandlerFor(UPDATED_VALUE)
         handleUpdatedValue(join(root, path))
       }
     }
+    if (changed) console.log('fs update from workspace.committedBranch')
   })
 }
