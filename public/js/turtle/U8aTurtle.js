@@ -116,10 +116,6 @@ export class U8aTurtle {
     if (address instanceof Uint8Array) return address
     u8aTurtle = u8aTurtle.getAncestorByAddress(address)
     const codecVersion = codec.getCodecTypeVersion(u8aTurtle.getByte(address))
-    if (!codecVersion) {
-      console.error(this)
-      throw new Error(`no CodecVersion found at #${address}, found: (${u8aTurtle.getByte(address)})`)
-    }
     return codecVersion.decode(u8aTurtle, address, options)
   }
 

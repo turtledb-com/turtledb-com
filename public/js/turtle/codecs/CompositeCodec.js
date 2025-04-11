@@ -28,7 +28,14 @@ export class CompositeCodec {
     return { uint8Array, codecType }
   }
 
-  getCodecTypeVersion (footer) { return this.codecTypeVersionsByFooter[footer] }
+  getCodecTypeVersion (footer) {
+    const codecVersion = this.codecTypeVersionsByFooter[footer]
+    if (!codecVersion) {
+      throw new Error(`getCodecTypeVersion failed for footer: ${footer}`)
+    }
+    return codecVersion
+  }
+
   getCodecType (name) { return this.codecTypesByName[name] }
   deriveFooter (codecType, versionArrays) {
     const footerByCombinedVersions = this.footerByCodecTypeAndCombinedVersions.get(codecType)
