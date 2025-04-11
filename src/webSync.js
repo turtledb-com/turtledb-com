@@ -15,9 +15,14 @@ export async function webSync (port, signer, base, turtleRegistry, https, insecu
   const basekey = await signer.makeKeysFor(base)
   app.use((req, res, next) => {
     const matchGroups = req.url.match(/\/(?<publiKey>[0-9A-Za-z]{41,51})\/(?<relativePath>.*)$/)?.groups
-    const type = extname(req.url)
+    let type = extname(req.url)
+    console.log({ matchGroups })
     if (matchGroups) {
-      const { publiKey, relativePath } = matchGroups
+      let { publiKey, relativePath } = matchGroups
+      if (!relativePath.length || relativePath.endsWith('/')) {
+        type = 'html'
+        relativePath = `${relativePath}index.html`
+      }
       const turtle = turtleRegistry[publiKey]
       if (!turtle) return next()
       const body = turtle.lookup('document', 'value', 'fs', relativePath)

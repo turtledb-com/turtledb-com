@@ -19,9 +19,10 @@ const UPDATED_VALUE = 'updated value'
 export function fsSync (workspace, root = workspace.name, jspath = 'fs') {
   const nextActionByPath = {}
   const jsobj = workspace.lastCommitValue?.[jspath] ?? {}
+  let commitDebounce
   const getPathHandlerFor = action => async path => {
     const relativePath = relative(root, path)
-    console.log(workspace.name, action, relativePath)
+    console.log(workspace.name, action, relativePath, jsobj)
     const alreadyRunning = Object.hasOwn(nextActionByPath, relativePath)
     nextActionByPath[relativePath] = action
     if (alreadyRunning) return
@@ -49,10 +50,13 @@ export function fsSync (workspace, root = workspace.name, jspath = 'fs') {
     }
     delete nextActionByPath[relativePath]
     if (!Object.keys(nextActionByPath).length) {
-      const valueAsRefs = workspace.lookup('document', 'value', AS_REFS) || {}
-      valueAsRefs[jspath] = workspace.upsert(jsobj, undefined, AS_REFS)
-      const valueAddress = workspace.upsert(valueAsRefs, undefined, AS_REFS)
-      await workspace.commit(valueAddress, 'chokidar.watch', true)
+      clearTimeout(commitDebounce)
+      commitDebounce = setTimeout(async () => {
+        const valueAsRefs = workspace.lookup('document', 'value', AS_REFS) || {}
+        valueAsRefs[jspath] = workspace.upsert(jsobj, undefined, AS_REFS)
+        const valueAddress = workspace.upsert(valueAsRefs, undefined, AS_REFS)
+        await workspace.commit(valueAddress, 'chokidar.watch', true)
+      }, 500) // delay should take longer than the commit
     }
   }
   watch(root, { ignored })
@@ -64,14 +68,14 @@ export function fsSync (workspace, root = workspace.name, jspath = 'fs') {
     if (!paths) return
     for (const path in jsobj) {
       if (!paths[path]) {
-        const removedValueHandler = getPathHandlerFor(UPDATED_VALUE)
-        removedValueHandler(join(root, path))
+        const handleRemovedValue = getPathHandlerFor(UPDATED_VALUE)
+        handleRemovedValue(join(root, path))
       }
     }
     for (const path in paths) {
       if (paths[path] !== jsobj[path]) {
-        const updatedValueHandler = getPathHandlerFor(UPDATED_VALUE)
-        updatedValueHandler(join(root, path))
+        const handleUpdatedValue = getPathHandlerFor(UPDATED_VALUE)
+        handleUpdatedValue(join(root, path))
       }
     }
   })

@@ -33,6 +33,7 @@ program
   .addOption(new Option('--s3-bucket <string>', 'bucket for s3').env('TURTLEDB_S3_BUCKET'))
   .addOption(new Option('--s3-access-key-id <string>', 'accessKeyId for s3').env('TURTLEDB_S3_ACCESS_KEY_ID'))
   .addOption(new Option('--s3-secret-access-key <string>', 'secretAccessKey for s3').env('TURTLEDB_S3_SECRET_ACCESS_KEY'))
+  .option('--nos3', 'disable S3', false)
   .option('-f, --fsdir <path...>', 'file paths of directories to sync from', [])
   .option('-n, --fsname <name...>', 'names of directories to sync from', [])
   .option('-j, --jspath <path...>', 'JSONpaths of javascript object properties to sync to', [])
@@ -51,7 +52,7 @@ program
 const options = program.opts()
 options.username ??= question('username: ')
 options.password ??= question('password: ', { hideEchoBack: true })
-const { username, password, s3EndPoint, s3Region, s3Bucket, s3AccessKeyId, s3SecretAccessKey, fsdir, fsname, jspath, turtle, base, root, port, originHost, originPort, https, insecure, certpath, interactive } = options
+const { username, password, s3EndPoint, s3Region, s3Bucket, s3AccessKeyId, s3SecretAccessKey, nos3, fsdir, fsname, jspath, turtle, base, root, port, originHost, originPort, https, insecure, certpath, interactive } = options
 
 console.log(https)
 console.log(options)
@@ -84,7 +85,7 @@ for (let i = 0; i < Math.max(fsdir.length, fsname.length); ++i) {
   fsSync(workspace, path, jspath[i])
 }
 
-if (s3EndPoint || s3Region || s3Bucket || s3AccessKeyId || s3SecretAccessKey) {
+if (!nos3 && (s3EndPoint || s3Region || s3Bucket || s3AccessKeyId || s3SecretAccessKey)) {
   if (!s3EndPoint || !s3Region || !s3Bucket || !s3AccessKeyId || !s3SecretAccessKey) {
     throw new Error('--s3-end-point, --s3-region, --s3-bucket, --s3-access-key-id, and --s3-secret-access-key must all be set to connect to s3')
   }
