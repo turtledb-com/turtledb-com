@@ -20,6 +20,7 @@ import { s3Sync, S3Updater } from '../src/s3Sync.js'
 import { S3Client } from '@aws-sdk/client-s3'
 import { TurtleBranchUpdater } from '../public/js/turtle/connections/TurtleBranchUpdater.js'
 import { TurtleBranch } from '../public/js/turtle/TurtleBranch.js'
+import { AS_REFS } from '../public/js/turtle/codecs/CodecType.js'
 
 /**
  * @typedef {import('../public/js/turtle/TurtleBranch.js').TurtleBranch} TurtleBranch
@@ -75,6 +76,7 @@ if (interactive) {
   global.TurtleDictionary = TurtleDictionary
   global.Signer = Signer
   global.Workspace = Workspace
+  global.AS_REFS = AS_REFS
   const replServer = start({ breakEvalOnSigint: true })
   replServer.setupHistory('.node_repl_history', err => {
     if (err) console.error(err)

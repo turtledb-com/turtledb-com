@@ -17,30 +17,29 @@ const REMOVED_FILE = 'removed file'
  */
 export function fsSync (workspace, root = workspace.name, jspath = 'fs') {
   let skipCommit = false
-  let greenLightPromise
-  const greenLight = async () => {
-    const previousPromise = greenLightPromise
-    let resolve
-    greenLightPromise = new Promise((...args) => { [resolve] = args })
+  let nextTurnPromise
+  const nextTurn = async () => {
+    const previousPromise = nextTurnPromise
+    let endTurn
+    nextTurnPromise = new Promise((...args) => { [endTurn] = args })
     await previousPromise
-    return resolve
+    return endTurn
   }
   const nextActionByPath = {}
-  const jsobj = workspace.committedBranch.lookup('document', 'value', jspath, AS_REFS) ?? {}
+  let jsobj = workspace.committedBranch.lookup('document', 'value', jspath) ?? {}
   let commitDebounce
   const getPathHandlerFor = action => async path => {
     const relativePath = relative(root, path)
-    console.log(workspace.name, action, relativePath)
+    // console.log(workspace.name, action, relativePath)
     const alreadyRunning = Object.hasOwn(nextActionByPath, relativePath)
     nextActionByPath[relativePath] = action
     if (alreadyRunning) return
-    const endGreenLight = await greenLight()
+    const endTurn = await nextTurn()
     while (nextActionByPath[relativePath]) {
       action = nextActionByPath[relativePath]
       nextActionByPath[relativePath] = null
       if (action === UPDATED_FILE) {
-        const file = await readFile(path, 'utf8')
-        jsobj[relativePath] = workspace.upsert(file)
+        jsobj[relativePath] = await readFile(path, 'utf8')
       } else if (action === REMOVED_FILE) {
         delete jsobj[relativePath]
       }
@@ -49,17 +48,20 @@ export function fsSync (workspace, root = workspace.name, jspath = 'fs') {
     if (!Object.keys(nextActionByPath).length) {
       clearTimeout(commitDebounce)
       commitDebounce = setTimeout(async () => {
-        const valueAsRefs = workspace.lookup('document', 'value', AS_REFS) || {}
-        valueAsRefs[jspath] = workspace.upsert(jsobj, undefined, AS_REFS)
-        const valueAddress = workspace.upsert(valueAsRefs, undefined, AS_REFS)
-        console.log('fs commit from local changes debounce', jsobj)
         if (!skipCommit) {
-          await workspace.commit(valueAddress, 'chokidar.watch', true)
+          const valueAsRefs = workspace.lookup('document', 'value', AS_REFS) || {}
+          const previousAddress = valueAsRefs[jspath]
+          valueAsRefs[jspath] = workspace.upsert(jsobj)
+          if (valueAsRefs[jspath] !== previousAddress) {
+            const valueAddress = workspace.upsert(valueAsRefs, undefined, AS_REFS)
+            console.log('fs commit from local changes commit', valueAddress)
+            await workspace.commit(valueAddress, 'chokidar.watch', true)
+          }
         }
-        endGreenLight()
+        endTurn()
       }, 500) // delay should take longer than the commit
     } else {
-      endGreenLight()
+      endTurn()
     }
   }
   watch(root, { ignored })
@@ -69,35 +71,27 @@ export function fsSync (workspace, root = workspace.name, jspath = 'fs') {
   workspace.committedBranch.recaller.watch(`fsSync"${root}"`, async () => {
     skipCommit = true
     workspace.committedBranch.lookup() // trigger recaller
-    const endGreenLight = await greenLight()
-    const newJsobj = workspace.committedBranch.lookup('document', 'value', jspath, AS_REFS)
+    const endTurn = await nextTurn()
+    const newJsobj = workspace.committedBranch.lookup('document', 'value', jspath)
     if (newJsobj) {
-      const promises = []
-      for (const path in jsobj) {
-        if (!newJsobj[path]) {
-          promises.push(unlink(join(root, path)))
+      const changes = []
+      for (const relativePath in jsobj) {
+        const path = join(root, relativePath)
+        if (newJsobj[relativePath] === undefined) {
+          changes.push(unlink(path))
         }
       }
-      for (const path in newJsobj) {
-        if (newJsobj[path] !== jsobj[path]) {
-          const relativePath = join(root, path)
-          const newAddress = workspace.committedBranch.lookup('document', 'value', jspath, AS_REFS)?.[relativePath]
-          if (!newAddress) {
-            console.error(workspace.committedBranch.lookup('document', 'value', jspath, AS_REFS))
-            throw new Error(`no address found at ${relativePath}`)
-          }
-          const file = workspace.committedBranch.lookup('document', 'value', jspath, relativePath)
-          if (!file) {
-            console.error(workspace.committedBranch.lookup('document', 'value', jspath, AS_REFS))
-            throw new Error(`no file found at relativePath: ${relativePath}, address: ${newAddress}`)
-          }
-          promises.push(writeFile(relativePath, file))
+      for (const relativePath in newJsobj) {
+        const path = join(root, relativePath)
+        if (newJsobj[relativePath] !== jsobj[relativePath]) {
+          changes.push(writeFile(path, newJsobj[relativePath]))
         }
       }
-      if (promises.length) console.log('fs update from workspace.committedBranch', workspace.lookup('document', 'value', jspath, AS_REFS), promises.length)
-      await Promise.all(promises)
+      if (changes.length) console.log('fs update from workspace.committedBranch, changes.length', changes.length)
+      await Promise.all(changes)
+      jsobj = newJsobj
     }
     skipCommit = false
-    endGreenLight()
+    endTurn()
   })
 }
