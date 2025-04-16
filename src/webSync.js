@@ -9,14 +9,14 @@ import { TurtleBranchMultiplexer } from '../public/js/turtle/connections/TurtleB
 export async function webSync (port, signer, base, turtleRegistry, https, insecure, certpath) {
   const app = express()
   app.use((req, _res, next) => {
-    console.log(req.method, req.url)
+    // console.log(req.method, req.url)
     next()
   })
   const basekey = await signer.makeKeysFor(base)
   app.use((req, res, next) => {
     const matchGroups = req.url.match(/\/(?<publiKey>[0-9A-Za-z]{41,51})\/(?<relativePath>.*)$/)?.groups
     let type = extname(req.url)
-    console.log({ matchGroups })
+    // console.log({ matchGroups })
     if (matchGroups) {
       let { publiKey, relativePath } = matchGroups
       if (!relativePath.length || relativePath.endsWith('/')) {
@@ -76,27 +76,26 @@ export async function webSync (port, signer, base, turtleRegistry, https, insecu
   // let count = 0
 
   wss.on('connection', ws => {
-    console.log('new connection attempt')
+    console.log('new connection')
     const tbMux = new TurtleBranchMultiplexer('server tbMux to ws')
     tbMux.getTurtleBranchUpdater('public', basekey.publicKey, turtleRegistry[basekey.publicKey])
     ws.on('message', buffer => tbMux.incomingBranch.append(new Uint8Array(buffer)))
     let lastIndex = -1
-    tbMux.recaller.watch('webclient tbMux to ws', () => {
+    const sendChanges = () => {
       while (tbMux.outgoingBranch.index > lastIndex) {
         ++lastIndex
         ws.send(tbMux.outgoingBranch.u8aTurtle.getAncestorByIndex(lastIndex).uint8Array.buffer)
       }
+    }
+    tbMux.recaller.watch('webclient tbMux to ws', sendChanges)
+    ws.on('close', (code, reason) => {
+      console.log('connection closed', code, reason)
+      tbMux.recaller.unwatch(sendChanges)
     })
-    /*
-      const peer = new Peer(`[webserver.js to wss-connection#${count++}]`, recaller)
-      const connectionCycle = (receive, setSend) => new Promise((resolve, reject) => {
-        ws.on('message', buffer => receive(new Uint8Array(buffer)))
-        ws.onclose = resolve
-        ws.onerror = reject
-        setSend(uint8Array => ws.send(uint8Array.buffer))
-      })
-      attachPeerToCycle(peer, connectionCycle)
-      */
+    ws.on('error', error => {
+      console.error('connection error', error.name, error.message)
+      tbMux.recaller.unwatch(sendChanges)
+    })
   })
 
   server.listen(port, () => {
