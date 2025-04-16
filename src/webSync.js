@@ -6,24 +6,23 @@ import { createServer as createHttpServer } from 'http'
 import { WebSocketServer } from 'ws'
 import { TurtleBranchMultiplexer } from '../public/js/turtle/connections/TurtleBranchMultiplexer.js'
 
-export async function webSync (port, signer, base, turtleRegistry, https, insecure, certpath) {
+export async function webSync (port, basePublicKey, getTurtleBranchByPublicKey, https, insecure, certpath) {
   const app = express()
   app.use((req, _res, next) => {
     // console.log(req.method, req.url)
     next()
   })
-  const basekey = await signer.makeKeysFor(base)
-  app.use((req, res, next) => {
-    const matchGroups = req.url.match(/\/(?<publiKey>[0-9A-Za-z]{41,51})\/(?<relativePath>.*)$/)?.groups
+  app.use(async (req, res, next) => {
+    const matchGroups = req.url.match(/\/(?<urlPublicKey>[0-9A-Za-z]{41,51})\/(?<relativePath>.*)$/)?.groups
     let type = extname(req.url)
     // console.log({ matchGroups })
     if (matchGroups) {
-      let { publiKey, relativePath } = matchGroups
+      let { urlPublicKey, relativePath } = matchGroups
       if (!relativePath.length || relativePath.endsWith('/')) {
         type = 'html'
         relativePath = `${relativePath}index.html`
       }
-      const turtle = turtleRegistry[publiKey]
+      const turtle = await getTurtleBranchByPublicKey(urlPublicKey)
       if (!turtle) return next()
       const body = turtle.lookup('document', 'value', 'fs', relativePath)
       if (!body) return next()
@@ -39,7 +38,7 @@ export async function webSync (port, signer, base, turtleRegistry, https, insecu
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>ALL YOUR TURTLE ARE BELONG TO US.</title>
-    <base href="${basekey.publicKey}/"/>
+    <base href="${basePublicKey}/"/>
     <script type="module" src="index.js"></script>
     <link rel="manifest" href="index.webmanifest" />
     <link rel="icon" href="svg/tinker.svg" />
@@ -75,10 +74,10 @@ export async function webSync (port, signer, base, turtleRegistry, https, insecu
   // const recaller = new Recaller('webserver')
   // let count = 0
 
-  wss.on('connection', ws => {
+  wss.on('connection', async ws => {
     console.log('new connection')
     const tbMux = new TurtleBranchMultiplexer('server tbMux to ws')
-    tbMux.getTurtleBranchUpdater('public', basekey.publicKey, turtleRegistry[basekey.publicKey])
+    tbMux.getTurtleBranchUpdater('public', basePublicKey, await getTurtleBranchByPublicKey(basePublicKey))
     ws.on('message', buffer => tbMux.incomingBranch.append(new Uint8Array(buffer)))
     let lastIndex = -1
     const sendChanges = () => {

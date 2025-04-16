@@ -38,14 +38,14 @@ export class TurtleBranchUpdater extends AbstractUpdater {
   get settle () {
     let resolve
     const settlePromise = new Promise((...args) => { [resolve] = args })
-    this.turtleBranch.recaller.watch(`TBMux"${this.name}".settle`, () => {
+    const checkSettle = () => {
       const incoming = this.incomingBranch.lookup()
-      console.log(incoming, this.turtleBranch.index)
       if (this.turtleBranch.index + 1 >= incoming?.uint8ArrayAddresses?.length) {
-        console.log('resolving')
+        this.turtleBranch.recaller.unwatch(checkSettle)
         resolve()
       }
-    })
+    }
+    this.turtleBranch.recaller.watch(`TBMux"${this.name}".settle`, checkSettle)
     return settlePromise
   }
 
@@ -53,6 +53,5 @@ export class TurtleBranchUpdater extends AbstractUpdater {
   async setUint8ArraysLength (length) { this.turtleBranch.u8aTurtle = length ? this.turtleBranch.u8aTurtle?.getAncestorByIndex?.(length - 1) : undefined }
   async getUint8Array (index) { return this.turtleBranch.u8aTurtle?.getAncestorByIndex?.(index)?.uint8Array }
   async pushUint8Array (uint8Array) { return this.turtleBranch.append(uint8Array) }
-
   async popUint8Array () { this.turtleBranch.u8aTurtle = this.turtleBranch.u8aTurtle.parent }
 }

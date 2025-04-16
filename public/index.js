@@ -29,6 +29,7 @@ while (true) {
           ws.send(tbMux.outgoingBranch.u8aTurtle.getAncestorByIndex(lastIndex).uint8Array)
         }
       })
+      t = 100
     }
     ws.onmessage = event => {
       tbMux.incomingBranch.append(new Uint8Array(event.data))
