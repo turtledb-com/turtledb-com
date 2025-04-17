@@ -2,11 +2,8 @@
 
 import { TurtleBranchMultiplexer } from './js/turtle/connections/TurtleBranchMultiplexer.js'
 
-console.log('asdf')
 const cpk = document.baseURI.match(/(?<=\/)[0-9A-Za-z]{41,51}(?=\/)/)?.[0]
-console.log(cpk)
 
-await new Promise((resolve) => setTimeout(resolve, 500))
 console.log(cpk)
 
 const url = `wss://${location.host}`

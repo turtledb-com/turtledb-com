@@ -1,4 +1,4 @@
-import { GetObjectCommand, ListObjectsV2Command, PutObjectCommand, S3Client } from '@aws-sdk/client-s3'
+import { GetObjectCommand, ListObjectsV2Command, PutObjectCommand } from '@aws-sdk/client-s3'
 import { AbstractUpdater } from '../public/js/turtle/connections/AbstractUpdater.js'
 import { verifyCommitU8a } from '../public/js/turtle/Signer.js'
 
