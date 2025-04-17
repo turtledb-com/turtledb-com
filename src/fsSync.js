@@ -40,7 +40,7 @@ export function fsSync (workspace, root = workspace.name, jspath = 'fs') {
     if (!isFirst) return
     await new Promise(resolve => setTimeout(resolve, 100)) // let chokidar cook
     const endTurn = await nextTurn()
-    console.log('next actions', nextActionsByPath)
+    // console.log('next actions', nextActionsByPath)
     while (Object.keys(nextActionsByPath).length) {
       const readFilePromises = []
       for (const relativePath in nextActionsByPath) {
@@ -51,25 +51,22 @@ export function fsSync (workspace, root = workspace.name, jspath = 'fs') {
           readFilePromises.push(readFile(path, 'utf8').then(file => { jsobj[relativePath] = file }))
         } else if (action === REMOVED_FILE) {
           delete jsobj[relativePath]
-          console.log('after delete', Object.keys(jsobj).filter(key => key.match(/old/)))
         }
       }
       await Promise.all(readFilePromises)
     }
     isHandlingChokidar = false
-    console.log('next actions (done)', nextActionsByPath)
 
     setTimeout(async () => {
       if (!skipCommit) {
         const valueAsRefs = workspace.lookup('document', 'value', AS_REFS) || {}
         const previousAddress = valueAsRefs[jspath]
-        console.log('before upsert', Object.keys(jsobj).filter(key => key.match(/old/)))
+        // console.log('before upsert', Object.keys(jsobj).filter(key => key.match(/old/)))
         valueAsRefs[jspath] = workspace.upsert(jsobj)
         if (valueAsRefs[jspath] !== previousAddress) {
           const valueAddress = workspace.upsert(valueAsRefs, undefined, AS_REFS)
           console.log('fs commit from local changes commit', valueAddress)
           await workspace.commit(valueAddress, 'chokidar.watch', true)
-          console.log('after commit', Object.keys(workspace.committedBranch.lookup('document', 'value', 'fs', AS_REFS)).filter(key => key.match(/old/)))
         }
       }
       endTurn()
