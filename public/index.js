@@ -1,12 +1,27 @@
 /* global location, WebSocket */
 
 import { TurtleBranchMultiplexer } from './js/turtle/connections/TurtleBranchMultiplexer.js'
+import { TurtleBranch } from './js/turtle/TurtleBranch.js'
+import { proxyWithRecaller } from './js/utils/proxyWithRecaller.js'
+import { Recaller } from './js/utils/Recaller.js'
 
 const cpk = document.baseURI.match(/(?<=\/)[0-9A-Za-z]{41,51}(?=\/)/)?.[0]
 
 console.log(cpk)
 
 const url = `wss://${location.host}`
+const recaller = new Recaller('web client')
+
+/** @type {Object.<string, TurtleBranch>} */
+const turtleRegistry = proxyWithRecaller({}, recaller)
+// s3 overrides this
+const _getTurtleBranchByPublicKey = async (publicKey, name = publicKey) => {
+  if (!turtleRegistry[publicKey]) {
+    turtleRegistry[publicKey] = new TurtleBranch(name, recaller)
+  }
+  return turtleRegistry[publicKey]
+}
+window.getTurtleBranchByPublicKey = _getTurtleBranchByPublicKey
 
 // const allServiceWorkers = new Set()
 // try {
@@ -56,24 +71,25 @@ let t = 100
 while (true) {
   try {
     console.log('creating new websocket and mux')
-    const tbMux = new TurtleBranchMultiplexer('websocket')
+    const tbMux = new TurtleBranchMultiplexer('websocket', true)
+    for (const publicKey in turtleRegistry) {
+      const turtleBranch = turtleRegistry[publicKey]
+      tbMux.getTurtleBranchUpdater(TurtleBranch.name, publicKey, turtleBranch)
+    }
     const ws = new WebSocket(url)
     window.cpk = cpk
     window.tbMux = tbMux
     ws.binaryType = 'arraybuffer'
-    ws.onopen = () => {
+    ws.onopen = async () => {
       console.log('onopen')
-      let lastIndex = -1
-      tbMux.recaller.watch('webclient tbMux to ws', () => {
-        while (tbMux.outgoingBranch.index > lastIndex) {
-          ++lastIndex
-          ws.send(tbMux.outgoingBranch.u8aTurtle.getAncestorByIndex(lastIndex).uint8Array)
-        }
-      })
-      t = 100
+      for await (const u8aTurtle of tbMux.outgoingBranch.u8aTurtleGenerator()) {
+        if (ws.readyState !== ws.OPEN) break
+        ws.send(u8aTurtle.uint8Array)
+      }
     }
     ws.onmessage = event => {
       tbMux.incomingBranch.append(new Uint8Array(event.data))
+      console.log(tbMux.incomingBranch.lookup())
     }
     await new Promise((resolve, reject) => {
       ws.onclose = resolve

@@ -58,15 +58,11 @@ export class TurtleBranchMultiplexer extends TurtleTalker {
     if (!this.#updatersByCpk[publicKey]) {
       turtleBranch ??= new TurtleBranch(name)
       const updater = new TurtleBranchUpdater(name, turtleBranch, publicKey, this.isTrusted)
-      let lastIndex = -1
-      updater.outgoingBranch.recaller.watch(`TBMux"${this.name}(${publicKey} ${name})`, () => {
-        while (lastIndex < updater.outgoingBranch.index) {
-          ++lastIndex
-          const u8aTurtle = updater.outgoingBranch.u8aTurtle.getAncestorByIndex(lastIndex)
-          // console.log(this.name, 'sending', u8aTurtle.lookup())
+      ;(async () => {
+        for await (const u8aTurtle of updater.outgoingBranch.u8aTurtleGenerator()) {
           this.sendUpdate(u8aTurtle.uint8Array, name, publicKey)
         }
-      })
+      })()
       this.#updatersByCpk[publicKey] = updater
     } else if (turtleBranch && this.#updatersByCpk[publicKey] !== turtleBranch) {
       throw new Error('trying to start existing updater with different turtle')

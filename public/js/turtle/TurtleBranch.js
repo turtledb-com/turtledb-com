@@ -67,12 +67,12 @@ export class TurtleBranch {
     return this.length - 1
   }
 
-  async * uint8ArrayGenerator () {
+  async * u8aTurtleGenerator () {
     let lastIndex = -1
     while (true) {
       while (lastIndex < this.index) {
         ++lastIndex
-        yield this.u8aTurtle.getAncestorByIndex(lastIndex).uint8Array
+        yield this.u8aTurtle.getAncestorByIndex(lastIndex)
       }
       await this.nextUint8Array
     }
@@ -83,12 +83,12 @@ export class TurtleBranch {
    */
   makeReadableStream () {
     let _controller
-    const tb = this
+    const turtleBranch = this
     return new ReadableStream({
       async start (controller) {
         _controller = controller
-        for await (const uint8Array of tb.uint8ArrayGenerator()) {
-          _controller.enqueue(_encodeUint8Array(uint8Array))
+        for await (const u8aTurtle of turtleBranch.u8aTurtleGenerator()) {
+          _controller.enqueue(_encodeUint8Array(u8aTurtle.uint8Array))
         }
       },
       cancel (reason) {

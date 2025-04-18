@@ -79,22 +79,12 @@ export async function webSync (port, basePublicKey, getTurtleBranchByPublicKey, 
     const tbMux = new TurtleBranchMultiplexer('server tbMux to ws')
     tbMux.getTurtleBranchUpdater('public', basePublicKey, await getTurtleBranchByPublicKey(basePublicKey))
     ws.on('message', buffer => tbMux.incomingBranch.append(new Uint8Array(buffer)))
-    let lastIndex = -1
-    const sendChanges = () => {
-      while (tbMux.outgoingBranch.index > lastIndex) {
-        ++lastIndex
-        ws.send(tbMux.outgoingBranch.u8aTurtle.getAncestorByIndex(lastIndex).uint8Array.buffer)
-      }
+    ws.on('close', (code, reason) => console.log('connection closed', code, reason))
+    ws.on('error', error => console.error('connection error', error.name, error.message))
+    for await (const u8aTurtle of tbMux.outgoingBranch.u8aTurtleGenerator()) {
+      if (ws.readyState !== ws.OPEN) break
+      ws.send(u8aTurtle.uint8Array.buffer)
     }
-    tbMux.recaller.watch('webclient tbMux to ws', sendChanges)
-    ws.on('close', (code, reason) => {
-      console.log('connection closed', code, reason)
-      tbMux.recaller.unwatch(sendChanges)
-    })
-    ws.on('error', error => {
-      console.error('connection error', error.name, error.message)
-      tbMux.recaller.unwatch(sendChanges)
-    })
   })
 
   server.listen(port, () => {

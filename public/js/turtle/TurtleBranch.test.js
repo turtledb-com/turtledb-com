@@ -75,8 +75,8 @@ globalRunner.describe(urlToName(import.meta.url), suite => {
     branch.append(new Uint8Array([2]))
     const uint8Arrays = []
     ;(async () => {
-      for await (const uint8Array of branch.uint8ArrayGenerator()) {
-        uint8Arrays.push(uint8Array)
+      for await (const u8aTurtle of branch.u8aTurtleGenerator()) {
+        uint8Arrays.push(u8aTurtle.uint8Array)
       }
     })()
     await tics(1)
