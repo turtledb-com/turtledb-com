@@ -15,8 +15,13 @@ const _encodeUint8Array = uint8Array => {
 export class TurtleBranch {
   /** @type {U8aTurtle} */
   #u8aTurtle
-  /** @type {Set.<ReadableStreamController>} */
-  #readableByteStreamControllers = new Set()
+  #resolveNextUint8Array
+  #setNextUint8Array = uint8Array => {
+    const prevResolve = this.#resolveNextUint8Array
+    this.nextUint8Array = new Promise(resolve => { this.#resolveNextUint8Array = resolve })
+    prevResolve?.(uint8Array)
+  }
+
   /**
    * @param {string} name
    * @param {Recaller} recaller
@@ -27,6 +32,7 @@ export class TurtleBranch {
     this.name = name
     this.recaller = recaller
     this.#u8aTurtle = u8aTurtle
+    this.nextUint8Array = new Promise(resolve => { this.#resolveNextUint8Array = resolve })
   }
 
   /** @type {U8aTurtle} */
@@ -40,11 +46,13 @@ export class TurtleBranch {
     if (u8aTurtle !== undefined) {
       if (u8aTurtle.hasAncestor(this.#u8aTurtle)) {
         const uint8Arrays = u8aTurtle.exportUint8Arrays((this.index ?? -1) + 1)
-        uint8Arrays.forEach(uint8Array => this.#broadcast(uint8Array))
+        uint8Arrays.forEach(uint8Array => {
+          this.#setNextUint8Array(uint8Array)
+        })
       } else {
         // console.log('old', JSON.stringify(this.name), this.#u8aTurtle)
         // console.log('new', JSON.stringify(this.name), u8aTurtle)
-        console.warn(`TurtleBranch, ${this.name}.u8aTurtle set to non-descendant (any ReadableStreams are broken now)`)
+        console.warn(`TurtleBranch, ${this.name}.u8aTurtle set to non-descendant (generators are broken now)`)
       }
     }
     this.recaller.reportKeyMutation(this, 'u8aTurtle', 'set', this.name)
@@ -59,32 +67,32 @@ export class TurtleBranch {
     return this.length - 1
   }
 
-  #broadcast (uint8Array) {
-    const controllers = this.#readableByteStreamControllers
-    controllers.forEach(controller => {
-      console.log(` >>>> sending ${this.name} 4 + ${uint8Array.length} bytes`)
-      controller.enqueue(_encodeUint8Array(uint8Array))
-    })
+  async * uint8ArrayGenerator () {
+    let lastIndex = -1
+    while (true) {
+      while (lastIndex < this.index) {
+        ++lastIndex
+        yield this.u8aTurtle.getAncestorByIndex(lastIndex).uint8Array
+      }
+      await this.nextUint8Array
+    }
   }
 
   /**
    * @returns {ReadableStream}
    */
   makeReadableStream () {
-    const uint8Arrays = this.u8aTurtle?.exportUint8Arrays?.() ?? []
-    const controllers = this.#readableByteStreamControllers
     let _controller
+    const tb = this
     return new ReadableStream({
-      start (controller) {
+      async start (controller) {
         _controller = controller
-        controllers.add(_controller)
-        uint8Arrays.forEach(uint8Array => {
+        for await (const uint8Array of tb.uint8ArrayGenerator()) {
           _controller.enqueue(_encodeUint8Array(uint8Array))
-        })
+        }
       },
       cancel (reason) {
         console.log('stream cancelled', { reason })
-        controllers.delete(_controller)
       },
       type: 'bytes'
     })

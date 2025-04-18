@@ -8,11 +8,55 @@ console.log(cpk)
 
 const url = `wss://${location.host}`
 
+// const allServiceWorkers = new Set()
+// try {
+//   const serviceWorkerRegistration = await navigator.serviceWorker.register(
+//     '/service-worker.js',
+//     { type: 'module', scope: '/' }
+//   )
+//   console.log('register complete', serviceWorkerRegistration)
+//   serviceWorkerRegistration.addEventListener('updatefound', () => {
+//     console.log('service-worker update found')
+//   })
+//   try {
+//     console.log(' ^^^^^^^ serviceWorkerRegistration.update()')
+//     await serviceWorkerRegistration.update()
+//   } catch (err) {
+//     console.log(' ^^^^^^^ serviceWorkerRegistration.update() failed', err)
+//   }
+//   console.log(' ^^^^^^^ serviceWorkerRegistration.update() complete')
+//   const { serviceWorker } = navigator
+//   if (!serviceWorker || allServiceWorkers.has(serviceWorker)) throw new Error('no serviceWorker')
+//   const { active } = await serviceWorker.ready
+//   console.log({ active })
+//   allServiceWorkers.add(serviceWorker)
+//   const tbMux = new TurtleBranchMultiplexer('service-worker')
+//   window.tbMux = tbMux
+//   serviceWorker.onmessage = event => {
+//     tbMux.incomingBranch.append(new Uint8Array(event.data))
+//   }
+//   /*
+//   setPeer(recaller, peer)
+//   serviceWorker.onmessage = event => receive(new Uint8Array(event.data))
+//   serviceWorker.onmessageerror = event => console.log(peer.name, 'onmessageerror', event)
+//   serviceWorker.startMessages()
+//   setSend(uint8Array => active.postMessage(uint8Array.buffer))
+//   await new Promise((resolve, reject) => {
+//     serviceWorker.oncontrollerchange = resolve
+//     serviceWorker.onerror = reject
+//   })
+//   */
+// } catch (error) {
+//   console.error(error)
+// }
+
+console.warn('unable to connect through service-worker, trying direct websocket connection')
+
 let t = 100
 while (true) {
   try {
     console.log('creating new websocket and mux')
-    const tbMux = new TurtleBranchMultiplexer('web-client')
+    const tbMux = new TurtleBranchMultiplexer('websocket')
     const ws = new WebSocket(url)
     window.cpk = cpk
     window.tbMux = tbMux

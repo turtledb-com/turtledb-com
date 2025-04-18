@@ -69,4 +69,21 @@ globalRunner.describe(urlToName(import.meta.url), suite => {
       new Uint8Array([7, 8, 9])
     ])
   })
+  suite.it('async generators', async ({ assert }) => {
+    const branch = new TurtleBranch('branch')
+    branch.append(new Uint8Array([1]))
+    branch.append(new Uint8Array([2]))
+    const uint8Arrays = []
+    ;(async () => {
+      for await (const uint8Array of branch.uint8ArrayGenerator()) {
+        uint8Arrays.push(uint8Array)
+      }
+    })()
+    await tics(1)
+    assert.equal(uint8Arrays, [new Uint8Array([1]), new Uint8Array([2])])
+    branch.append(new Uint8Array([3]))
+    branch.append(new Uint8Array([4]))
+    await tics(1)
+    assert.equal(uint8Arrays, [new Uint8Array([1]), new Uint8Array([2]), new Uint8Array([3]), new Uint8Array([4])])
+  })
 })
