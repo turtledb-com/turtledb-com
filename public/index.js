@@ -84,7 +84,7 @@ while (true) {
   const addTurtleRegistry = () => {
     for (const publicKey in turtleRegistry) {
       const turtleBranch = turtleRegistry[publicKey]
-      tbMux.getTurtleBranchUpdater(TurtleBranch.name, publicKey, turtleBranch)
+      tbMux.getTurtleBranchUpdater(turtleBranch.name, publicKey, turtleBranch, true)
     }
   }
   try {
@@ -94,7 +94,7 @@ while (true) {
     const startOutgoingLoop = async () => {
       for await (const u8aTurtle of tbMux.outgoingBranch.u8aTurtleGenerator()) {
         if (ws.readyState !== ws.OPEN) break
-        console.log('sending')
+        console.log('web-client sending', u8aTurtle.index)
         ws.send(u8aTurtle.uint8Array)
       }
     }
@@ -102,9 +102,11 @@ while (true) {
       for await (const u8aTurtle of tbMux.incomingBranch.u8aTurtleGenerator()) {
         if (ws.readyState !== ws.OPEN) break
         const update = u8aTurtle.lookup()
+        console.log(update)
         if (update?.publicKey && !turtleRegistry[update.publicKey]) {
           console.log('adding missing from incoming')
           window.getTurtleBranchByPublicKey(update.publicKey, update.name)
+          console.log('---')
         }
       }
     }
@@ -116,6 +118,7 @@ while (true) {
           updatersByKey[publicKey] = tbMux.getTurtleBranchUpdater(name, publicKey)
         }
         await updatersByKey[publicKey].settle
+        console.log('settled', publicKey)
         turtleRegistry[publicKey] ??= updatersByKey[publicKey].turtleBranch
       }
       return turtleRegistry[publicKey]

@@ -51,12 +51,13 @@ const recaller = new Recaller('turtledb-com')
 /** @type {Object.<string, TurtleBranch>} */
 const turtleRegistry = proxyWithRecaller({}, recaller)
 // s3 overrides this
-let getTurtleBranchByPublicKey = async publicKey => {
+const _getTurtleBranchByPublicKey = async (publicKey, name = publicKey) => {
   if (!turtleRegistry[publicKey]) {
-    turtleRegistry[publicKey] = new TurtleBranch(`turtledb-com publicKey: ${publicKey}`, recaller)
+    turtleRegistry[publicKey] = new TurtleBranch(name, recaller)
   }
   return turtleRegistry[publicKey]
 }
+let getTurtleBranchByPublicKey = _getTurtleBranchByPublicKey
 
 if (!nos3 && (s3EndPoint || s3Region || s3Bucket || s3AccessKeyId || s3SecretAccessKey)) {
   if (!s3EndPoint || !s3Region || !s3Bucket || !s3AccessKeyId || !s3SecretAccessKey) {
@@ -72,12 +73,11 @@ if (!nos3 && (s3EndPoint || s3Region || s3Bucket || s3AccessKeyId || s3SecretAcc
       secretAccessKey: s3SecretAccessKey
     }
   })
-  const oldGetTurtleBranchByPublicKey = getTurtleBranchByPublicKey
-  getTurtleBranchByPublicKey = async publicKey => {
+  getTurtleBranchByPublicKey = async (publicKey, name = publicKey) => {
     if (!turtleRegistry[publicKey]) {
-      const s3Updater = new S3Updater(`s3Updater"${publicKey}"`, publicKey, recaller, s3Client, s3Bucket)
-      const turtleBranch = await oldGetTurtleBranchByPublicKey(publicKey)
-      const tbUpdater = new TurtleBranchUpdater(`tbUpdater"${publicKey}"`, turtleBranch, publicKey, false, recaller)
+      const s3Updater = new S3Updater(`s3Updater"${name}"`, publicKey, recaller, s3Client, s3Bucket)
+      const turtleBranch = await _getTurtleBranchByPublicKey(publicKey, name)
+      const tbUpdater = new TurtleBranchUpdater(`tbUpdater"${name}"`, turtleBranch, publicKey, false, recaller)
       s3Updater.connect(tbUpdater)
       s3Updater.start()
       tbUpdater.start()
@@ -106,12 +106,12 @@ for (let i = 0; i < Math.max(fsdir.length, fsname.length); ++i) {
   const path = fsdir[i] ?? fsname[i]
   const name = fsname[i] ?? fsdir[i]
   const { publicKey } = await signer.makeKeysFor(name)
-  const workspace = new Workspace(name, signer, await getTurtleBranchByPublicKey(publicKey))
+  const workspace = new Workspace(name, signer, await getTurtleBranchByPublicKey(publicKey, name))
   // turtleRegistry[publicKey] = workspace.committedBranch
   fsSync(workspace, path, fsobj[i])
 }
 
 if (port) {
   const baseKeys = await signer.makeKeysFor(base)
-  webSync(port, baseKeys.publicKey, getTurtleBranchByPublicKey, https, insecure, certpath)
+  webSync(port, baseKeys.publicKey, recaller, turtleRegistry, getTurtleBranchByPublicKey, https, insecure, certpath)
 }

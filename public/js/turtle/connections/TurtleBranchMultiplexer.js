@@ -54,7 +54,7 @@ export class TurtleBranchMultiplexer extends TurtleTalker {
    * @param {string} publicKey
    * @returns {TurtleBranchUpdater}
    */
-  getTurtleBranchUpdater (name = '', publicKey = '', turtleBranch) {
+  getTurtleBranchUpdater (name = '', publicKey = '', turtleBranch, ignoreExisting = false) {
     if (!this.#updatersByCpk[publicKey]) {
       turtleBranch ??= new TurtleBranch(name)
       const updater = new TurtleBranchUpdater(name, turtleBranch, publicKey, this.isTrusted)
@@ -64,7 +64,7 @@ export class TurtleBranchMultiplexer extends TurtleTalker {
         }
       })()
       this.#updatersByCpk[publicKey] = updater
-    } else if (turtleBranch && this.#updatersByCpk[publicKey] !== turtleBranch) {
+    } else if (!ignoreExisting && turtleBranch && this.#updatersByCpk[publicKey] !== turtleBranch) {
       throw new Error('trying to start existing updater with different turtle')
     }
     this.#updatersByCpk[publicKey].start()

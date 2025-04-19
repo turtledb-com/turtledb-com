@@ -6,7 +6,7 @@ import { createServer as createHttpServer } from 'http'
 import { WebSocketServer } from 'ws'
 import { TurtleBranchMultiplexer } from '../public/js/turtle/connections/TurtleBranchMultiplexer.js'
 
-export async function webSync (port, basePublicKey, getTurtleBranchByPublicKey, https, insecure, certpath) {
+export async function webSync (port, basePublicKey, recaller, turtleRegistry, getTurtleBranchByPublicKey, https, insecure, certpath) {
   const app = express()
   app.use((req, _res, next) => {
     // console.log(req.method, req.url)
@@ -77,14 +77,37 @@ export async function webSync (port, basePublicKey, getTurtleBranchByPublicKey, 
   wss.on('connection', async ws => {
     console.log('new connection')
     const tbMux = new TurtleBranchMultiplexer('server tbMux to ws')
-    tbMux.getTurtleBranchUpdater('public', basePublicKey, await getTurtleBranchByPublicKey(basePublicKey))
-    ws.on('message', buffer => tbMux.incomingBranch.append(new Uint8Array(buffer)))
-    ws.on('close', (code, reason) => console.log('connection closed', code, reason))
-    ws.on('error', error => console.error('connection error', error.name, error.message))
-    for await (const u8aTurtle of tbMux.outgoingBranch.u8aTurtleGenerator()) {
-      if (ws.readyState !== ws.OPEN) break
-      ws.send(u8aTurtle.uint8Array.buffer)
+    // const addTurtleRegistry = () => {
+    for (const publicKey in turtleRegistry) {
+      const turtleBranch = turtleRegistry[publicKey]
+      tbMux.getTurtleBranchUpdater(turtleBranch.name, publicKey, turtleBranch)
     }
+    // }
+    // recaller.watch('webSync addTurtleRegistry', addTurtleRegistry)
+    const startOutgoingLoop = async () => {
+      for await (const u8aTurtle of tbMux.outgoingBranch.u8aTurtleGenerator()) {
+        if (ws.readyState !== ws.OPEN) break
+        console.log('web-server sending', u8aTurtle.index)
+        console.log(u8aTurtle.lookup())
+        ws.send(u8aTurtle.uint8Array)
+      }
+    }
+    startOutgoingLoop()
+    const startIncomingLoop = async () => {
+      for await (const u8aTurtle of tbMux.incomingBranch.u8aTurtleGenerator()) {
+        if (ws.readyState !== ws.OPEN) break
+        const update = u8aTurtle.lookup()
+        if (update?.publicKey && !turtleRegistry[update.publicKey]) {
+          console.log('adding missing from incoming')
+          getTurtleBranchByPublicKey(update.publicKey, update.name)
+        }
+      }
+    }
+    startIncomingLoop()
+    // tbMux.getTurtleBranchUpdater('public', basePublicKey, await getTurtleBranchByPublicKey(basePublicKey))
+    ws.on('message', buffer => tbMux.incomingBranch.append(new Uint8Array(buffer)))
+    ws.on('close', (code, reason) => console.log('connection closed', { code, reason }))
+    ws.on('error', error => console.error('connection error', { name: error.name, message: error.message }))
   })
 
   server.listen(port, () => {
