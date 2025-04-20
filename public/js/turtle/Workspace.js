@@ -48,10 +48,11 @@ export class Workspace extends TurtleDictionary {
     this.append(await this.signer.signCommit(this.name, address, this.u8aTurtle, this.committedBranch.u8aTurtle))
     this.squash((this.committedBranch?.index ?? -1) + 1)
     this.committedBranch.u8aTurtle = this.u8aTurtle
+    return this
   }
 
   async commit (value, message, asRef = false) {
     this._queuedCommit = this.#queueCommit(value, message, asRef, this._queuedCommit)
-    await this._queuedCommit
+    return this._queuedCommit
   }
 }

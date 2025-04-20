@@ -11,11 +11,11 @@ export class TurtleBranchUpdater extends AbstractUpdater {
    * @param {string} name
    * @param {TurtleBranch} turtleBranch
    * @param {string} publicKey
-   * @param {boolean} [isTrusted=false]
+   * @param {boolean} [Xours=false]
    * @param {Recaller} [recaller=new Recaller(`${name}.recaller`)]
    */
-  constructor (name, turtleBranch, publicKey, isTrusted, recaller = new Recaller(name)) {
-    super(name, publicKey, isTrusted, recaller)
+  constructor (name, turtleBranch, publicKey, Xours, recaller = new Recaller(name)) {
+    super(name, publicKey, Xours, recaller)
     this.turtleBranch = turtleBranch
     /** @type {U8aTurtle} */
     let lastU8aTurtle
@@ -43,10 +43,10 @@ export class TurtleBranchUpdater extends AbstractUpdater {
     const settlePromise = new Promise((...args) => { [resolve] = args })
     const checkSettle = () => {
       const incoming = this.incomingBranch.lookup()
-      console.log(j, this.publicKey, { incoming }, this.turtleBranch.index)
+      // console.log(j, this.publicKey, { incoming }, this.turtleBranch.index)
       if (this.turtleBranch.index + 1 >= incoming?.uint8ArrayAddresses?.length) {
         this.incomingBranch.recaller.unwatch(checkSettle)
-        console.log(j, 'resolve')
+        // console.log(j, 'resolve')
         resolve()
       }
     }

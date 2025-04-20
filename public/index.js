@@ -25,9 +25,9 @@ const recaller = new Recaller('web client')
 const turtleRegistry = proxyWithRecaller({}, recaller)
 window.turtleRegistry = turtleRegistry
 // s3 overrides this
-const _getTurtleBranchByPublicKey = async (publicKey, name = publicKey) => {
+const _getTurtleBranchByPublicKey = async (publicKey, name = publicKey, turtleBranch) => {
   if (!turtleRegistry[publicKey]) {
-    turtleRegistry[publicKey] = new TurtleBranch(name, recaller)
+    turtleRegistry[publicKey] = turtleBranch ?? new TurtleBranch(name, recaller)
   }
   return turtleRegistry[publicKey]
 }
@@ -94,7 +94,7 @@ while (true) {
     const startOutgoingLoop = async () => {
       for await (const u8aTurtle of tbMux.outgoingBranch.u8aTurtleGenerator()) {
         if (ws.readyState !== ws.OPEN) break
-        console.log('web-client sending', u8aTurtle.index)
+        // console.log('web-client sending', u8aTurtle.index)
         ws.send(u8aTurtle.uint8Array)
       }
     }
@@ -102,23 +102,25 @@ while (true) {
       for await (const u8aTurtle of tbMux.incomingBranch.u8aTurtleGenerator()) {
         if (ws.readyState !== ws.OPEN) break
         const update = u8aTurtle.lookup()
-        console.log(update)
+        // console.log(update)
         if (update?.publicKey && !turtleRegistry[update.publicKey]) {
-          console.log('adding missing from incoming', update.publicKey)
-          const turtleBranch = await window.getTurtleBranchByPublicKey(update.publicKey, update.name)
-          console.log(turtleBranch.lookup())
+          // console.log('adding missing from incoming', update.publicKey)
+          const { turtleBranch } = tbMux.getTurtleBranchUpdater(update.name, update.publicKey)
+          window.getTurtleBranchByPublicKey(update.publicKey, update.name, turtleBranch)
+          // const turtleBranch = await window.getTurtleBranchByPublicKey(update.publicKey, update.name)
+          // console.log(turtleBranch.lookup())
         }
       }
     }
     const updatersByKey = {}
-    window.getTurtleBranchByPublicKey = async (publicKey, name = publicKey) => {
+    window.getTurtleBranchByPublicKey = async (publicKey, name = publicKey, turtleBranch) => {
       if (!turtleRegistry[publicKey]) {
         if (!updatersByKey[publicKey]) {
-          console.log('adding manually', publicKey)
-          updatersByKey[publicKey] = tbMux.getTurtleBranchUpdater(name, publicKey)
+          // console.log('adding manually', publicKey)
+          updatersByKey[publicKey] = tbMux.getTurtleBranchUpdater(name, publicKey, turtleBranch, true)
         }
         await updatersByKey[publicKey].settle
-        console.log('settled', publicKey, turtleRegistry[publicKey], updatersByKey[publicKey].turtleBranch)
+        // console.log('settled', publicKey, turtleRegistry[publicKey], updatersByKey[publicKey].turtleBranch)
         turtleRegistry[publicKey] ??= updatersByKey[publicKey].turtleBranch
       }
       return turtleRegistry[publicKey]
@@ -131,7 +133,7 @@ while (true) {
 
       const signer = new Signer('david', 'secret')
       const keys = await signer.makeKeysFor('test')
-      await new Promise(resolve => setTimeout(resolve, 3000))
+      // await new Promise(resolve => setTimeout(resolve, 3000))
       console.log('about to getTurtleBranchByPublicKey', keys.publicKey)
       window.testBranch = await window.getTurtleBranchByPublicKey(keys.publicKey, 'test')
       console.log('set window.testBranch')
@@ -139,7 +141,7 @@ while (true) {
       console.log('set window.testWorkspace')
       const result = await window.testWorkspace.commit({ random: Math.random() }, new Date())
       console.log('commit result', result)
-      console.log()
+      console.log('\n\n testBranch.index:', window.testBranch?.index)
     }
     ws.onmessage = event => {
       tbMux.incomingBranch.append(new Uint8Array(event.data))

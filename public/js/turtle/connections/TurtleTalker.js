@@ -8,16 +8,16 @@ import { TurtleBranch } from '../TurtleBranch.js'
 export class TurtleTalker {
   /**
    * @param {string} name
-   * @param {boolean} [isTrusted=false]
+   * @param {boolean} [Xours=false]
    * @param {Recaller} [recaller=new Recaller(`${name}.recaller`)]
    */
   constructor (
     name,
-    isTrusted = false,
+    Xours = false,
     recaller = new Recaller(`${name}.recaller`)
   ) {
     this.name = name
-    this.isTrusted = isTrusted
+    this.Xours = Xours
     this.recaller = recaller
     this.outgoingBranch = new TurtleBranch(`${name}.outgoingBranch`, recaller)
     this.incomingBranch = new TurtleBranch(`${name}.incomingBranch`, recaller)

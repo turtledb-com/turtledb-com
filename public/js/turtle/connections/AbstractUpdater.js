@@ -13,16 +13,16 @@ export class AbstractUpdater extends TurtleTalker {
   /**
    * @param {string} name
    * @param {string} publicKey
-   * @param {boolean} [isTrusted=false]
+   * @param {boolean} [Xours=false]
    * @param {Recaller} [recaller=new Recaller(`${name}.recaller`)]
    */
   constructor (
     name,
     publicKey,
-    isTrusted = false,
+    Xours = false,
     recaller = new Recaller(`${name}.recaller`)
   ) {
-    super(name, isTrusted, recaller)
+    super(name, Xours, recaller)
     this.publicKey = publicKey
     this.outgoingDictionary = new TurtleDictionary(`${name}.outgoingDictionary`, recaller)
   }
@@ -65,7 +65,7 @@ export class AbstractUpdater extends TurtleTalker {
             this.#incomingUint8ArraysByAddress[incomingAddress] = ourUint8Array
           }
           if (this.#incomingUint8ArraysByAddress[incomingAddress] !== ourUint8Array) { // collision!
-            if (this.isTrusted) {
+            if (this.Xours) {
               incomingUint8ArrayAddresses.length = i
               break
             } else {
@@ -78,7 +78,7 @@ export class AbstractUpdater extends TurtleTalker {
           if (this.publicKey) {
             const previousUint8Array = i && await this.getUint8Array(i - 1)
             if (!(await verifyCommitU8a(this.publicKey, incomingUint8Array, previousUint8Array))) {
-              if (this.isTrusted) {
+              if (this.Xours) {
                 incomingUint8ArrayAddresses.length = Math.max(i - 1, 0)
               }
               break
@@ -89,7 +89,7 @@ export class AbstractUpdater extends TurtleTalker {
         }
       }
       const startingIndex = incomingUint8ArrayAddresses.length
-      if (length > 0 && startingIndex > 0 && this.isTrusted) {
+      if (length > 0 && startingIndex > 0 && this.Xours) {
         const uint8Array = await this.getUint8Array(startingIndex - 1)
         if (this.#outgoingAddressesByUint8Array.get(uint8Array) === undefined) {
           this.#outgoingAddressesByUint8Array.set(uint8Array, this.outgoingDictionary.upsert(uint8Array, [OPAQUE_UINT8ARRAY]))

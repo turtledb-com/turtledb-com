@@ -14,11 +14,11 @@ export class TurtleBranchMultiplexer extends TurtleTalker {
 
   /**
    * @param {string} name
-   * @param {boolean} isTrusted
+   * @param {boolean} Xours
    * @param {Recaller} recaller
    */
-  constructor (name, isTrusted, recaller) {
-    super(name, isTrusted, recaller)
+  constructor (name, Xours, recaller) {
+    super(name, Xours, recaller)
     this.outgoingDictionary = new TurtleDictionary(`TurtleBranchMultiplexer"${name}".outgoingDictionary`, recaller)
     let lastIndex = this.incomingBranch.index
     this.recaller.watch(`TurtleBranchMultiplexer"${name}"(distribute updates)`, () => {
@@ -56,9 +56,9 @@ export class TurtleBranchMultiplexer extends TurtleTalker {
    */
   getTurtleBranchUpdater (name = '', publicKey = '', turtleBranch, ignoreExisting = false) {
     if (!this.#updatersByCpk[publicKey]) {
-      console.log('????? muxer adding updater', publicKey)
+      // console.log('????? muxer adding updater', publicKey)
       turtleBranch ??= new TurtleBranch(name)
-      const updater = new TurtleBranchUpdater(name, turtleBranch, publicKey, this.isTrusted)
+      const updater = new TurtleBranchUpdater(name, turtleBranch, publicKey, this.Xours)
       ;(async () => {
         for await (const u8aTurtle of updater.outgoingBranch.u8aTurtleGenerator()) {
           this.sendUpdate(u8aTurtle.uint8Array, name, publicKey)
