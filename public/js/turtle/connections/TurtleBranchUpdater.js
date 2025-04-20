@@ -4,6 +4,8 @@ import { AbstractUpdater } from './AbstractUpdater.js'
 
 /** @typedef {import('../TurtleBranch.js').TurtleBranch} TurtleBranch */
 
+let i = 0
+
 export class TurtleBranchUpdater extends AbstractUpdater {
   /**
    * @param {string} name
@@ -37,15 +39,18 @@ export class TurtleBranchUpdater extends AbstractUpdater {
 
   get settle () {
     let resolve
+    const j = ++i
     const settlePromise = new Promise((...args) => { [resolve] = args })
     const checkSettle = () => {
       const incoming = this.incomingBranch.lookup()
+      console.log(j, this.publicKey, { incoming }, this.turtleBranch.index)
       if (this.turtleBranch.index + 1 >= incoming?.uint8ArrayAddresses?.length) {
-        this.turtleBranch.recaller.unwatch(checkSettle)
+        this.incomingBranch.recaller.unwatch(checkSettle)
+        console.log(j, 'resolve')
         resolve()
       }
     }
-    this.turtleBranch.recaller.watch(`TBMux"${this.name}".settle`, checkSettle)
+    this.incomingBranch.recaller.watch(`TBMux"${this.name}".settle`, checkSettle)
     return settlePromise
   }
 

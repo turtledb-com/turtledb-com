@@ -80,7 +80,7 @@ console.warn('unable to connect through service-worker, trying direct websocket 
 let t = 100
 while (true) {
   console.log('creating new websocket and mux')
-  const tbMux = new TurtleBranchMultiplexer('websocket', true)
+  const tbMux = new TurtleBranchMultiplexer('websocket', false)
   const addTurtleRegistry = () => {
     for (const publicKey in turtleRegistry) {
       const turtleBranch = turtleRegistry[publicKey]
@@ -104,9 +104,9 @@ while (true) {
         const update = u8aTurtle.lookup()
         console.log(update)
         if (update?.publicKey && !turtleRegistry[update.publicKey]) {
-          console.log('adding missing from incoming')
-          window.getTurtleBranchByPublicKey(update.publicKey, update.name)
-          console.log('---')
+          console.log('adding missing from incoming', update.publicKey)
+          const turtleBranch = await window.getTurtleBranchByPublicKey(update.publicKey, update.name)
+          console.log(turtleBranch.lookup())
         }
       }
     }
@@ -118,7 +118,7 @@ while (true) {
           updatersByKey[publicKey] = tbMux.getTurtleBranchUpdater(name, publicKey)
         }
         await updatersByKey[publicKey].settle
-        console.log('settled', publicKey)
+        console.log('settled', publicKey, turtleRegistry[publicKey], updatersByKey[publicKey].turtleBranch)
         turtleRegistry[publicKey] ??= updatersByKey[publicKey].turtleBranch
       }
       return turtleRegistry[publicKey]
@@ -128,6 +128,18 @@ while (true) {
       addTurtleRegistry()
       startOutgoingLoop() // don't await
       startIncomingLoop() // don't await
+
+      const signer = new Signer('david', 'secret')
+      const keys = await signer.makeKeysFor('test')
+      await new Promise(resolve => setTimeout(resolve, 3000))
+      console.log('about to getTurtleBranchByPublicKey', keys.publicKey)
+      window.testBranch = await window.getTurtleBranchByPublicKey(keys.publicKey, 'test')
+      console.log('set window.testBranch')
+      window.testWorkspace = new Workspace('test', signer, window.testBranch)
+      console.log('set window.testWorkspace')
+      const result = await window.testWorkspace.commit({ random: Math.random() }, new Date())
+      console.log('commit result', result)
+      console.log()
     }
     ws.onmessage = event => {
       tbMux.incomingBranch.append(new Uint8Array(event.data))

@@ -51,9 +51,10 @@ const recaller = new Recaller('turtledb-com')
 /** @type {Object.<string, TurtleBranch>} */
 const turtleRegistry = proxyWithRecaller({}, recaller)
 // s3 overrides this
-const _getTurtleBranchByPublicKey = async (publicKey, name = publicKey) => {
+const _getTurtleBranchByPublicKey = async (publicKey, name = publicKey, turtleBranch) => {
   if (!turtleRegistry[publicKey]) {
-    turtleRegistry[publicKey] = new TurtleBranch(name, recaller)
+    console.log('--- adding new TurtleBranch', name, publicKey)
+    turtleRegistry[publicKey] = turtleBranch ?? new TurtleBranch(name, recaller)
   }
   return turtleRegistry[publicKey]
 }
@@ -73,10 +74,10 @@ if (!nos3 && (s3EndPoint || s3Region || s3Bucket || s3AccessKeyId || s3SecretAcc
       secretAccessKey: s3SecretAccessKey
     }
   })
-  getTurtleBranchByPublicKey = async (publicKey, name = publicKey) => {
+  getTurtleBranchByPublicKey = async (publicKey, name = publicKey, turtleBranch) => {
     if (!turtleRegistry[publicKey]) {
       const s3Updater = new S3Updater(`s3Updater"${name}"`, publicKey, recaller, s3Client, s3Bucket)
-      const turtleBranch = await _getTurtleBranchByPublicKey(publicKey, name)
+      turtleBranch = await _getTurtleBranchByPublicKey(publicKey, name, turtleBranch)
       const tbUpdater = new TurtleBranchUpdater(`tbUpdater"${name}"`, turtleBranch, publicKey, false, recaller)
       s3Updater.connect(tbUpdater)
       s3Updater.start()

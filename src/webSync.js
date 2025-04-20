@@ -77,18 +77,24 @@ export async function webSync (port, basePublicKey, recaller, turtleRegistry, ge
   wss.on('connection', async ws => {
     console.log('new connection')
     const tbMux = new TurtleBranchMultiplexer('server tbMux to ws')
-    // const addTurtleRegistry = () => {
-    for (const publicKey in turtleRegistry) {
-      const turtleBranch = turtleRegistry[publicKey]
-      tbMux.getTurtleBranchUpdater(turtleBranch.name, publicKey, turtleBranch)
+    const addTurtleRegistry = () => {
+      console.log('\n\n  turtleRegistry', Object.keys(turtleRegistry))
+      for (const publicKey in turtleRegistry) {
+        const turtleBranch = turtleRegistry[publicKey]
+        tbMux.getTurtleBranchUpdater(turtleBranch.name, publicKey, turtleBranch, true)
+      }
     }
-    // }
-    // recaller.watch('webSync addTurtleRegistry', addTurtleRegistry)
+    recaller.watch('webSync addTurtleRegistry', addTurtleRegistry)
     const startOutgoingLoop = async () => {
       for await (const u8aTurtle of tbMux.outgoingBranch.u8aTurtleGenerator()) {
         if (ws.readyState !== ws.OPEN) break
         console.log('web-server sending', u8aTurtle.index)
-        console.log(u8aTurtle.lookup())
+        const update = u8aTurtle.lookup()
+        console.log(update)
+        if (update?.publicKey) {
+          const updater = tbMux.getTurtleBranchUpdater(update.name, update.publicKey)
+          console.log(update.name, update.publicKey, updater.turtleBranch.lookup())
+        }
         ws.send(u8aTurtle.uint8Array)
       }
     }
@@ -99,7 +105,7 @@ export async function webSync (port, basePublicKey, recaller, turtleRegistry, ge
         const update = u8aTurtle.lookup()
         if (update?.publicKey && !turtleRegistry[update.publicKey]) {
           console.log('adding missing from incoming')
-          getTurtleBranchByPublicKey(update.publicKey, update.name)
+          getTurtleBranchByPublicKey(update.publicKey, update.name, tbMux.getTurtleBranchUpdater(update.name, update.publicKey).turtleBranch)
         }
       }
     }

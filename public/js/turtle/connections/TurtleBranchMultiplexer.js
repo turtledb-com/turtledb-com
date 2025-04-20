@@ -56,6 +56,7 @@ export class TurtleBranchMultiplexer extends TurtleTalker {
    */
   getTurtleBranchUpdater (name = '', publicKey = '', turtleBranch, ignoreExisting = false) {
     if (!this.#updatersByCpk[publicKey]) {
+      console.log('????? muxer adding updater', publicKey)
       turtleBranch ??= new TurtleBranch(name)
       const updater = new TurtleBranchUpdater(name, turtleBranch, publicKey, this.isTrusted)
       ;(async () => {
