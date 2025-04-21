@@ -41,7 +41,7 @@ export async function webSync (port, basePublicKey, recaller, turtleRegistry, ge
     <base href="${basePublicKey}/"/>
     <script type="module" src="index.js"></script>
     <link rel="manifest" href="index.webmanifest" />
-    <link rel="icon" href="svg/tinker.svg" />
+    <link rel="icon" href="tinker.svg" />
   </head>
 
   <body style="margin: 0; background: dimgray;">

@@ -4,7 +4,7 @@ import { AbstractUpdater } from './AbstractUpdater.js'
 
 /** @typedef {import('../TurtleBranch.js').TurtleBranch} TurtleBranch */
 
-let i = 0
+// let i = 0
 
 export class TurtleBranchUpdater extends AbstractUpdater {
   /**
@@ -39,14 +39,14 @@ export class TurtleBranchUpdater extends AbstractUpdater {
 
   get settle () {
     let resolve
-    const j = ++i
+    // const j = ++i
     const settlePromise = new Promise((...args) => { [resolve] = args })
     const checkSettle = () => {
       const incoming = this.incomingBranch.lookup()
       // console.log(j, this.publicKey, { incoming }, this.turtleBranch.index)
+      // console.log(this.name, 'checkSettle index:', this.turtleBranch.index, 'incoming uint8ArrayAddresses:', incoming?.uint8ArrayAddresses)
       if (this.turtleBranch.index + 1 >= incoming?.uint8ArrayAddresses?.length) {
         this.incomingBranch.recaller.unwatch(checkSettle)
-        // console.log(j, 'resolve')
         resolve()
       }
     }
