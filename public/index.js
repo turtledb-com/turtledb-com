@@ -2,11 +2,12 @@
 
 import { AS_REFS } from './js/turtle/codecs/CodecType.js'
 import { TurtleBranchMultiplexer } from './js/turtle/connections/TurtleBranchMultiplexer.js'
+import { TurtleDB } from './js/turtle/connections/TurtleDB.js'
 import { Signer } from './js/turtle/Signer.js'
-import { TurtleBranch } from './js/turtle/TurtleBranch.js'
+// import { TurtleBranch } from './js/turtle/TurtleBranch.js'
 import { TurtleDictionary } from './js/turtle/TurtleDictionary.js'
 import { Workspace } from './js/turtle/Workspace.js'
-import { proxyWithRecaller } from './js/utils/proxyWithRecaller.js'
+// import { proxyWithRecaller } from './js/utils/proxyWithRecaller.js'
 import { Recaller } from './js/utils/Recaller.js'
 
 const cpk = document.baseURI.match(/(?<=\/)[0-9A-Za-z]{41,51}(?=\/)/)?.[0]
@@ -20,18 +21,20 @@ console.log(cpk)
 
 const url = `wss://${location.host}`
 const recaller = new Recaller('web client')
+const turtleDB = new TurtleDB('public/index.js', recaller)
+window.turtleDB = turtleDB
 
-/** @type {Object.<string, TurtleBranch>} */
-const turtleRegistry = proxyWithRecaller({}, recaller)
-window.turtleRegistry = turtleRegistry
-// s3 overrides this
-const _getTurtleBranchByPublicKey = async (publicKey, name = publicKey, turtleBranch) => {
-  if (!turtleRegistry[publicKey]) {
-    turtleRegistry[publicKey] = turtleBranch ?? new TurtleBranch(name, recaller)
-  }
-  return turtleRegistry[publicKey]
-}
-window.getTurtleBranchByPublicKey = _getTurtleBranchByPublicKey
+// /** @type {Object.<string, TurtleBranch>} */
+// const turtleRegistry = proxyWithRecaller({}, recaller)
+// window.turtleRegistry = turtleRegistry
+// // s3 overrides this
+// const _getTurtleBranchByPublicKey = async (publicKey, name = publicKey, turtleBranch) => {
+//   if (!turtleRegistry[publicKey]) {
+//     turtleRegistry[publicKey] = turtleBranch ?? new TurtleBranch(name, recaller)
+//   }
+//   return turtleRegistry[publicKey]
+// }
+// window.getTurtleBranchByPublicKey = _getTurtleBranchByPublicKey
 
 // const allServiceWorkers = new Set()
 // try {
@@ -81,12 +84,13 @@ let t = 100
 while (true) {
   console.log('creating new websocket and mux')
   const tbMux = new TurtleBranchMultiplexer('websocket', false)
-  const addTurtleRegistry = () => {
-    for (const publicKey in turtleRegistry) {
-      const turtleBranch = turtleRegistry[publicKey]
-      tbMux.getTurtleBranchUpdater(turtleBranch.name, publicKey, turtleBranch, true)
-    }
+  const addToTbMuxStep = async (next, publicKey, name, turtleBranchSuggestion) => {
+    const turtleBranch = await next(publicKey, name, turtleBranchSuggestion)
+    const updater = tbMux.getTurtleBranchUpdater(name, publicKey, turtleBranch, true)
+    await updater.settle
+    return updater.turtleBranch
   }
+  turtleDB.addTurtleBranchStep(addToTbMuxStep)
   try {
     const ws = new WebSocket(url)
     window.tbMux = tbMux
@@ -102,32 +106,12 @@ while (true) {
       for await (const u8aTurtle of tbMux.incomingBranch.u8aTurtleGenerator()) {
         if (ws.readyState !== ws.OPEN) break
         const update = u8aTurtle.lookup()
-        // console.log(update)
-        if (update?.publicKey && !turtleRegistry[update.publicKey]) {
-          // console.log('adding missing from incoming', update.publicKey)
-          const { turtleBranch } = tbMux.getTurtleBranchUpdater(update.name, update.publicKey)
-          window.getTurtleBranchByPublicKey(update.publicKey, update.name, turtleBranch)
-          // const turtleBranch = await window.getTurtleBranchByPublicKey(update.publicKey, update.name)
-          // console.log(turtleBranch.lookup())
-        }
+        console.log(update)
+        if (update.publicKey) turtleDB.getTurtleBranch(update.publicKey, update.name)
       }
-    }
-    const updatersByKey = {}
-    window.getTurtleBranchByPublicKey = async (publicKey, name = publicKey, turtleBranch) => {
-      if (!turtleRegistry[publicKey]) {
-        if (!updatersByKey[publicKey]) {
-          // console.log('adding manually', publicKey)
-          updatersByKey[publicKey] = tbMux.getTurtleBranchUpdater(name, publicKey, turtleBranch, true)
-        }
-        await updatersByKey[publicKey].settle
-        // console.log('settled', publicKey, turtleRegistry[publicKey], updatersByKey[publicKey].turtleBranch)
-        turtleRegistry[publicKey] ??= updatersByKey[publicKey].turtleBranch
-      }
-      return turtleRegistry[publicKey]
     }
     ws.onopen = async () => {
       console.log('onopen')
-      addTurtleRegistry()
       startOutgoingLoop() // don't await
       startIncomingLoop() // don't await
 
@@ -135,7 +119,7 @@ while (true) {
       const keys = await signer.makeKeysFor('test')
       // await new Promise(resolve => setTimeout(resolve, 3000))
       console.log('about to getTurtleBranchByPublicKey', keys.publicKey)
-      window.testBranch = await window.getTurtleBranchByPublicKey(keys.publicKey, 'test')
+      window.testBranch = await turtleDB.getTurtleBranch(keys.publicKey, 'test')
       console.log('set window.testBranch')
       window.testWorkspace = new Workspace('test', signer, window.testBranch)
       console.log('set window.testWorkspace')
@@ -154,7 +138,7 @@ while (true) {
     console.error(error)
   }
   delete window.tbMux
-  window.getTurtleBranchByPublicKey = _getTurtleBranchByPublicKey
+  turtleDB.removeTurtleBranchStep(addToTbMuxStep)
   t = Math.min(t, 2 * 60 * 1000) // 2 minutes
   t = t * (1 + Math.random()) // exponential backoff and some jitter
   console.log('waiting', t, 'ms')

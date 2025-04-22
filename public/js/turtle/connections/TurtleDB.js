@@ -35,8 +35,13 @@ export class TurtleDB {
    * @param {TurtleBranchStep} step
    */
   addTurtleBranchStep (step) {
-    if (this.#turtleBranchSteps.includes(step)) return console.warn('step already included')
+    if (this.#turtleBranchSteps.includes(step)) return console.warn('step already added')
     this.#turtleBranchSteps.push(step)
+  }
+
+  removeTurtleBranchStep (step) {
+    if (!this.#turtleBranchSteps.includes(step)) return console.warn('step already removed')
+    this.#turtleBranchSteps = this.#turtleBranchSteps.filter(_step => _step !== step)
   }
 
   /**
