@@ -4,7 +4,7 @@ import { TurtleBranch } from '../TurtleBranch.js'
 import { Workspace } from '../Workspace.js'
 import { TurtleBranchMultiplexer } from './TurtleBranchMultiplexer.js'
 
-globalRunner.only.describe(urlToName(import.meta.url), suite => {
+globalRunner.describe(urlToName(import.meta.url), suite => {
   suite.it('syncs multiple SimpleAsyncTurtleBranch', async ({ assert }) => {
     const signer = new Signer('username', 'password')
     const name = 'test'
