@@ -17,8 +17,6 @@ window.Signer = Signer
 window.Workspace = Workspace
 window.AS_REFS = AS_REFS
 
-console.log(cpk)
-
 const url = `wss://${location.host}`
 const recaller = new Recaller('web client')
 const turtleDB = new TurtleDB('public/index.js', recaller)
@@ -82,7 +80,7 @@ console.warn('unable to connect through service-worker, trying direct websocket 
 
 let t = 100
 while (true) {
-  console.log('creating new websocket and mux')
+  console.log('-- creating new websocket and mux')
   const tbMux = new TurtleBranchMultiplexer('websocket', false)
   const addToTbMuxStep = async (next, publicKey, name, turtleBranchSuggestion) => {
     const turtleBranch = await next(publicKey, name, turtleBranchSuggestion)
@@ -97,8 +95,9 @@ while (true) {
     ws.binaryType = 'arraybuffer'
     const startOutgoingLoop = async () => {
       for await (const u8aTurtle of tbMux.outgoingBranch.u8aTurtleGenerator()) {
+        const branch = tbMux.getTurtleBranchUpdater(undefined, u8aTurtle.lookup('publicKey'))
+        console.log('--', u8aTurtle.lookup('name'), 'web-client >>> outgoing', branch.outgoingBranch.lookup('uint8ArrayAddresses'))
         if (ws.readyState !== ws.OPEN) break
-        // console.log('web-client sending', u8aTurtle.index)
         ws.send(u8aTurtle.uint8Array)
       }
     }
@@ -106,26 +105,30 @@ while (true) {
       for await (const u8aTurtle of tbMux.incomingBranch.u8aTurtleGenerator()) {
         if (ws.readyState !== ws.OPEN) break
         const update = u8aTurtle.lookup()
-        console.log(update)
+        if (u8aTurtle.lookup('name') === 'test') {
+          const branch = tbMux.getTurtleBranchUpdater(undefined, u8aTurtle.lookup('publicKey'))
+          console.log('--', update.name, 'web-client <<< incomint', branch.incomingBranch.lookup('uint8ArrayAddresses'))
+        }
         if (update.publicKey) turtleDB.getTurtleBranch(update.publicKey, update.name)
       }
     }
     ws.onopen = async () => {
-      console.log('onopen')
+      console.log('-- onopen')
       startOutgoingLoop() // don't await
       startIncomingLoop() // don't await
 
       const signer = new Signer('david', 'secret')
       const keys = await signer.makeKeysFor('test')
       // await new Promise(resolve => setTimeout(resolve, 3000))
-      console.log('about to getTurtleBranchByPublicKey', keys.publicKey)
+      console.log('\n\n(warmup)')
+      console.log('(warmup) about to getTurtleBranchByPublicKey', keys.publicKey)
       window.testBranch = await turtleDB.getTurtleBranch(keys.publicKey, 'test')
-      console.log('set window.testBranch')
+      console.log('(warmup) set window.testBranch')
       window.testWorkspace = new Workspace('test', signer, window.testBranch)
-      console.log('set window.testWorkspace')
+      console.log('(warmup) set window.testWorkspace')
       const result = await window.testWorkspace.commit({ random: Math.random() }, new Date())
-      console.log('commit result', result)
-      console.log('\n\n testBranch.index:', window.testBranch?.index)
+      console.log('(warmup) commit result', result)
+      console.log('\n\n(warmup) testBranch.index:', window.testBranch?.index)
     }
     ws.onmessage = event => {
       tbMux.incomingBranch.append(new Uint8Array(event.data))
@@ -139,7 +142,7 @@ while (true) {
   }
   delete window.tbMux
   turtleDB.removeTurtleBranchStep(addToTbMuxStep)
-  t = Math.min(t, 2 * 60 * 1000) // 2 minutes
+  t = Math.min(t, 2 * 60 * 1000) // 2 minutes max (unjittered)
   t = t * (1 + Math.random()) // exponential backoff and some jitter
   console.log('waiting', t, 'ms')
   await new Promise(resolve => setTimeout(resolve, t))

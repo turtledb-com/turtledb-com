@@ -32,6 +32,7 @@ export class TurtleBranchUpdater extends AbstractUpdater {
         }
         // console.log('TurtleBranchUpdater', this.name, 'incomingUint8ArrayAddresses', incomingUint8ArrayAddresses)
         this.update(incomingUint8ArrayAddresses)
+        // console.log(this.turtleBranch.name, this.turtleBranch.index)
         lastU8aTurtle = this.turtleBranch.u8aTurtle
       }
     })
@@ -44,8 +45,9 @@ export class TurtleBranchUpdater extends AbstractUpdater {
     const checkSettle = () => {
       const incoming = this.incomingBranch.lookup()
       // console.log(j, this.publicKey, { incoming }, this.turtleBranch.index)
-      // console.log(this.name, 'checkSettle index:', this.turtleBranch.index, 'incoming uint8ArrayAddresses:', incoming?.uint8ArrayAddresses)
+      console.log('???????', this.name, 'checkSettle index:', this.turtleBranch.index, 'incoming uint8ArrayAddresses:', incoming?.uint8ArrayAddresses)
       if (this.turtleBranch.index + 1 >= incoming?.uint8ArrayAddresses?.length) {
+        console.log('!!!!!!!', this.name, 'settled')
         this.incomingBranch.recaller.unwatch(checkSettle)
         resolve()
       }
