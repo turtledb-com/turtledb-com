@@ -82,6 +82,10 @@ let t = 100
 while (true) {
   console.log('-- creating new websocket and mux')
   const tbMux = new TurtleBranchMultiplexer('websocket', false)
+  for (const publicKey of turtleDB.getPublicKeys()) {
+    const turtleBranch = await turtleDB.getTurtleBranch(publicKey)
+    tbMux.getTurtleBranchUpdater(turtleBranch.name, publicKey, turtleBranch, true)
+  }
   const addToTbMuxStep = async (next, publicKey, name, turtleBranchSuggestion) => {
     const turtleBranch = await next(publicKey, name, turtleBranchSuggestion)
     const updater = tbMux.getTurtleBranchUpdater(name, publicKey, turtleBranch, true)
@@ -89,30 +93,36 @@ while (true) {
     return updater.turtleBranch
   }
   turtleDB.addTurtleBranchStep(addToTbMuxStep)
+  let isOpen
   try {
     const ws = new WebSocket(url)
     window.tbMux = tbMux
     ws.binaryType = 'arraybuffer'
     const startOutgoingLoop = async () => {
       for await (const u8aTurtle of tbMux.outgoingBranch.u8aTurtleGenerator()) {
+        if (!isOpen) break
         const branch = tbMux.getTurtleBranchUpdater(undefined, u8aTurtle.lookup('publicKey'))
         console.log('--', u8aTurtle.lookup('name'), 'web-client >>> outgoing', branch.outgoingBranch.lookup('uint8ArrayAddresses'))
-        if (ws.readyState !== ws.OPEN) break
+        // console.log(ws.readyState)
+        // console.log(ws.readyState !== ws.OPEN)
+        // if (ws.readyState !== ws.OPEN) break
         ws.send(u8aTurtle.uint8Array)
       }
     }
     const startIncomingLoop = async () => {
       for await (const u8aTurtle of tbMux.incomingBranch.u8aTurtleGenerator()) {
-        if (ws.readyState !== ws.OPEN) break
+        if (!isOpen) break
+        // if (ws.readyState !== ws.OPEN) break
         const update = u8aTurtle.lookup()
         if (u8aTurtle.lookup('name') === 'test') {
-          const branch = tbMux.getTurtleBranchUpdater(undefined, u8aTurtle.lookup('publicKey'))
-          console.log('--', update.name, 'web-client <<< incomint', branch.incomingBranch.lookup('uint8ArrayAddresses'))
+          const branch = tbMux.getTurtleBranchUpdater(u8aTurtle.lookup('name'), u8aTurtle.lookup('publicKey'))
+          console.log('--', update.name, 'web-client <<< incoming', branch.incomingBranch.lookup('uint8ArrayAddresses'))
         }
         if (update.publicKey) turtleDB.getTurtleBranch(update.publicKey, update.name)
       }
     }
     ws.onopen = async () => {
+      isOpen = true
       console.log('-- onopen')
       startOutgoingLoop() // don't await
       startIncomingLoop() // don't await
@@ -141,6 +151,7 @@ while (true) {
     console.error(error)
   }
   delete window.tbMux
+  isOpen = false
   turtleDB.removeTurtleBranchStep(addToTbMuxStep)
   t = Math.min(t, 2 * 60 * 1000) // 2 minutes max (unjittered)
   t = t * (1 + Math.random()) // exponential backoff and some jitter
