@@ -111,7 +111,7 @@ export class AbstractUpdater extends TurtleTalker {
     const outgoingAddressesAddress = this.outgoingDictionary.upsert(outgoingTurtleTalk.uint8ArrayAddresses)
     // console.log('AbstractUpdater', this.name, 'outgoingUint8ArrayAddresses', outgoingTurtleTalk.uint8ArrayAddresses)
     if (this.#previousOutgoingAddressesAddress !== outgoingAddressesAddress) {
-      console.log('++++   ', this.name, 'AbstractUpdater >>> outgoing', outgoingAddressesAddress.uint8ArrayAddresses)
+      console.log('++++   ', this.name, 'AbstractUpdater >>> outgoing', outgoingAddressesAddress, outgoingTurtleTalk.uint8ArrayAddresses)
       this.#previousOutgoingAddressesAddress = outgoingAddressesAddress
       this.outgoingDictionary.upsert(outgoingTurtleTalk)
       this.outgoingDictionary.squash(this.outgoingBranch.index + 1)

@@ -5,7 +5,6 @@ import { createServer as createHttpsServer } from 'https'
 import { createServer as createHttpServer } from 'http'
 import { WebSocketServer } from 'ws'
 import { TurtleBranchMultiplexer } from '../public/js/turtle/connections/TurtleBranchMultiplexer.js'
-import { TurtleDB } from '../public/js/turtle/connections/TurtleDB.js'
 
 /**
  * @param {number} port
@@ -31,7 +30,7 @@ export async function webSync (port, basePublicKey, turtleDB, https, insecure, c
         type = 'html'
         relativePath = `${relativePath}index.html`
       }
-      const turtle = await turtleDB.getTurtleBranch(urlPublicKey)
+      const turtle = await turtleDB.buildTurtleBranch(urlPublicKey)
       if (!turtle) return next()
       const body = turtle.lookup('document', 'value', 'fs', relativePath)
       if (!body) return next()
@@ -85,26 +84,26 @@ export async function webSync (port, basePublicKey, turtleDB, https, insecure, c
 
   wss.on('connection', async ws => {
     console.log(' * * * webSync new connection')
-    const tbMux = new TurtleBranchMultiplexer('server tbMux to ws')
-    const addBranchesFromTurtleDB = async () => {
-      const turtleDBPublicKeys = turtleDB.getPublicKeys()
-      const tbMuxPublicKeys = tbMux.publicKeys
-      for (const publicKey of turtleDBPublicKeys) {
-        if (tbMuxPublicKeys.includes(publicKey)) continue
-        const turtleBranch = await turtleDB.getTurtleBranch(publicKey)
-        console.log(' * * * webSync adding from turtleDB', turtleBranch.name)
-        tbMux.getTurtleBranchUpdater(turtleBranch.name, publicKey, turtleBranch, true)
-      }
-    }
-    turtleDB.recaller.watch('webSync addBranchesFromTurtleDB', addBranchesFromTurtleDB)
+    const tbMux = new TurtleBranchMultiplexer('server tbMux to ws', true, turtleDB)
+    // const addBranchesFromTurtleDB = async () => {
+    //   const turtleDBPublicKeys = turtleDB.getPublicKeys()
+    //   const tbMuxPublicKeys = tbMux.publicKeys
+    //   for (const publicKey of turtleDBPublicKeys) {
+    //     if (tbMuxPublicKeys.includes(publicKey)) continue
+    //     const turtleBranch = await turtleDB.buildTurtleBranch(publicKey)
+    //     console.log(' * * * webSync adding from turtleDB', turtleBranch.name)
+    //     tbMux.getTurtleBranchUpdater(turtleBranch.name, publicKey//, turtleBranch, true)
+    //   }
+    // }
+    // turtleDB.recaller.watch('webSync addBranchesFromTurtleDB', addBranchesFromTurtleDB)
     const startOutgoingLoop = async () => {
       for await (const u8aTurtle of tbMux.outgoingBranch.u8aTurtleGenerator()) {
         if (ws.readyState !== ws.OPEN) break
-        console.log(' * * * webSync sending', u8aTurtle.name, u8aTurtle.index)
         const update = u8aTurtle.lookup()
         if (update?.publicKey) {
+          // const branch = turtleDB.buildTurtleBranch(update.publicKey, update.name)
           const updater = tbMux.getTurtleBranchUpdater(update.name, update.publicKey)
-          console.log(' * * * webSync outgoing', update.name, update.publicKey, updater.turtleBranch.index)
+          console.log(' * * * webSync sending', JSON.stringify(updater.name), updater.turtleBranch.index)
         }
         ws.send(u8aTurtle.uint8Array)
       }
@@ -116,14 +115,14 @@ export async function webSync (port, basePublicKey, turtleDB, https, insecure, c
         const update = u8aTurtle.lookup()
         if (update?.publicKey) {
           const { turtleBranch } = tbMux.getTurtleBranchUpdater(update.name, update.publicKey)
-          const turtleDBTurtleBranch = await turtleDB.getTurtleBranch(update.publicKey, update.name, turtleBranch)
-          console.log(' * * * webSync ', update.name, 'adding incoming index:', turtleBranch.index, turtleBranch === turtleDBTurtleBranch)
+          // await turtleDB.buildTurtleBranch(update.publicKey, update.name, turtleBranch)
+          console.log(' * * * webSync ', JSON.stringify(update.name), 'adding incoming index:', turtleBranch.index)
         }
       }
     }
     startIncomingLoop()
-    turtleDB.recaller.unwatch(addBranchesFromTurtleDB)
-    // tbMux.getTurtleBranchUpdater('public', basePublicKey, await getTurtleBranchByPublicKey(basePublicKey))
+    // turtleDB.recaller.unwatch(addBranchesFromTurtleDB)
+    // tbMux.getTurtleBranchUpdater('public', basePublicKey//, await getTurtleBranchByPublicKey(basePublicKey))
     ws.on('message', buffer => tbMux.incomingBranch.append(new Uint8Array(buffer)))
     ws.on('close', (code, reason) => console.log('connection closed', { code, reason }))
     ws.on('error', error => console.error('connection error', { name: error.name, message: error.message }))

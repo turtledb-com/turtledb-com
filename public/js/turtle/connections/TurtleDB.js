@@ -2,9 +2,9 @@ import { Recaller } from '../../utils/Recaller.js'
 import { TurtleBranch } from '../TurtleBranch.js'
 
 /**
- * @typedef {{turtleBranchPromise: Promise.<TurtleBranch>, publicKey: string, tags: Set.<string>}} BranchInfo
- * @typedef {(publicKey: string, name: string, turtleBranchSuggestion: TurtleBranch) => Promise.<TurtleBranch>} TurtleBranchGetter
- * @typedef {(next: TurtleBranchGetter, publicKey: string, name: string, turtleBranchSuggestion: TurtleBranch) => Promise.<TurtleBranch>} TurtleBranchStep
+ * @typedef {{turtleBranchPromise: Promise.<TurtleBranch>, publicKey: string, tags: Set.<string>, existingTurtleBranch: TurtleBranch}} BranchInfo
+ * @typedef {(publicKey: string, name: string, existingTurtleBranch: TurtleBranch) => Promise.<TurtleBranch>} TurtleBranchGetter
+ * @typedef {(next: TurtleBranchGetter, publicKey: string, name: string, existingTurtleBranch: TurtleBranch) => Promise.<TurtleBranch>} TurtleBranchStep
  */
 
 const KEY_OR_TAG_CHANGE = Symbol('TurtleDB instance changed')
@@ -13,17 +13,25 @@ export class TurtleDB {
   /** @type {Object.<string, BranchInfo>} */
   #branchInfoByKey = {}
   /** @type {Array.<TurtleBranchStep>} */
-  #turtleBranchSteps = [async (next, publicKey, name, turtleBranchSuggestion) => {
+  #turtleBranchSteps = [async (next, publicKey, name) => {
+    // console.log(publicKey)
+    let tb
     if (!this.#branchInfoByKey[publicKey]) {
-      // const turtleBranch = await next(publicKey, name, turtleBranchSuggestion)
+      const _turtleBranch = new TurtleBranch(name)
+      tb = _turtleBranch
       this.#branchInfoByKey[publicKey] = {
-        turtleBranchPromise: next(publicKey, name, turtleBranchSuggestion),
         publicKey,
-        tags: new Set()
+        tags: new Set(),
+        existingTurtleBranch: _turtleBranch
       }
+      this.#branchInfoByKey[publicKey].turtleBranchPromise = next(publicKey, name, _turtleBranch)
       this.recaller.reportKeyMutation(this, KEY_OR_TAG_CHANGE, '#turtleBranchSteps[0]', this.name)
     }
-    return this.#branchInfoByKey[publicKey].turtleBranchPromise
+    const turtleBranch = await this.#branchInfoByKey[publicKey].turtleBranchPromise
+    if (tb && tb !== turtleBranch) {
+      throw new Error('?!')
+    }
+    return turtleBranch
   }]
 
   constructor (name, recaller = new Recaller(name)) {
@@ -47,20 +55,19 @@ export class TurtleDB {
   /**
    * @param {string} publicKey
    * @param {string} name
-   * @param {TurtleBranch} turtleBranchSuggestion
    * @returns {Promise.<TurtleBranch>}
    */
-  async getTurtleBranch (publicKey, name = publicKey, turtleBranchSuggestion) {
-    this.recaller.reportKeyAccess(this, KEY_OR_TAG_CHANGE, 'getTurtleBranch', this.name)
+  async buildTurtleBranch (publicKey, name = publicKey) {
+    this.recaller.reportKeyAccess(this, KEY_OR_TAG_CHANGE, 'buildTurtleBranch', this.name)
     let i = 0
     /** @type {(j: number) => TurtleBranchStep} */
-    const next = j => (publicKey, name, turtleBranchSuggestion) => {
+    const next = j => (publicKey, name, existingTurtleBranch) => {
       if (i !== j) console.error('turtleBranchSteps called out of order')
-      if (j >= this.#turtleBranchSteps.length) return turtleBranchSuggestion ?? new TurtleBranch(name)
+      if (j >= this.#turtleBranchSteps.length) return this.#branchInfoByKey[publicKey].existingTurtleBranch
       ++i
-      return this.#turtleBranchSteps[j](next(i), publicKey, name, turtleBranchSuggestion)
+      return this.#turtleBranchSteps[j](next(i), publicKey, name, existingTurtleBranch)
     }
-    return next(i)(publicKey, name, turtleBranchSuggestion)
+    return next(i)(publicKey, name)
   }
 
   addTag (publicKey, tag) {
@@ -71,7 +78,7 @@ export class TurtleDB {
   }
 
   getTurtleBranchInfo (publicKey) {
-    this.recaller.reportKeyAccess(this, KEY_OR_TAG_CHANGE, 'getTurtleBranch', this.name)
+    this.recaller.reportKeyAccess(this, KEY_OR_TAG_CHANGE, 'buildTurtleBranch', this.name)
     return this.#branchInfoByKey[publicKey]
   }
 

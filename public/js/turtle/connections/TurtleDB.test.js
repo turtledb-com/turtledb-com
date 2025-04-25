@@ -5,9 +5,9 @@ import { TurtleDB } from './TurtleDB.js'
 globalRunner.describe(urlToName(import.meta.url), suite => {
   suite.it('correctly makes branches', async ({ assert }) => {
     const turtleDB = new TurtleDB('test1')
-    turtleDB.addTurtleBranchStep(async (next, publicKey, name, turtleBranchSuggestion) => {
+    turtleDB.addTurtleBranchStep(async (next, publicKey, name, existingTurtleBranch) => {
       name += 'a'
-      const turtleBranch = await next(publicKey, name, turtleBranchSuggestion)
+      const turtleBranch = await next(publicKey, name, existingTurtleBranch)
       turtleBranch.x = 1
       return turtleBranch
     })

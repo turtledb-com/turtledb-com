@@ -3,11 +3,13 @@
 /// <reference lib="webworker"/>
 
 import { TurtleBranchMultiplexer } from './js/turtle/connections/TurtleBranchMultiplexer.js'
+import { TurtleDB } from './js/turtle/connections/TurtleDB.js'
 import { Recaller } from './js/utils/Recaller.js'
 
 /* global self, location, WebSocket, clients */
 
 const recaller = new Recaller('service-worker')
+const turtleDB = new TurtleDB('service-worker')
 
 console.log('service-worker started')
 /** @type {ServiceWorkerGlobalScope} */
@@ -20,9 +22,9 @@ const tbMuxAndClientById = {}
  * @param {Client} client
  * @returns {TurtleBranchMultiplexer}
  */
-const getTbMuxForClient = client => {
+const getTBMuxForClient = client => {
   if (!tbMuxAndClientById[client.id]) {
-    const tbMux = new TurtleBranchMultiplexer(client.id, false)
+    const tbMux = new TurtleBranchMultiplexer(client.id, true, turtleDB)
     tbMuxAndClientById[client.id] = { tbMux, client }
   }
   return tbMuxAndClientById[client.id].tbMux
@@ -38,7 +40,7 @@ serviceWorkerGlobalScope.addEventListener('activate', async () => {
 
 serviceWorkerGlobalScope.addEventListener('message', async messageEvent => {
   console.log('service-worker activate')
-  const tbMux = getTbMuxForClient(messageEvent.source)
+  const tbMux = getTBMuxForClient(messageEvent.source)
   tbMux.incomingBranch.append(new Uint8Array(messageEvent.data))
 })
 
@@ -51,7 +53,7 @@ let t = 100
 while (true) {
   try {
     console.log('creating new websocket and mux')
-    const tbMux = new TurtleBranchMultiplexer('websocket')
+    const tbMux = new TurtleBranchMultiplexer('websocket', false, turtleDB)
     const webSocket = new WebSocket(url)
     serviceWorkerGlobalScope.tbMux = tbMux
     webSocket.binaryType = 'arraybuffer'
