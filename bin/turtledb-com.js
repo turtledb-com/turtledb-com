@@ -5,7 +5,6 @@ import { Option, program } from 'commander'
 import { Signer } from '../public/js/turtle/Signer.js'
 import { question } from 'readline-sync'
 import { TurtleDictionary } from '../public/js/turtle/TurtleDictionary.js'
-import { proxyWithRecaller } from '../public/js/utils/proxyWithRecaller.js'
 import { Workspace } from '../public/js/turtle/Workspace.js'
 import { fsSync } from '../src/fsSync.js'
 import { webSync } from '../src/webSync.js'
@@ -13,7 +12,6 @@ import { Recaller } from '../public/js/utils/Recaller.js'
 import { S3Client } from '@aws-sdk/client-s3'
 import { S3Updater } from '../src/S3Updater.js'
 import { TurtleBranchUpdater } from '../public/js/turtle/connections/TurtleBranchUpdater.js'
-import { TurtleBranch } from '../public/js/turtle/TurtleBranch.js'
 import { AS_REFS } from '../public/js/turtle/codecs/CodecType.js'
 import { TurtleDB } from '../public/js/turtle/connections/TurtleDB.js'
 
@@ -43,9 +41,7 @@ program
 const options = program.opts()
 options.username ??= question('username: ')
 options.password ??= question('password: ', { hideEchoBack: true })
-const { username, password, s3EndPoint, s3Region, s3Bucket, s3AccessKeyId, s3SecretAccessKey, nos3, fsdir, fsname, fsobj, base, port, originHost, originPort, https, insecure, certpath, interactive } = options
-
-// console.log(options)
+const { username, password, s3EndPoint, s3Region, s3Bucket, s3AccessKeyId, s3SecretAccessKey, nos3, fsdir, fsname, fsobj, base, port, /* originHost, originPort, */ https, insecure, certpath, interactive } = options
 
 const signer = new Signer(username, password)
 const recaller = new Recaller('turtledb-com')

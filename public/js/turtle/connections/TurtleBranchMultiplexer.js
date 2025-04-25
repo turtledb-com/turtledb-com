@@ -34,7 +34,6 @@ export class TurtleBranchMultiplexer extends TurtleTalker {
   async appendGeneratedIncomingForever () {
     for await (const u8aTurtle of this.incomingBranch.u8aTurtleGenerator()) {
       const { address, name, publicKey } = u8aTurtle.lookup()
-      // console.log(this.name, 'receiveUpdate', name, publicKey, address)
       const uint8Array = u8aTurtle.lookup(address)
       const turtleBranchUpdater = this.getTurtleBranchUpdater(name, publicKey)
       turtleBranchUpdater.incomingBranch.append(uint8Array)
@@ -66,8 +65,6 @@ export class TurtleBranchMultiplexer extends TurtleTalker {
     publicKey ||= name
     name ||= publicKey
     if (!this.#updatersByCpk[publicKey]) {
-      // console.log('????? muxer adding updater', publicKey)
-      // console.log('existing for', name, this.turtleDB.getTurtleBranchInfo(publicKey)?.existingTurtleBranch)
       this.turtleDB.buildTurtleBranch(publicKey, name) // don't await
       const turtleBranch = this.turtleDB.getTurtleBranchInfo(publicKey).existingTurtleBranch
       const updater = new TurtleBranchUpdater(name, turtleBranch, publicKey, this.Xours)

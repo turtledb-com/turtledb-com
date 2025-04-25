@@ -32,7 +32,6 @@ export class AbstractUpdater extends TurtleTalker {
     this._started = true
     this.incomingBranch.recaller.watch(`${JSON.stringify(this.name)}.start`, () => {
       const incomingUint8ArrayAddresses = this.incomingBranch.lookup()?.uint8ArrayAddresses
-      // console.log('AbstractUpdater', this.name, 'incomingUint8ArrayAddresses', incomingUint8ArrayAddresses)
       this.update(incomingUint8ArrayAddresses)
     })
   }
@@ -48,19 +47,15 @@ export class AbstractUpdater extends TurtleTalker {
    */
   update = async (incomingUint8ArrayAddresses) => {
     if (this.#isUpdating) return this.recaller.reportKeyAccess(this, '#isUpdating', 'update', JSON.stringify(this.name)) // try again when when it's done updating
-    // console.log(this.name, 'is updating')
     this.#isUpdating = true
-    // console.log(`${JSON.stringify(this.name)} receiving uint8ArrayAddresses`, incomingUint8ArrayAddresses)
     let length = await this.getUint8ArraysLength()
     const outgoingTurtleTalk = { uint8ArrayAddresses: [], ts: new Date().getTime() }
     if (incomingUint8ArrayAddresses) { // they're ready
-      // console.log('++++   ', this.name, 'AbstractUpdater <<< incoming:', incomingUint8ArrayAddresses)
       // handle incoming message (if any exist)
       for (const indexString in incomingUint8ArrayAddresses) {
         const i = +indexString
         const incomingAddress = incomingUint8ArrayAddresses[i]
         const incomingUint8Array = this.incomingBranch.lookup(incomingAddress)
-        // console.log(this.name, { incomingUint8ArrayAddresses })
         if (i < length) { // we should already have this one
           const ourUint8Array = await this.getUint8Array(i)
           if (this.#incomingUint8ArraysByAddress[incomingAddress] === undefined && deepEqualUint8Arrays(ourUint8Array, incomingUint8Array)) {
@@ -109,14 +104,11 @@ export class AbstractUpdater extends TurtleTalker {
 
     outgoingTurtleTalk.uint8ArrayAddresses.length = length
     const outgoingAddressesAddress = this.outgoingDictionary.upsert(outgoingTurtleTalk.uint8ArrayAddresses)
-    // console.log('AbstractUpdater', this.name, 'outgoingUint8ArrayAddresses', outgoingTurtleTalk.uint8ArrayAddresses)
     if (this.#previousOutgoingAddressesAddress !== outgoingAddressesAddress) {
-      // console.log('++++   ', this.name, 'AbstractUpdater >>> outgoing', outgoingAddressesAddress, outgoingTurtleTalk.uint8ArrayAddresses)
       this.#previousOutgoingAddressesAddress = outgoingAddressesAddress
       this.outgoingDictionary.upsert(outgoingTurtleTalk)
       this.outgoingDictionary.squash(this.outgoingBranch.index + 1)
       this.outgoingBranch.u8aTurtle = this.outgoingDictionary.u8aTurtle
-      // console.log(this.outgoingBranch.u8aTurtle.lookup())
     }
 
     this.#isUpdating = false

@@ -110,7 +110,7 @@ while (true) {
         if (!tbMux.publicKeys.includes(publicKey)) {
           turtleDB.buildTurtleBranch(publicKey, u8aTurtle.lookup('name'))
         }
-        const updater = tbMux.getTurtleBranchUpdater(undefined, publicKey) //
+        tbMux.getTurtleBranchUpdater(undefined, publicKey) //
         // console.log('--', JSON.stringify(u8aTurtle.lookup('name')), 'web-client >>> outgoing', updater.outgoingBranch.lookup('uint8ArrayAddresses'))
         // console.log(ws.readyState)
         // console.log(ws.readyState !== ws.OPEN)
@@ -126,7 +126,7 @@ while (true) {
         // if (ws.readyState !== ws.OPEN) break
         const update = u8aTurtle.lookup()
         if (u8aTurtle.lookup('name') === 'test') {
-          const updater = tbMux.getTurtleBranchUpdater(u8aTurtle.lookup('name'), u8aTurtle.lookup('publicKey'))
+          tbMux.getTurtleBranchUpdater(u8aTurtle.lookup('name'), u8aTurtle.lookup('publicKey'))
           // console.log('--', JSON.stringify(update.name), 'web-client <<< incoming', updater.incomingBranch.lookup('uint8ArrayAddresses'))
         }
         if (update.publicKey) turtleDB.buildTurtleBranch(update.publicKey, update.name)

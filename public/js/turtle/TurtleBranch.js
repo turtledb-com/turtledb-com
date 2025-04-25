@@ -50,8 +50,6 @@ export class TurtleBranch {
           this.#setNextUint8Array(uint8Array)
         })
       } else {
-        // console.log('old', JSON.stringify(this.name), this.#u8aTurtle)
-        // console.log('new', JSON.stringify(this.name), u8aTurtle)
         console.warn(`TurtleBranch, ${this.name}.u8aTurtle set to non-descendant (generators are broken now)`)
       }
     }
