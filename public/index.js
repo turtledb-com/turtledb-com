@@ -82,16 +82,16 @@ let t = 100
 let connectionCount = 0
 while (true) {
   console.log('-- creating new websocket and mux')
-  const tbMux = new TurtleBranchMultiplexer('websocket', false, turtleDB)
+  const tbMux = new TurtleBranchMultiplexer(`websocket#${connectionCount}`, false, turtleDB)
   for (const publicKey of turtleDB.getPublicKeys()) {
     tbMux.getTurtleBranchUpdater(publicKey)
   }
   const addToTBMuxStep = async (next, publicKey, name, existingTurtleBranch) => {
-    console.log('addToTBMuxStep about to get next', { publicKey })
+    // console.log('addToTBMuxStep about to get next', { publicKey })
     const updater = tbMux.getTurtleBranchUpdater(name, publicKey)
-    console.log('addToTBMuxStep about to await settle', { updater })
+    // console.log('addToTBMuxStep about to await settle', { updater })
     await updater.settle
-    console.log('addToTBMuxStep', { publicKey })
+    // console.log('addToTBMuxStep', { publicKey })
     return updater.turtleBranch
   }
   turtleDB.addTurtleBranchStep(addToTBMuxStep)
@@ -101,17 +101,17 @@ while (true) {
     window.tbMux = tbMux
     ws.binaryType = 'arraybuffer'
     const startOutgoingLoop = async () => {
-      console.log('startOutgoingLoop', { _connectionCount })
+      // console.log('startOutgoingLoop', { _connectionCount })
       for await (const u8aTurtle of tbMux.outgoingBranch.u8aTurtleGenerator()) {
-        console.log('outgoing', ws.readyState, ws.OPEN, { _connectionCount })
+        // console.log('outgoing', ws.readyState, ws.OPEN, { _connectionCount })
         if (ws.readyState !== ws.OPEN) break
         const publicKey = u8aTurtle.lookup('publicKey')
-        console.log('\n\n -------')
+        // console.log('\n\n -------')
         if (!tbMux.publicKeys.includes(publicKey)) {
           turtleDB.buildTurtleBranch(publicKey, u8aTurtle.lookup('name'))
         }
-        const updater = tbMux.getTurtleBranchUpdater(undefined, publicKey)
-        console.log('--', JSON.stringify(u8aTurtle.lookup('name')), 'web-client >>> outgoing', updater.outgoingBranch.lookup('uint8ArrayAddresses'))
+        const updater = tbMux.getTurtleBranchUpdater(undefined, publicKey) //
+        // console.log('--', JSON.stringify(u8aTurtle.lookup('name')), 'web-client >>> outgoing', updater.outgoingBranch.lookup('uint8ArrayAddresses'))
         // console.log(ws.readyState)
         // console.log(ws.readyState !== ws.OPEN)
         // if (ws.readyState !== ws.OPEN) break
@@ -119,15 +119,15 @@ while (true) {
       }
     }
     const startIncomingLoop = async () => {
-      console.log('startIncomingLoop', { _connectionCount })
+      // console.log('startIncomingLoop', { _connectionCount })
       for await (const u8aTurtle of tbMux.incomingBranch.u8aTurtleGenerator()) {
-        console.log('incoming', ws.readyState, ws.OPEN, { _connectionCount })
+        // console.log('incoming', ws.readyState, ws.OPEN, { _connectionCount })
         if (ws.readyState !== ws.OPEN) break
         // if (ws.readyState !== ws.OPEN) break
         const update = u8aTurtle.lookup()
         if (u8aTurtle.lookup('name') === 'test') {
           const updater = tbMux.getTurtleBranchUpdater(u8aTurtle.lookup('name'), u8aTurtle.lookup('publicKey'))
-          console.log('--', JSON.stringify(update.name), 'web-client <<< incoming', updater.incomingBranch.lookup('uint8ArrayAddresses'))
+          // console.log('--', JSON.stringify(update.name), 'web-client <<< incoming', updater.incomingBranch.lookup('uint8ArrayAddresses'))
         }
         if (update.publicKey) turtleDB.buildTurtleBranch(update.publicKey, update.name)
       }
@@ -153,18 +153,18 @@ while (true) {
       console.log('\n\n(warmup) testBranch.index:', window.testBranch?.index)
     }
     ws.onmessage = event => {
-      console.log(event)
+      // console.log(event)
       tbMux.incomingBranch.append(new Uint8Array(event.data))
     }
     await new Promise((resolve, reject) => {
       ws.onclose = resolve
       ws.onerror = reject
     })
-    console.log('-- onclose/onerror', { _connectionCount })
+    // console.log('-- onclose/onerror', { _connectionCount })
   } catch (error) {
     console.error(error)
   }
-  console.log('-- exited try')
+  // console.log('-- exited try')
   delete window.tbMux
   turtleDB.removeTurtleBranchStep(addToTBMuxStep)
   t = Math.min(t, 2 * 60 * 1000) // 2 minutes max (unjittered)

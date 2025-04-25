@@ -11,6 +11,7 @@ import { TurtleTalker } from './TurtleTalker.js'
 export class TurtleBranchMultiplexer extends TurtleTalker {
   /** @type {Object.<string, TurtleBranchUpdater>} */
   #updatersByCpk = {}
+  #stopped = false
 
   /**
    * @param {string} name
@@ -26,6 +27,10 @@ export class TurtleBranchMultiplexer extends TurtleTalker {
     this.appendGeneratedIncomingForever() // don't await
   }
 
+  stop () {
+    this.#stopped = true
+  }
+
   async appendGeneratedIncomingForever () {
     for await (const u8aTurtle of this.incomingBranch.u8aTurtleGenerator()) {
       const { address, name, publicKey } = u8aTurtle.lookup()
@@ -33,7 +38,7 @@ export class TurtleBranchMultiplexer extends TurtleTalker {
       const uint8Array = u8aTurtle.lookup(address)
       const turtleBranchUpdater = this.getTurtleBranchUpdater(name, publicKey)
       turtleBranchUpdater.incomingBranch.append(uint8Array)
-      console.log(JSON.stringify(this.name), 'receiving', { publicKey, name }, turtleBranchUpdater.incomingBranch.lookup())
+      console.log(JSON.stringify(this.name), '<- incoming <-', publicKey, '<-', name, '<-', turtleBranchUpdater.incomingBranch.lookup('uint8ArrayAddresses'))
     }
   }
 
@@ -49,7 +54,7 @@ export class TurtleBranchMultiplexer extends TurtleTalker {
     this.outgoingDictionary.upsert(update)
     this.outgoingDictionary.squash(this.outgoingBranch.index + 1)
     this.outgoingBranch.u8aTurtle = this.outgoingDictionary.u8aTurtle
-    console.log(JSON.stringify(this.name), '#sendUpdate', turtleBranchUpdater.outgoingBranch.lookup())
+    console.log(JSON.stringify(this.name), '-> outgoing ->', publicKey, '->', name, '->', turtleBranchUpdater.outgoingBranch.lookup('uint8ArrayAddresses'))
   }
 
   /**
@@ -58,18 +63,18 @@ export class TurtleBranchMultiplexer extends TurtleTalker {
    * @returns {TurtleBranchUpdater}
    */
   getTurtleBranchUpdater (name = '', publicKey = '') {
-    console.log({ publicKey, name })
     publicKey ||= name
     name ||= publicKey
-    console.log({ publicKey, name })
     if (!this.#updatersByCpk[publicKey]) {
       // console.log('????? muxer adding updater', publicKey)
-      console.log('existing for', name, this.turtleDB.getTurtleBranchInfo(publicKey)?.existingTurtleBranch)
+      // console.log('existing for', name, this.turtleDB.getTurtleBranchInfo(publicKey)?.existingTurtleBranch)
       this.turtleDB.buildTurtleBranch(publicKey, name) // don't await
       const turtleBranch = this.turtleDB.getTurtleBranchInfo(publicKey).existingTurtleBranch
       const updater = new TurtleBranchUpdater(name, turtleBranch, publicKey, this.Xours)
+      const getStopped = () => this.#stopped
       ;(async () => {
         for await (const u8aTurtle of updater.outgoingBranch.u8aTurtleGenerator()) {
+          if (getStopped()) break
           this.#sendUpdate(u8aTurtle.uint8Array, name, publicKey, updater)
         }
       })()

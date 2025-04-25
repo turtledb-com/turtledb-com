@@ -54,7 +54,7 @@ export class AbstractUpdater extends TurtleTalker {
     let length = await this.getUint8ArraysLength()
     const outgoingTurtleTalk = { uint8ArrayAddresses: [], ts: new Date().getTime() }
     if (incomingUint8ArrayAddresses) { // they're ready
-      console.log('++++   ', this.name, 'AbstractUpdater <<< incoming:', incomingUint8ArrayAddresses)
+      // console.log('++++   ', this.name, 'AbstractUpdater <<< incoming:', incomingUint8ArrayAddresses)
       // handle incoming message (if any exist)
       for (const indexString in incomingUint8ArrayAddresses) {
         const i = +indexString
@@ -111,7 +111,7 @@ export class AbstractUpdater extends TurtleTalker {
     const outgoingAddressesAddress = this.outgoingDictionary.upsert(outgoingTurtleTalk.uint8ArrayAddresses)
     // console.log('AbstractUpdater', this.name, 'outgoingUint8ArrayAddresses', outgoingTurtleTalk.uint8ArrayAddresses)
     if (this.#previousOutgoingAddressesAddress !== outgoingAddressesAddress) {
-      console.log('++++   ', this.name, 'AbstractUpdater >>> outgoing', outgoingAddressesAddress, outgoingTurtleTalk.uint8ArrayAddresses)
+      // console.log('++++   ', this.name, 'AbstractUpdater >>> outgoing', outgoingAddressesAddress, outgoingTurtleTalk.uint8ArrayAddresses)
       this.#previousOutgoingAddressesAddress = outgoingAddressesAddress
       this.outgoingDictionary.upsert(outgoingTurtleTalk)
       this.outgoingDictionary.squash(this.outgoingBranch.index + 1)

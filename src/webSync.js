@@ -80,11 +80,12 @@ export async function webSync (port, basePublicKey, turtleDB, https, insecure, c
 
   const wss = new WebSocketServer({ server })
   // const recaller = new Recaller('webserver')
-  // let count = 0
+  let connectionCount = 0
 
   wss.on('connection', async ws => {
+    ++connectionCount
     console.log(' * * * webSync new connection')
-    const tbMux = new TurtleBranchMultiplexer('server tbMux to ws', true, turtleDB)
+    const tbMux = new TurtleBranchMultiplexer(`server-tbMux-to-ws#${connectionCount}`, true, turtleDB)
     // const addBranchesFromTurtleDB = async () => {
     //   const turtleDBPublicKeys = turtleDB.getPublicKeys()
     //   const tbMuxPublicKeys = tbMux.publicKeys
@@ -103,7 +104,7 @@ export async function webSync (port, basePublicKey, turtleDB, https, insecure, c
         if (update?.publicKey) {
           // const branch = turtleDB.buildTurtleBranch(update.publicKey, update.name)
           const updater = tbMux.getTurtleBranchUpdater(update.name, update.publicKey)
-          console.log(' * * * webSync sending', JSON.stringify(updater.name), updater.turtleBranch.index)
+          // console.log(' * * * webSync sending', JSON.stringify(updater.name), updater.turtleBranch.index)
         }
         ws.send(u8aTurtle.uint8Array)
       }
@@ -116,7 +117,7 @@ export async function webSync (port, basePublicKey, turtleDB, https, insecure, c
         if (update?.publicKey) {
           const { turtleBranch } = tbMux.getTurtleBranchUpdater(update.name, update.publicKey)
           // await turtleDB.buildTurtleBranch(update.publicKey, update.name, turtleBranch)
-          console.log(' * * * webSync ', JSON.stringify(update.name), 'adding incoming index:', turtleBranch.index)
+          // console.log(' * * * webSync ', JSON.stringify(update.name), 'adding incoming index:', turtleBranch.index)
         }
       }
     }
@@ -126,6 +127,11 @@ export async function webSync (port, basePublicKey, turtleDB, https, insecure, c
     ws.on('message', buffer => tbMux.incomingBranch.append(new Uint8Array(buffer)))
     ws.on('close', (code, reason) => console.log('connection closed', { code, reason }))
     ws.on('error', error => console.error('connection error', { name: error.name, message: error.message }))
+    await new Promise((resolve, reject) => {
+      ws.onclose = resolve
+      ws.onerror = reject
+    })
+    tbMux.stop()
   })
 
   server.listen(port, () => {
