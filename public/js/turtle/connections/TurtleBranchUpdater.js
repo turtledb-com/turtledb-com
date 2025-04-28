@@ -41,6 +41,7 @@ export class TurtleBranchUpdater extends AbstractUpdater {
     const settlePromise = new Promise((...args) => { [resolve] = args })
     const checkSettle = () => {
       const incoming = this.incomingBranch.lookup()
+      console.log('checkSettle', this.turtleBranch.index + 1, '>=', incoming?.uint8ArrayAddresses?.length)
       if (this.turtleBranch.index + 1 >= incoming?.uint8ArrayAddresses?.length) {
         this.incomingBranch.recaller.unwatch(checkSettle)
         resolve()

@@ -65,8 +65,8 @@ export class TurtleBranchMultiplexer extends TurtleTalker {
     publicKey ||= name
     name ||= publicKey
     if (!this.#updatersByCpk[publicKey]) {
-      this.turtleDB.buildTurtleBranch(publicKey, name) // don't await
-      const turtleBranch = this.turtleDB.getTurtleBranchInfo(publicKey).existingTurtleBranch
+      this.turtleDB.summonBoundTurtleBranch(publicKey, name) // don't await
+      const turtleBranch = this.turtleDB.getStatus(publicKey).turtleBranch
       const updater = new TurtleBranchUpdater(name, turtleBranch, publicKey, this.Xours)
       const getStopped = () => this.#stopped
       ;(async () => {
