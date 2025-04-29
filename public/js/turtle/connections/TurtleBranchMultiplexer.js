@@ -35,7 +35,7 @@ export class TurtleBranchMultiplexer extends TurtleTalker {
     for await (const u8aTurtle of this.incomingBranch.u8aTurtleGenerator()) {
       const { address, name, publicKey } = u8aTurtle.lookup()
       const uint8Array = u8aTurtle.lookup(address)
-      const turtleBranchUpdater = this.getTurtleBranchUpdater(name, publicKey)
+      const turtleBranchUpdater = await this.getTurtleBranchUpdater(name, publicKey)
       turtleBranchUpdater.incomingBranch.append(uint8Array)
       console.log(JSON.stringify(this.name), '<- incoming <-', publicKey, '<-', name, '<-', turtleBranchUpdater.incomingBranch.lookup('uint8ArrayAddresses'))
     }
@@ -61,23 +61,24 @@ export class TurtleBranchMultiplexer extends TurtleTalker {
    * @param {string} publicKey
    * @returns {TurtleBranchUpdater}
    */
-  getTurtleBranchUpdater (name = '', publicKey = '') {
+  async getTurtleBranchUpdater (name = '', publicKey = '', turtleBranch) {
     publicKey ||= name
     name ||= publicKey
     if (!this.#updatersByCpk[publicKey]) {
-      this.turtleDB.summonBoundTurtleBranch(publicKey, name) // don't await
-      const turtleBranch = this.turtleDB.getStatus(publicKey).turtleBranch
-      const updater = new TurtleBranchUpdater(name, turtleBranch, publicKey, this.Xours)
       const getStopped = () => this.#stopped
-      ;(async () => {
-        for await (const u8aTurtle of updater.outgoingBranch.u8aTurtleGenerator()) {
-          if (getStopped()) break
-          this.#sendUpdate(u8aTurtle.uint8Array, name, publicKey, updater)
-        }
+      this.#updatersByCpk[publicKey] = (async () => {
+        turtleBranch ??= await this.turtleDB.summonBoundTurtleBranch(publicKey, name)
+        const updater = new TurtleBranchUpdater(name, turtleBranch, publicKey, this.Xours)
+        ;(async () => {
+          for await (const u8aTurtle of updater.outgoingBranch.u8aTurtleGenerator()) {
+            if (getStopped()) break
+            this.#sendUpdate(u8aTurtle.uint8Array, name, publicKey, updater)
+          }
+        })()
+        updater.start()
+        return updater
       })()
-      this.#updatersByCpk[publicKey] = updater
     }
-    this.#updatersByCpk[publicKey].start()
     return this.#updatersByCpk[publicKey]
   }
 

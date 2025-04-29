@@ -56,6 +56,7 @@ export class S3Updater extends AbstractUpdater {
           }
         }
         this.#length = lengthGuess
+        console.log('(S3) length', this.name, this.#length)
         resolve(this.#length)
       } catch (error) { reject(error) }
     }
@@ -74,6 +75,7 @@ export class S3Updater extends AbstractUpdater {
           Key: S3Updater.indexToKey(this.publicKey, index)
         }))
         const uint8Array = await object.Body.transformToByteArray()
+        console.log('(S3) <= incoming <=', this.name, '<=', index)
         resolve(uint8Array)
       } catch (error) { reject(error) }
     }
@@ -97,6 +99,7 @@ export class S3Updater extends AbstractUpdater {
           Body: uint8Array,
           Key: S3Updater.indexToKey(this.publicKey, this.#length)
         }))
+        console.log('(S3) => outgoing =>', this.name, '=>', this.#length)
         ++this.#length
         resolve(uint8Array)
       } catch (error) { reject(error) }

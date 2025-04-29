@@ -85,8 +85,8 @@ export class AbstractUpdater extends TurtleTalker {
           length = await this.getUint8ArraysLength()
         }
       }
-      const startingIndex = incomingUint8ArrayAddresses.length
-      if (length > 0 && startingIndex > 0 && this.Xours) {
+      const startingIndex = Math.min(incomingUint8ArrayAddresses.length, length)
+      if (startingIndex > 0 && this.Xours) {
         const uint8Array = await this.getUint8Array(startingIndex - 1)
         if (this.#outgoingAddressesByUint8Array.get(uint8Array) === undefined) {
           this.#outgoingAddressesByUint8Array.set(uint8Array, this.outgoingDictionary.upsert(uint8Array, [OPAQUE_UINT8ARRAY]))

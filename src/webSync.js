@@ -7,6 +7,10 @@ import { WebSocketServer } from 'ws'
 import { TurtleBranchMultiplexer } from '../public/js/turtle/connections/TurtleBranchMultiplexer.js'
 
 /**
+ * @typedef {import('../public/js/turtle/connections/TurtleDB.js').TurtleDB} TurtleDB
+ */
+
+/**
  * @param {number} port
  * @param {string} basePublicKey
  * @param {TurtleDB} turtleDB
@@ -29,7 +33,7 @@ export async function webSync (port, basePublicKey, turtleDB, https, insecure, c
         type = 'html'
         relativePath = `${relativePath}index.html`
       }
-      const turtle = await turtleDB.buildTurtleBranch(urlPublicKey)
+      const turtle = await turtleDB.summonBoundTurtleBranch(urlPublicKey)
       if (!turtle) return next()
       const body = turtle.lookup('document', 'value', 'fs', relativePath)
       if (!body) return next()
@@ -88,7 +92,7 @@ export async function webSync (port, basePublicKey, turtleDB, https, insecure, c
         if (ws.readyState !== ws.OPEN) break
         const update = u8aTurtle.lookup()
         if (update?.publicKey) {
-          tbMux.getTurtleBranchUpdater(update.name, update.publicKey)
+          await tbMux.getTurtleBranchUpdater(update.name, update.publicKey)
         }
         ws.send(u8aTurtle.uint8Array)
       }
@@ -99,7 +103,7 @@ export async function webSync (port, basePublicKey, turtleDB, https, insecure, c
         if (ws.readyState !== ws.OPEN) break
         const update = u8aTurtle.lookup()
         if (update?.publicKey) {
-          tbMux.getTurtleBranchUpdater(update.name, update.publicKey)
+          await tbMux.getTurtleBranchUpdater(update.name, update.publicKey)
         }
       }
     }

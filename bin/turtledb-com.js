@@ -61,15 +61,18 @@ if (!nos3 && (s3EndPoint || s3Region || s3Bucket || s3AccessKeyId || s3SecretAcc
       secretAccessKey: s3SecretAccessKey
     }
   })
-  turtleDB.addTurtleBranchStep(async (next, publicKey, name, existingTurtleBranch) => {
+  console.log('bound')
+  turtleDB.bind(async status => {
+    const turtleBranch = status.turtleBranch
+    const name = turtleBranch.name
+    console.log('binding', name)
+    const publicKey = status.publicKey
     const s3Updater = new S3Updater(`s3Updater"${name}"`, publicKey, recaller, s3Client, s3Bucket)
-    const turtleBranch = await next(publicKey, name, existingTurtleBranch)
     const tbUpdater = new TurtleBranchUpdater(`tbUpdater"${name}"`, turtleBranch, publicKey, false, recaller)
     s3Updater.connect(tbUpdater)
     s3Updater.start()
     tbUpdater.start()
     await tbUpdater.settle
-    return turtleBranch
   })
 }
 
@@ -91,7 +94,7 @@ for (let i = 0; i < Math.max(fsdir.length, fsname.length); ++i) {
   const path = fsdir[i] ?? fsname[i]
   const name = fsname[i] ?? fsdir[i]
   const { publicKey } = await signer.makeKeysFor(name)
-  const workspace = new Workspace(name, signer, await turtleDB.buildTurtleBranch(publicKey, name))
+  const workspace = new Workspace(name, signer, await turtleDB.summonBoundTurtleBranch(publicKey, name))
   fsSync(workspace, path, fsobj[i])
 }
 

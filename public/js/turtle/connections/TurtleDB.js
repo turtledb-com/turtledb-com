@@ -81,16 +81,15 @@ export class TurtleDB {
         bindingInProgress: null,
         bindings: new Set()
       }
+      this.#statuses[publicKey] = status
       status.turtleBranchPromise = (async () => {
         for (const binding of this.#bindings) {
-          console.log(binding)
           status.bindingInProgress = binding
           await binding(status)
           status.bindings.add(binding)
         }
         return turtleBranch
       })()
-      this.#statuses[publicKey] = status
     } else {
       status.tags = status.tags.union(tags)
     }

@@ -17,7 +17,7 @@ globalRunner.describe(urlToName(import.meta.url), suite => {
     await tics(1) // let the commit make it into aTBUpdater's outgoing branch (or else it will start settled at 0)
 
     const bTBMux = new TurtleBranchMultiplexer('b')
-    const bTBUpdater = bTBMux.getTurtleBranchUpdater('test-b', keys.publicKey)
+    const bTBUpdater = await bTBMux.getTurtleBranchUpdater('test-b', keys.publicKey)
     aTBMux.connect(bTBMux)
 
     await bTBUpdater.settle
