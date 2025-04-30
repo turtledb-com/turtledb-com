@@ -100,33 +100,22 @@ while (true) {
     window.tbMux = tbMux
     ws.binaryType = 'arraybuffer'
     const startOutgoingLoop = async () => {
-      // console.log('startOutgoingLoop', { _connectionCount })
       for await (const u8aTurtle of tbMux.outgoingBranch.u8aTurtleGenerator()) {
-        // console.log('outgoing', ws.readyState, ws.OPEN, { _connectionCount })
         if (ws.readyState !== ws.OPEN) break
         const publicKey = u8aTurtle.lookup('publicKey')
-        // console.log('\n\n -------')
         if (!tbMux.publicKeys.includes(publicKey)) {
           turtleDB.summonBoundTurtleBranch(publicKey, u8aTurtle.lookup('name'))
         }
         await tbMux.getTurtleBranchUpdater(undefined, publicKey) //
-        // console.log('--', JSON.stringify(u8aTurtle.lookup('name')), 'web-client >>> outgoing', updater.outgoingBranch.lookup('uint8ArrayAddresses'))
-        // console.log(ws.readyState)
-        // console.log(ws.readyState !== ws.OPEN)
-        // if (ws.readyState !== ws.OPEN) break
         ws.send(u8aTurtle.uint8Array)
       }
     }
     const startIncomingLoop = async () => {
-      // console.log('startIncomingLoop', { _connectionCount })
       for await (const u8aTurtle of tbMux.incomingBranch.u8aTurtleGenerator()) {
-        // console.log('incoming', ws.readyState, ws.OPEN, { _connectionCount })
         if (ws.readyState !== ws.OPEN) break
-        // if (ws.readyState !== ws.OPEN) break
         const update = u8aTurtle.lookup()
         if (u8aTurtle.lookup('name') === 'test') {
           await tbMux.getTurtleBranchUpdater(u8aTurtle.lookup('name'), u8aTurtle.lookup('publicKey'))
-          // console.log('--', JSON.stringify(update.name), 'web-client <<< incoming', updater.incomingBranch.lookup('uint8ArrayAddresses'))
         }
         if (update.publicKey) turtleDB.summonBoundTurtleBranch(update.publicKey, update.name)
       }
@@ -141,7 +130,6 @@ while (true) {
       const signer = new Signer('david', 'secret')
       const keys = await signer.makeKeysFor('test')
       console.log({ keys })
-      // await new Promise(resolve => setTimeout(resolve, 3000))
       console.log('\n\n(warmup)')
       console.log('(warmup) about to getTurtleBranchByPublicKey', keys.publicKey)
       window.testBranch = await turtleDB.summonBoundTurtleBranch(keys.publicKey, 'test')
@@ -153,18 +141,16 @@ while (true) {
       console.log('\n\n(warmup) testBranch.index:', window.testBranch?.index)
     }
     ws.onmessage = event => {
-      // console.log(event)
       tbMux.incomingBranch.append(new Uint8Array(event.data))
     }
     await new Promise((resolve, reject) => {
       ws.onclose = resolve
       ws.onerror = reject
     })
-    // console.log('-- onclose/onerror', { _connectionCount })
   } catch (error) {
     console.error(error)
   }
-  // console.log('-- exited try')
+  tbMux.stop()
   delete window.tbMux
   turtleDB.unbind(addToTBMuxStep)
   t = Math.min(t, 20 * 1000) // 2 minutes max (unjittered)

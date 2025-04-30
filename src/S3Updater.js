@@ -24,6 +24,9 @@ export class S3Updater extends AbstractUpdater {
     this.bucket = bucket
   }
 
+  /**
+   * @returns {Promise.<number>}
+   */
   async getUint8ArraysLength () {
     if (this.#length !== undefined) return this.#length
     const getExists = async index => {
@@ -63,6 +66,10 @@ export class S3Updater extends AbstractUpdater {
     return this.#lengthPromise
   }
 
+  /**
+   * @param {number} index
+   * @returns {Promise.<Uint8Array>}
+   */
   async getUint8Array (index) {
     await this.getUint8ArraysLength()
     if (index >= this.#length) return
@@ -82,6 +89,10 @@ export class S3Updater extends AbstractUpdater {
     return this.#getPromises[index]
   }
 
+  /**
+   * @param {Uint8Array} uint8Array
+   * @returns {Promise.<number>}
+   */
   async pushUint8Array (uint8Array) {
     await this.getUint8ArraysLength()
     if (!this.#getPromises[this.#length]) {
@@ -107,5 +118,10 @@ export class S3Updater extends AbstractUpdater {
     return this.#getPromises[this.#length]
   }
 
-  static indexToKey = (compactPublicKey, index) => `${compactPublicKey}/${`000000${index.toString(32)}`.slice(-6)}`
+  /**
+   * @param {string} publicKey
+   * @param {number} index
+   * @returns {string}
+   */
+  static indexToKey = (publicKey, index) => `${publicKey}/${`000000${index.toString(32)}`.slice(-6)}`
 }

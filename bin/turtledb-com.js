@@ -61,11 +61,9 @@ if (!nos3 && (s3EndPoint || s3Region || s3Bucket || s3AccessKeyId || s3SecretAcc
       secretAccessKey: s3SecretAccessKey
     }
   })
-  console.log('bound')
   turtleDB.bind(async status => {
     const turtleBranch = status.turtleBranch
     const name = turtleBranch.name
-    console.log('binding', name)
     const publicKey = status.publicKey
     const s3Updater = new S3Updater(`s3Updater"${name}"`, publicKey, recaller, s3Client, s3Bucket)
     const tbUpdater = new TurtleBranchUpdater(`tbUpdater"${name}"`, turtleBranch, publicKey, false, recaller)
