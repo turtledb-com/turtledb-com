@@ -4,8 +4,6 @@ import { AbstractUpdater } from './AbstractUpdater.js'
 
 /** @typedef {import('../TurtleBranch.js').TurtleBranch} TurtleBranch */
 
-// let i = 0
-
 export class TurtleBranchUpdater extends AbstractUpdater {
   /**
    * @param {string} name
@@ -36,6 +34,9 @@ export class TurtleBranchUpdater extends AbstractUpdater {
     })
   }
 
+  /**
+   * @type {Promise.<void>}
+   */
   get settle () {
     let resolve
     const settlePromise = new Promise((...args) => { [resolve] = args })

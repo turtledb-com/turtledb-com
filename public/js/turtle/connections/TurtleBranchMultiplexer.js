@@ -82,6 +82,9 @@ export class TurtleBranchMultiplexer extends TurtleTalker {
     return this.#updatersByCpk[publicKey]
   }
 
+  /**
+   * @type {Array.<string>}
+   */
   get publicKeys () {
     return Object.keys(this.#updatersByCpk)
   }
