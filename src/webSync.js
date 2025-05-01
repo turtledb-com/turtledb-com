@@ -57,8 +57,7 @@ export async function webSync (port, basePublicKey, turtleDB, https, insecure, c
 
   <body style="margin: 0; background: dimgray;">
     <p>
-      loading the turtle that will load the turtles that will load the
-      turtles...
+      loading the turtle that will load the turtles that will load the turtles...
     </p>
   </body>
 </html>
@@ -87,27 +86,12 @@ export async function webSync (port, basePublicKey, turtleDB, https, insecure, c
   wss.on('connection', async ws => {
     ++connectionCount
     const tbMux = new TurtleBranchMultiplexer(`server-tbMux-to-ws#${connectionCount}`, true, turtleDB)
-    const startOutgoingLoop = async () => {
+    ;(async () => {
       for await (const u8aTurtle of tbMux.outgoingBranch.u8aTurtleGenerator()) {
         if (ws.readyState !== ws.OPEN) break
-        const update = u8aTurtle.lookup()
-        if (update?.publicKey) {
-          await tbMux.getTurtleBranchUpdater(update.name, update.publicKey)
-        }
         ws.send(u8aTurtle.uint8Array)
       }
-    }
-    startOutgoingLoop()
-    const startIncomingLoop = async () => {
-      for await (const u8aTurtle of tbMux.incomingBranch.u8aTurtleGenerator()) {
-        if (ws.readyState !== ws.OPEN) break
-        const update = u8aTurtle.lookup()
-        if (update?.publicKey) {
-          await tbMux.getTurtleBranchUpdater(update.name, update.publicKey)
-        }
-      }
-    }
-    startIncomingLoop()
+    })()
     ws.on('message', buffer => tbMux.incomingBranch.append(new Uint8Array(buffer)))
     ws.on('close', (code, reason) => console.log('connection closed', { code, reason }))
     ws.on('error', error => console.error('connection error', { name: error.name, message: error.message }))

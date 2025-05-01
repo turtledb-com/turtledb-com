@@ -22,9 +22,6 @@ const recaller = new Recaller('web client')
 const turtleDB = new TurtleDB('public/index.js', recaller)
 window.turtleDB = turtleDB
 
-// /** @type {Object.<string, TurtleBranch>} */
-// const turtleRegistry = proxyWithRecaller({}, recaller)
-// window.turtleRegistry = turtleRegistry
 // // s3 overrides this
 // const _getTurtleBranchByPublicKey = async (publicKey, name = publicKey, turtleBranch) => {
 //   if (!turtleRegistry[publicKey]) {
@@ -34,47 +31,48 @@ window.turtleDB = turtleDB
 // }
 // window.getTurtleBranchByPublicKey = _getTurtleBranchByPublicKey
 
-// const allServiceWorkers = new Set()
-// try {
-//   const serviceWorkerRegistration = await navigator.serviceWorker.register(
-//     '/service-worker.js',
-//     { type: 'module', scope: '/' }
-//   )
-//   console.log('register complete', serviceWorkerRegistration)
-//   serviceWorkerRegistration.addEventListener('updatefound', () => {
-//     console.log('service-worker update found')
-//   })
-//   try {
-//     console.log(' ^^^^^^^ serviceWorkerRegistration.update()')
-//     await serviceWorkerRegistration.update()
-//   } catch (err) {
-//     console.log(' ^^^^^^^ serviceWorkerRegistration.update() failed', err)
-//   }
-//   console.log(' ^^^^^^^ serviceWorkerRegistration.update() complete')
-//   const { serviceWorker } = navigator
-//   if (!serviceWorker || allServiceWorkers.has(serviceWorker)) throw new Error('no serviceWorker')
-//   const { active } = await serviceWorker.ready
-//   console.log({ active })
-//   allServiceWorkers.add(serviceWorker)
-//   const tbMux = new TurtleBranchMultiplexer('service-worker')
-//   window.tbMux = tbMux
-//   serviceWorker.onmessage = event => {
-//     tbMux.incomingBranch.append(new Uint8Array(event.data))
-//   }
-//   /*
-//   setPeer(recaller, peer)
-//   serviceWorker.onmessage = event => receive(new Uint8Array(event.data))
-//   serviceWorker.onmessageerror = event => console.log(peer.name, 'onmessageerror', event)
-//   serviceWorker.startMessages()
-//   setSend(uint8Array => active.postMessage(uint8Array.buffer))
-//   await new Promise((resolve, reject) => {
-//     serviceWorker.oncontrollerchange = resolve
-//     serviceWorker.onerror = reject
-//   })
-//   */
-// } catch (error) {
-//   console.error(error)
-// }
+const allServiceWorkers = new Set()
+try {
+  const serviceWorkerRegistration = await navigator.serviceWorker.register(
+    '/service-worker.js',
+    { type: 'module', scope: '/' }
+  )
+  console.log('register complete', serviceWorkerRegistration)
+  serviceWorkerRegistration.addEventListener('updatefound', () => {
+    console.log('service-worker update found')
+  })
+  try {
+    console.log(' ^^^^^^^ serviceWorkerRegistration.update()')
+    await serviceWorkerRegistration.update()
+  } catch (err) {
+    console.log(' ^^^^^^^ serviceWorkerRegistration.update() failed', err)
+  }
+  console.log(' ^^^^^^^ serviceWorkerRegistration.update() complete')
+  const { serviceWorker } = navigator
+  if (!serviceWorker || allServiceWorkers.has(serviceWorker)) throw new Error('no serviceWorker')
+  const { active } = await serviceWorker.ready
+  console.log({ active })
+  allServiceWorkers.add(serviceWorker)
+  const tbMux = new TurtleBranchMultiplexer('service-worker')
+  window.tbMux = tbMux
+  const tbMuxBinding = async status => {
+    // console.log('tbMuxBinding about to get next', { publicKey })
+    const updater = await tbMux.getTurtleBranchUpdater(status.turtleBranch.name, status.publicKey, status.turtleBranch)
+    // console.log('tbMuxBinding about to await settle', { updater })
+    await updater.settle
+    // console.log('tbMuxBinding', { publicKey })
+  }
+  turtleDB.bind(tbMuxBinding)
+  serviceWorker.onmessage = event => {
+    tbMux.incomingBranch.append(new Uint8Array(event.data))
+  }
+  serviceWorker.startMessages()
+  for await (const u8aTurtle of tbMux.outgoingBranch.u8aTurtleGenerator()) {
+    active.postMessage(u8aTurtle.uint8Array.buffer)
+  }
+} catch (error) {
+  console.error(error)
+}
 
 console.warn('unable to connect through service-worker, trying direct websocket connection')
 
@@ -86,47 +84,30 @@ while (true) {
   for (const publicKey of turtleDB.getPublicKeys()) {
     await tbMux.getTurtleBranchUpdater(publicKey)
   }
-  const addToTBMuxStep = async status => {
-    // console.log('addToTBMuxStep about to get next', { publicKey })
+  const tbMuxBinding = async status => {
+    // console.log('tbMuxBinding about to get next', { publicKey })
     const updater = await tbMux.getTurtleBranchUpdater(status.turtleBranch.name, status.publicKey, status.turtleBranch)
-    // console.log('addToTBMuxStep about to await settle', { updater })
+    // console.log('tbMuxBinding about to await settle', { updater })
     await updater.settle
-    // console.log('addToTBMuxStep', { publicKey })
+    // console.log('tbMuxBinding', { publicKey })
   }
-  turtleDB.bind(addToTBMuxStep)
+  turtleDB.bind(tbMuxBinding)
   let _connectionCount
   try {
     const ws = new WebSocket(url)
     window.tbMux = tbMux
     ws.binaryType = 'arraybuffer'
-    const startOutgoingLoop = async () => {
-      for await (const u8aTurtle of tbMux.outgoingBranch.u8aTurtleGenerator()) {
-        if (ws.readyState !== ws.OPEN) break
-        const publicKey = u8aTurtle.lookup('publicKey')
-        if (!tbMux.publicKeys.includes(publicKey)) {
-          turtleDB.summonBoundTurtleBranch(publicKey, u8aTurtle.lookup('name'))
-        }
-        await tbMux.getTurtleBranchUpdater(undefined, publicKey) //
-        ws.send(u8aTurtle.uint8Array)
-      }
-    }
-    const startIncomingLoop = async () => {
-      for await (const u8aTurtle of tbMux.incomingBranch.u8aTurtleGenerator()) {
-        if (ws.readyState !== ws.OPEN) break
-        const update = u8aTurtle.lookup()
-        if (u8aTurtle.lookup('name') === 'test') {
-          await tbMux.getTurtleBranchUpdater(u8aTurtle.lookup('name'), u8aTurtle.lookup('publicKey'))
-        }
-        if (update.publicKey) turtleDB.summonBoundTurtleBranch(update.publicKey, update.name)
-      }
-    }
     ws.onopen = async () => {
-      _connectionCount = ++connectionCount
-      console.log('-- onopen', { _connectionCount })
-      startOutgoingLoop() // don't await
-      startIncomingLoop() // don't await
+      ;(async () => {
+        for await (const u8aTurtle of tbMux.outgoingBranch.u8aTurtleGenerator()) {
+          if (ws.readyState !== ws.OPEN) break
+          ws.send(u8aTurtle.uint8Array)
+        }
+      })()
       t = 100
 
+      _connectionCount = ++connectionCount
+      console.log('-- onopen', { _connectionCount })
       const signer = new Signer('david', 'secret')
       const keys = await signer.makeKeysFor('test')
       console.log({ keys })
@@ -152,8 +133,8 @@ while (true) {
   }
   tbMux.stop()
   delete window.tbMux
-  turtleDB.unbind(addToTBMuxStep)
-  t = Math.min(t, 20 * 1000) // 2 minutes max (unjittered)
+  turtleDB.unbind(tbMuxBinding)
+  t = Math.min(t, 2 * 60 * 1000) // 2 minutes max (unjittered)
   t = t * (1 + Math.random()) // exponential backoff and some jitter
   console.log('waiting', t, 'ms')
   await new Promise(resolve => setTimeout(resolve, t))

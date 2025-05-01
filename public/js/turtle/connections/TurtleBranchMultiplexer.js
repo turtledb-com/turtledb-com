@@ -47,7 +47,7 @@ export class TurtleBranchMultiplexer extends TurtleTalker {
    * @param {string} publicKey
    * @param {TurtleBranchUpdater} turtleBranchUpdater
    */
-  #sendUpdate (uint8Array, name, publicKey, turtleBranchUpdater) {
+  #sendMuxedUpdate (uint8Array, name, publicKey, turtleBranchUpdater) {
     const address = this.outgoingDictionary.upsert(uint8Array, [OPAQUE_UINT8ARRAY])
     const update = { address, name, publicKey }
     this.outgoingDictionary.upsert(update)
@@ -65,14 +65,13 @@ export class TurtleBranchMultiplexer extends TurtleTalker {
     publicKey ||= name
     name ||= publicKey
     if (!this.#updatersByCpk[publicKey]) {
-      const getStopped = () => this.#stopped
       this.#updatersByCpk[publicKey] = (async () => {
         turtleBranch ??= await this.turtleDB.summonBoundTurtleBranch(publicKey, name)
         const updater = new TurtleBranchUpdater(name, turtleBranch, publicKey, this.Xours)
         ;(async () => {
           for await (const u8aTurtle of updater.outgoingBranch.u8aTurtleGenerator()) {
-            if (getStopped()) break
-            this.#sendUpdate(u8aTurtle.uint8Array, name, publicKey, updater)
+            if (this.#stopped) break
+            this.#sendMuxedUpdate(u8aTurtle.uint8Array, name, publicKey, updater)
           }
         })()
         updater.start()
