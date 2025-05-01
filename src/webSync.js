@@ -20,10 +20,10 @@ import { TurtleBranchMultiplexer } from '../public/js/turtle/connections/TurtleB
  */
 export async function webSync (port, basePublicKey, turtleDB, https, insecure, certpath) {
   const app = express()
-  // app.use((req, _res, next) => {
-  //   console.log(req.method, req.url)
-  //   next()
-  // })
+  app.use((req, _res, next) => {
+    console.log(req.method, req.url)
+    next()
+  })
   app.use(async (req, res, next) => {
     const matchGroups = req.url.match(/\/(?<urlPublicKey>[0-9A-Za-z]{41,51})\/(?<relativePath>.*)$/)?.groups
     let type = extname(req.url)
@@ -40,29 +40,8 @@ export async function webSync (port, basePublicKey, turtleDB, https, insecure, c
       res.type(type)
       res.send(body)
     } else if (req.url.match(/^\/$|^\/index.html?$/)) {
-      res.set('Content-Type', 'text/html')
-      res.send(
-`
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>ALL YOUR TURTLE ARE BELONG TO US.</title>
-    <base href="${basePublicKey}/"/>
-    <script type="module" src="index.js"></script>
-    <link rel="manifest" href="index.webmanifest" />
-    <link rel="icon" href="tinker.svg" />
-  </head>
-
-  <body style="margin: 0; background: dimgray;">
-    <p>
-      loading the turtle that will load the turtles that will load the turtles...
-    </p>
-  </body>
-</html>
-`
-      )
+      console.log(req.url)
+      res.redirect(`/${basePublicKey}/`)
     } else {
       next()
     }

@@ -49,6 +49,39 @@ serviceWorkerGlobalScope.addEventListener('message', async messageEvent => {
   tbMux.incomingBranch.append(new Uint8Array(messageEvent.data))
 })
 
+const contentTypeByExtension = {
+  css: 'text/css',
+  html: 'text/html',
+  js: 'application/javascript',
+  json: 'application/json',
+  svg: 'image/svg+xml',
+  webmanifest: 'application/manifest+json'
+}
+
+serviceWorkerGlobalScope.addEventListener('fetch', fetchEvent => {
+  const url = fetchEvent.request.url
+  console.log('service-worker fetch', url)
+  fetchEvent.respondWith((async () => {
+    let extension = url.split(/[#?]/)[0].split('.').pop()
+    const matchGroups = url.match(/\/(?<publicKey>[0-9A-Za-z]{41,51})\/(?<relativePath>.*)$/)?.groups
+    if (matchGroups) {
+      let { publicKey, relativePath } = matchGroups
+      if (!relativePath.length || relativePath.endsWith('/')) {
+        extension = 'html'
+        relativePath = `${relativePath}index.html`
+      }
+      const turtleBranch = await turtleDB.summonBoundTurtleBranch(publicKey)
+      const body = turtleBranch.lookup('document', 'value', 'fs', relativePath)
+      if (body) {
+        const contentType = contentTypeByExtension[extension]
+        console.log({ publicKey, relativePath, extension, contentType })
+        return new Response(new Blob([body], { headers: { type: contentType } }), { headers: { 'Content-Type': contentType } })
+      }
+    }
+    return fetch(fetchEvent.request)
+  })())
+})
+
 ;(async () => {
   let t = 100
   let connectionCount = 0
