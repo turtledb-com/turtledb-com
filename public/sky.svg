@@ -1,0 +1,48 @@
+<svg width="200" height="200" style="background-color: gray;" xmlns="http://www.w3.org/2000/svg">
+  <path  fill="MediumSeaGreen" stroke="Black" stroke-width="3" d="
+  M 25 100
+  L 25 80
+  A 50 50 0 0 1 125 80
+  L 125 100
+  A 10 10 0 0 1 115 110
+  L 35 110
+  A 10 10 0 0 1 25 100
+  "/>
+
+  <path  fill="MediumSpringGreen" stroke="Black" stroke-width="3" d="
+  M 15 130 
+  A 10 10 0 0 1 25 120
+  L 115 120
+  A 20 20 0 0 0 135 100
+  L 135 80
+  A 20 20 0 0 1 155 60
+  L 160 60
+  A 30 30 0 0 1 190 90
+  A 20 20 0 0 1 170 110
+  L 155 110
+  A 40 40 0 0 1 115 140
+  L 125 160
+  A 10 10 0 0 1 115 170
+  L 95 170
+  A 10 10 0 0 1 85 160
+  L 85 140
+  L 75 140
+  L 75 160
+  A 10 10 0 0 1 65 170
+  L 45 170
+  A 10 10 0 0 1 35 160
+  L 45 140
+  L 25 140
+  A 10 10 0 0 1 15 130
+
+  M 165 80
+  A 5 5 0 0 0 175 80
+  A 5 5 0 0 0 165 80
+  "/>
+  <path  fill="red" stroke="white" stroke-width="3" d="
+  M 30 100
+  A 50 30 0 0 0 80 70
+  "/>
+
+</svg>
+

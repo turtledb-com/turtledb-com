@@ -36,3 +36,10 @@ export const handleNextTick = (decorate = false) => {
 }
 
 export const getTickCount = () => _tickCount
+
+export const tics = async (count = 1, ticLabel = '') => {
+  for (let i = 0; i < count; ++i) {
+    if (ticLabel) console.log(`${ticLabel}, tic: ${i}`)
+    await new Promise(resolve => setTimeout(resolve))
+  }
+}

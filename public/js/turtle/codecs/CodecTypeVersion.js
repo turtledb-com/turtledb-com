@@ -1,4 +1,4 @@
-import { toSubVersions } from '../utils.js'
+import { toSubVersions } from '../../utils/toSubVersions.js'
 import { DEREFERENCE } from './CodecType.js'
 
 export class CodecTypeVersion {

@@ -17,25 +17,24 @@ globalRunner.describe(urlToName(import.meta.url), suite => {
     const peerB = new Peer('b')
     const connectionAB = new EchoConnection('A-TO-B', peerA)
     const connectionBA = new EchoConnection('b-to-a', peerB, false, connectionAB.duplex)
-    const aWorkspace = await peerA.getWorkspace(signer, 'simpleWorkspace')
+    const aWorkspace = await peerA.getWorkspace('simpleWorkspace', signer)
     // aWorkspace.recaller.debug = true
     await aWorkspace.commit('abcd')
-    console.log(bWorkspace.lastCommitValue)
     await tics(4) // tics needed found through trial and error (TODO: better visibility)
     // aWorkspace.recaller.debug = false
-    const bWorkspace = await peerA.getWorkspace(signer, 'simpleWorkspace')
+    const bWorkspace = await peerA.getWorkspace('simpleWorkspace', signer)
     assert.equal(bWorkspace.lastCommitValue, 'abcd')
   })
 
   suite.it('rejects incorrectly signed commits', async ({ assert }) => {
     const peerA = new Peer('a')
-    const aWorkspace = await peerA.getWorkspace(signer, 'simpleWorkspace')
+    const aWorkspace = await peerA.getWorkspace('simpleWorkspace', signer)
     await aWorkspace.commit('first value', 'first commit message')
     const peerB = new Peer('b')
     const connectionAB = new EchoConnection('A-TO-SHIFTY_B', peerA)
     const connectionBA = new EchoConnection('shifty_b-to-a', peerB, false, connectionAB.duplex)
     // const badSigner = new Signer('testuser', '1234')
-    const aBadWorkspace = await peerA.getWorkspace(signer, 'simpleWorkspace')
+    const aBadWorkspace = await peerA.getWorkspace('simpleWorkspace', signer)
     // aBadWorkspace.signer = badSigner
     await aBadWorkspace.commit('xxx', 'bad commit')
   })
@@ -53,14 +52,14 @@ globalRunner.describe(urlToName(import.meta.url), suite => {
     const connectionBOrigin = new EchoConnection('b-to-origin', peerB, false, connectionOriginB.duplex)
 
     // peerOrigin.recaller.debug = true
-    const originWorkspace = await peerOrigin.getWorkspace(signer, 'conflictedWorkspace')
+    const originWorkspace = await peerOrigin.getWorkspace('conflictedWorkspace', signer)
     await tics(4, '\n ---- waiting originWorkspace')
     // peerOrigin.recaller.debug = false
 
     await originWorkspace.commit(1, 'commit 1')
     await tics(2, '\n ---- awaiting 1st commit')
-    const aWorkspace = await peerA.getWorkspace(signer, 'conflictedWorkspace')
-    const bWorkspace = await peerB.getWorkspace(signer, 'conflictedWorkspace')
+    const aWorkspace = await peerA.getWorkspace('conflictedWorkspace', signer)
+    const bWorkspace = await peerB.getWorkspace('conflictedWorkspace', signer)
     assert.equal(originWorkspace.lastCommit, aWorkspace.lastCommit)
     assert.equal(aWorkspace.lastCommit, bWorkspace.lastCommit)
     await tics(60, ',,')

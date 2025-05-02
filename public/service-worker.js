@@ -1,57 +1,52 @@
-/* global self, location, WebSocket, clients */
+/// <reference no-default-lib="true"/>
+/// <reference lib="esnext"/>
+/// <reference lib="webworker"/>
 
-import { Peer, getPublicKeys, peerRecaller, getPointerByPublicKey } from './js/net/Peer.js'
-import { attachPeerToCycle, newPeerPerCycle } from './js/utils/peerFactory.js'
-import { defaultCPK } from './js/constants.js'
+import { TurtleBranchMultiplexer } from './js/turtle/connections/TurtleBranchMultiplexer.js'
+import { TurtleDB } from './js/turtle/connections/TurtleDB.js'
 
-console.log(' @@@ defaultCPK', defaultCPK)
-getPointerByPublicKey(defaultCPK)
+/* global self, location, WebSocket */
 
-export const v = '0.0.14'
+const url = `wss://${location.host}`
+const turtleDB = new TurtleDB('service-worker')
 
-const recaller = peerRecaller
+console.log('service-worker started')
+/** @type {ServiceWorkerGlobalScope} */
+const serviceWorkerGlobalScope = self
 
-let ws
-const peersById = {}
-const receiveById = {}
-const updateClients = async eventName => {
-  const currentIds = (await clients?.matchAll?.() ?? []).map(client => client.id)
-  for (const peerId in peersById) {
-    if (!currentIds.includes(peerId)) {
-      console.log(` @@@ removing detached peer with id === '${peerId}'`)
-      peersById[peerId].cleanup()
-      delete peersById[peerId]
-      delete receiveById[peerId]
-    }
-  }
-  if (ws?.readyState === undefined) {
-    console.log(' @@@ creating connectionCycle. ws.readyState', ws?.readyState)
-    const url = `wss://${location.host}`
-    const connectionCycle = (receive, setSend) => new Promise((resolve, reject) => {
-      ws = new WebSocket(url)
-      ws.binaryType = 'arraybuffer'
-      ws.onopen = () => {
-        setSend(uint8Array => ws.send(uint8Array.buffer))
+/** @type {Object.<string, {tbMux:TurtleBranchMultiplexer, client:Client}} */
+const tbMuxAndClientById = {}
+/**
+ * @param {Client} client
+ * @returns {TurtleBranchMultiplexer}
+ */
+const getTBMuxForClient = client => {
+  if (!tbMuxAndClientById[client.id]) {
+    const tbMux = new TurtleBranchMultiplexer(client.id, true, turtleDB)
+    ;(async () => {
+      for await (const u8aTurtle of tbMux.outgoingBranch.u8aTurtleGenerator()) {
+        // if (ws.readyState !== ws.OPEN) break
+        // ws.send(u8aTurtle.uint8Array)
+        client.postMessage(u8aTurtle.uint8Array.buffer)
       }
-      ws.onmessage = event => {
-        receive(new Uint8Array(event.data))
-      }
-      ws.onclose = resolve
-      ws.onerror = reject
-    })
-    newPeerPerCycle(`[${name} to WebSocket]`, recaller, connectionCycle, true)
+    })()
+    tbMuxAndClientById[client.id] = { tbMux, client }
   }
+  return tbMuxAndClientById[client.id].tbMux
 }
 
-self.addEventListener('install', async () => {
-  updateClients('install')
-  // await self.skipWaiting
+serviceWorkerGlobalScope.addEventListener('install', async () => {
+  console.log('service-worker install')
 })
 
-const name = `service-worker.js#${v}`
-self.addEventListener('activate', event => {
-  event.waitUntil(clients.claim())
-  updateClients('activate')
+serviceWorkerGlobalScope.addEventListener('activate', async () => {
+  console.log('service-worker activate')
+})
+
+serviceWorkerGlobalScope.addEventListener('message', async messageEvent => {
+  console.log('service-worker activate')
+  const tbMux = getTBMuxForClient(messageEvent.source)
+  tbMux.incomingBranch.append(new Uint8Array(messageEvent.data))
 })
 
 const contentTypeByExtension = {
@@ -59,125 +54,81 @@ const contentTypeByExtension = {
   html: 'text/html',
   js: 'application/javascript',
   json: 'application/json',
-  svg: 'image/svg+xml'
+  svg: 'image/svg+xml',
+  webmanifest: 'application/manifest+json'
 }
-const fallbackRefs = {}
-export const putVirtualCache = async (request, body) => {
-  const extension = request.split(/\?/)[0].split(/\./).pop()
-  const contentType = contentTypeByExtension[extension]
-  try {
-    if (extension === 'json') {
-      body = JSON.stringify(body, null, 10)
-    }
-  } catch (error) {
-    console.error(error)
-    return
-  }
-  const headers = new Headers({
-    'Content-Length': body.length,
-    'Content-Type': contentType
-  })
-  const options = { headers }
-  const response = new Response(body, options)
-  const cache = await self.caches.open(v)
-  // console.log(' @@@ caching', request, contentType)
-  cache.put(request, response)
-}
-recaller.watch('populate cache', () => {
-  const cpks = getPublicKeys()
-  for (const cpk of cpks) {
-    const pointer = getPointerByPublicKey(cpk, recaller)
-    try {
-      const fsRefs = pointer.getRefs('value', 'fs')
-      if (typeof fsRefs !== 'object') throw new Error('value.fs must be object')
 
-      Object.keys(fsRefs).forEach(relativePath => {
-        if (fsRefs[relativePath] === fallbackRefs[relativePath]) return
-        const address = fsRefs[relativePath]
-        const file = pointer.lookup(address)
-        const absolutePath = `/${relativePath}`
-        const indexed = absolutePath.match(/(?<indexed>.*)\/index.html?/)?.groups?.indexed
-        fallbackRefs[relativePath] = address
-        // const headers = new Headers({
-        //   'Content-Type': contentTypeByExtension[extension]
-        // })
-        if (cpk === defaultCPK) {
-          putVirtualCache(absolutePath, file)
-          // cache.put(absolutePath, new Response(file, { headers }))
-        }
-        putVirtualCache(`${absolutePath}?address=${address}&cpk=${cpk}`, file)
-        // cache.put(`${absolutePath}?address=${address}&cpk=${cpk}`, new Response(file, { headers }))
-        // console.log(' @@@ caching', `${absolutePath}?address=${address}&cpk=${cpk}`, file.length)
-        if (indexed !== undefined) {
-          putVirtualCache(indexed, file)
-          putVirtualCache(`${indexed}/`, file)
-          // cache.put(indexed, new Response(file, { headers }))
-          // cache.put(`${indexed}/`, new Response(file, { headers }))
-        }
-      })
-    } catch (error) {
-      // console.error(error)
-    }
-  }
-})
-
-self.addEventListener('fetch', event => {
-  // console.log('fetch', event.request.url)
-  updateClients('fetch')
-  event.respondWith((async () => {
-    const cache = await self.caches.open(v)
-    const response = await cache.match(event.request)
-    if (response) {
-      // console.log(' @@@ matched cache for', event.request.url)
-      return response
-    }
-    const url = new URL(event.request.url)
-    const address = +url.searchParams.get('address')
-    const cpk = url.searchParams.get('cpk')
-    if (address && cpk) {
-      const pointer = getPointerByPublicKey(cpk)
-      const extension = url.pathname.split(/\./).pop()
-      let file = pointer.lookup(address)
-      // console.log(' @@@ trying to add cache for', { address, cpk, extension, fileLength: file?.length })
-      if (file !== undefined) {
-        try {
-          if (extension === 'json') {
-            file = JSON.stringify(file, null, 10)
-          }
-          const headers = new Headers({
-            'Content-Type': contentTypeByExtension[extension]
-          })
-          return new Response(file, { headers })
-        } catch (error) {
-          console.error(error)
-        }
+serviceWorkerGlobalScope.addEventListener('fetch', fetchEvent => {
+  const url = fetchEvent.request.url
+  // console.log('service-worker fetch', url)
+  fetchEvent.respondWith((async () => {
+    let extension = url.split(/[#?]/)[0].split('.').pop()
+    const matchGroups = url.match(/\/(?<publicKey>[0-9A-Za-z]{41,51})\/(?<relativePath>.*)$/)?.groups
+    if (matchGroups) {
+      let { publicKey, relativePath } = matchGroups
+      if (!relativePath.length || relativePath.endsWith('/')) {
+        extension = 'html'
+        relativePath = `${relativePath}index.html`
+      }
+      const turtleBranch = await turtleDB.summonBoundTurtleBranch(publicKey)
+      const body = turtleBranch.lookup('document', 'value', 'fs', relativePath)
+      if (body) {
+        const contentType = contentTypeByExtension[extension]
+        // console.log({ publicKey, relativePath, extension, contentType })
+        return new Response(new Blob([body], { headers: { type: contentType } }), { headers: { 'Content-Type': contentType } })
       }
     }
-    console.log(' @@@ unmatched fetch request', event.request.url, response)
-    return fetch(event.request)
+    return fetch(fetchEvent.request)
   })())
 })
 
-self.addEventListener('message', message => {
-  updateClients('message')
-  // console.log('message')
-  if (ws?.readyState !== 1) {
-    console.error(new Error(`ws.readyState: ${ws?.readyState}`))
-  }
-  const client = message.source
-  const id = client.id
-  if (!peersById[id]) {
-    peersById[id] = new Peer(`[${name} to ${id}]`, recaller)
-    const connectionCycle = (receive, setSend) => new Promise((resolve, reject) => {
-      receiveById[id] = receive
-      client.onmessage = event => {
-        receive(new Uint8Array(event.data))
+;(async () => {
+  let t = 100
+  let connectionCount = 0
+  while (true) {
+    console.log('-- creating new websocket and mux')
+    const tbMux = new TurtleBranchMultiplexer(`websocket#${connectionCount}`, false, turtleDB)
+    for (const publicKey of turtleDB.getPublicKeys()) {
+      await tbMux.getTurtleBranchUpdater(publicKey)
+    }
+    const tbMuxBinding = async status => {
+    // console.log('tbMuxBinding about to get next', { publicKey })
+      const updater = await tbMux.getTurtleBranchUpdater(status.turtleBranch.name, status.publicKey, status.turtleBranch)
+      // console.log('tbMuxBinding about to await settle', { updater })
+      await updater.settle
+    // console.log('tbMuxBinding', { publicKey })
+    }
+    turtleDB.bind(tbMuxBinding)
+    let _connectionCount
+    try {
+      const ws = new WebSocket(url)
+      ws.binaryType = 'arraybuffer'
+      ws.onopen = async () => {
+        ;(async () => {
+          for await (const u8aTurtle of tbMux.outgoingBranch.u8aTurtleGenerator()) {
+            if (ws.readyState !== ws.OPEN) break
+            ws.send(u8aTurtle.uint8Array)
+          }
+        })()
+        t = 100
+        _connectionCount = ++connectionCount
+        console.log('-- onopen', { _connectionCount })
       }
-      client.onclose = resolve
-      client.onerror = reject
-      setSend(uint8Array => client.postMessage(uint8Array.buffer))
-    })
-    attachPeerToCycle(peersById[id], connectionCycle)
+      ws.onmessage = event => {
+        tbMux.incomingBranch.append(new Uint8Array(event.data))
+      }
+      await new Promise((resolve, reject) => {
+        ws.onclose = resolve
+        ws.onerror = reject
+      })
+    } catch (error) {
+      console.error(error)
+    }
+    tbMux.stop()
+    turtleDB.unbind(tbMuxBinding)
+    t = Math.min(t, 2 * 60 * 1000) // 2 minutes max (unjittered)
+    t = t * (1 + Math.random()) // exponential backoff and some jitter
+    console.log('waiting', t, 'ms')
+    await new Promise(resolve => setTimeout(resolve, t))
   }
-  receiveById[id](new Uint8Array(message.data))
-})
+})()

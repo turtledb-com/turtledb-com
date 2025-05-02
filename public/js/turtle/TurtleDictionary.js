@@ -27,9 +27,8 @@ export class TurtleDictionary extends TurtleBranch {
   }
 
   append (uint8Array) {
-    const start = this.length
     super.append(uint8Array)
-    this.lexicograph(start)
+    this.lexicograph()
     return this.length - 1
   }
 
@@ -38,11 +37,7 @@ export class TurtleDictionary extends TurtleBranch {
     this.#valueByUint8Array.set(uint8Array, address)
   }
 
-  lexicograph (start = 0, end = this.length - 1, logall = false) {
-    // start = this.#lastLexicographed?.
-    // if (start === 0) {
-    //   this.#valueByUint8Array = new ValueByUint8Array()
-    // }
+  lexicograph (logall = false) {
     if (!this.u8aTurtle) return
     const commonAncestor = findCommonAncestor(this.u8aTurtle, this.#lastLexicographedTurtle)
     if (!commonAncestor || commonAncestor !== this.#lastLexicographedTurtle) {
@@ -63,7 +58,7 @@ export class TurtleDictionary extends TurtleBranch {
           else string = [string]
           console.log(' -', address, ':', ...string)
         } else if (this.#valueByUint8Array?.get?.(uint8Array) !== undefined) {
-          console.error({ address, footer: u8aTurtle.getByte(address), uint8Array, value: u8aTurtle.lookup(address) })
+          console.error({ name: this.name, address, footer: u8aTurtle.getByte(address), uint8Array, value: u8aTurtle.lookup(address) })
           throw new Error('uint8Array already stored')
         }
         this.#cache(uint8Array, address, codecVersion.codecType)

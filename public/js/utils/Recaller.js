@@ -42,8 +42,9 @@ export class Recaller {
     if (typeof f !== 'function') throw new Error('can only hide functions')
     const previousIgnore = this.#ignore
     this.#ignore = ignore
-    f(this)
+    const v = f(this)
     this.#ignore = previousIgnore
+    return v
   }
 
   watch (name, f) {
@@ -80,15 +81,15 @@ export class Recaller {
     const f = this.#stack[0]
     if (typeof f !== 'function') return
     name = `${name}['${key.toString()}']`
-    const triggering = this.#getFunctionName(f)
     if (this.debug) {
+      const triggering = this.#getFunctionName(f)
       console.debug(
-        `<--  access     --- ${JSON.stringify({
+        '<--  access:', {
           recaller: this.name,
           method,
           name,
-          triggering
-        })}`
+          triggering: JSON.stringify(triggering)
+        }
       )
     }
     this.#associate(f, target, key)
@@ -98,16 +99,16 @@ export class Recaller {
     if (this.#ignore === IGNORE || this.#ignore === IGNORE_MUTATE) return
     const newTriggered = this.#getFunctions(target, key)
     if (!newTriggered.length) return
-    const triggering = newTriggered.map(f => this.#getFunctionName(f))
     name = `${name}['${key.toString()}']`
     if (this.debug) {
+      const triggering = newTriggered.map(f => this.#getFunctionName(f))
       console.debug(
-        `-->  mutation   --- ${JSON.stringify({
+        '-->  mutation:', {
           recaller: this.name,
           method,
           name,
-          triggering
-        })}`
+          triggering: JSON.stringify(triggering)
+        }
       )
     }
     if (name.match(/\['name'\]\['name'\]/)) throw new Error('double name')
@@ -155,15 +156,15 @@ export class Recaller {
       }
       const triggered = this.#triggered
       this.#triggered = new Set()
-      const triggering = [...triggered].map(f => this.#getFunctionName(f))
       if (this.debug) {
+        const triggering = [...triggered].map(f => this.#getFunctionName(f))
         console.time('handling triggered group')
-        console.groupCollapsed(`triggering --- ${JSON.stringify({
+        console.groupCollapsed('triggering:', {
           recaller: this.name,
           tickCount: getTickCount(),
           loopCounter,
-          triggering
-        })}`)
+          triggering: JSON.stringify(triggering)
+        })
       }
       triggered.forEach(f => {
         const name = this.#getFunctionName(f)

@@ -1,16 +1,27 @@
 import { Recaller } from '../utils/Recaller.js'
 import { squashTurtle, U8aTurtle } from './U8aTurtle.js'
-import { combineUint8ArrayLikes, combineUint8Arrays } from './utils.js'
+import { combineUint8Arrays } from '../utils/combineUint8Arrays.js'
+import { combineUint8ArrayLikes } from '../utils/combineUint8ArrayLikes.js'
 
 /**
  * @typedef {import('./codecs/CodecType.js').CodecOptions} CodecOptions
  */
 
+const _encodeUint8Array = uint8Array => {
+  const encodedLength = new Uint32Array([uint8Array.length])
+  return combineUint8ArrayLikes([encodedLength, uint8Array])
+}
+
 export class TurtleBranch {
   /** @type {U8aTurtle} */
   #u8aTurtle
-  /** @type {Set.<ReadableStreamController>} */
-  #readableByteStreamControllers = new Set()
+  #resolveNextUint8Array
+  #setNextUint8Array = uint8Array => {
+    const prevResolve = this.#resolveNextUint8Array
+    this.nextUint8Array = new Promise(resolve => { this.#resolveNextUint8Array = resolve })
+    prevResolve?.(uint8Array)
+  }
+
   /**
    * @param {string} name
    * @param {Recaller} recaller
@@ -21,6 +32,7 @@ export class TurtleBranch {
     this.name = name
     this.recaller = recaller
     this.#u8aTurtle = u8aTurtle
+    this.nextUint8Array = new Promise(resolve => { this.#resolveNextUint8Array = resolve })
   }
 
   /** @type {U8aTurtle} */
@@ -31,12 +43,15 @@ export class TurtleBranch {
 
   set u8aTurtle (u8aTurtle) {
     if (u8aTurtle === this.#u8aTurtle) return
-    if (u8aTurtle.hasAncestor(this.#u8aTurtle)) {
-      const uint8Arrays = u8aTurtle.exportUint8Arrays((this.index ?? -1) + 1)
-      uint8Arrays.forEach(uint8Array => this.#broadcast(uint8Array))
-    } else {
-      console.log(this.#u8aTurtle, '->', u8aTurtle)
-      console.warn(`TurtleBranch, ${this.name}.u8aTurtle set to non-descendant (any ReadableStreams are broken now)`)
+    if (u8aTurtle !== undefined) {
+      if (u8aTurtle.hasAncestor(this.#u8aTurtle)) {
+        const uint8Arrays = u8aTurtle.exportUint8Arrays((this.index ?? -1) + 1)
+        uint8Arrays.forEach(uint8Array => {
+          this.#setNextUint8Array(uint8Array)
+        })
+      } else {
+        console.warn(`TurtleBranch, ${this.name}.u8aTurtle set to non-descendant (generators are broken now)`)
+      }
     }
     this.recaller.reportKeyMutation(this, 'u8aTurtle', 'set', this.name)
     this.#u8aTurtle = u8aTurtle
@@ -50,34 +65,32 @@ export class TurtleBranch {
     return this.length - 1
   }
 
-  #broadcast (uint8Array) {
-    const controllers = this.#readableByteStreamControllers
-    const encodedLength = new Uint32Array([uint8Array.length])
-    const encodedUint8Array = combineUint8ArrayLikes([encodedLength, uint8Array])
-    controllers.forEach(controller => {
-      console.log(` >>>> sending ${this.name} 4 + ${uint8Array.length} bytes`)
-      controller.enqueue(encodedUint8Array)
-    })
+  async * u8aTurtleGenerator () {
+    let lastIndex = -1
+    while (true) {
+      while (lastIndex < this.index) {
+        ++lastIndex
+        yield this.u8aTurtle.getAncestorByIndex(lastIndex)
+      }
+      await this.nextUint8Array
+    }
   }
 
   /**
    * @returns {ReadableStream}
    */
   makeReadableStream () {
-    const uint8Arrays = this.u8aTurtle?.exportUint8Arrays?.() ?? []
-    const controllers = this.#readableByteStreamControllers
     let _controller
+    const turtleBranch = this
     return new ReadableStream({
-      start (controller) {
+      async start (controller) {
         _controller = controller
-        controllers.add(_controller)
-        uint8Arrays.forEach(uint8Array => {
-          _controller.enqueue(uint8Array)
-        })
+        for await (const u8aTurtle of turtleBranch.u8aTurtleGenerator()) {
+          _controller.enqueue(_encodeUint8Array(u8aTurtle.uint8Array))
+        }
       },
       cancel (reason) {
         console.log('stream cancelled', { reason })
-        controllers.delete(_controller)
       },
       type: 'bytes'
     })
@@ -92,19 +105,19 @@ export class TurtleBranch {
     const turtleBranch = this
     return new WritableStream({
       write (chunk) {
-        // console.log(turtleBranch.name, chunk)
         inProgress = combineUint8Arrays([inProgress, chunk])
         if (inProgress.length < 4) return
         totalLength = new Uint32Array(inProgress.slice(0, 4).buffer)[0]
         if (inProgress.length < totalLength + 4) return
-        turtleBranch.append(inProgress.slice(4, totalLength + 4))
+        const uint8Array = inProgress.slice(4, totalLength + 4)
+        turtleBranch.append(uint8Array)
         inProgress = inProgress.slice(totalLength + 4)
       }
     })
   }
 
-  get length () { return this.u8aTurtle?.length }
-  get index () { return this.u8aTurtle?.index }
+  get length () { return this.u8aTurtle?.length ?? 0 }
+  get index () { return this.u8aTurtle?.index ?? -1 }
   getByte (address) { return this.u8aTurtle?.getAncestorByAddress?.(address)?.getByte?.(address) }
   slice (start, end) { return this.u8aTurtle?.getAncestorByAddress?.(start)?.slice?.(start, end) }
   squash (downToIndex) {

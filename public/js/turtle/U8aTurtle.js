@@ -1,6 +1,7 @@
 import { codec } from './codecs/codec.js'
 import { AS_REFS } from './codecs/CodecType.js'
-import { combineUint8Arrays, zabacaba } from './utils.js'
+import { combineUint8Arrays } from '../utils/combineUint8Arrays.js'
+import { zabacaba } from '../utils/zabacaba.js'
 
 /**
  * @typedef {import('./codecs/CodecType.js').CodecOptions} CodecOptions
@@ -33,6 +34,25 @@ export class U8aTurtle {
       this.index = 0
       this.length = uint8Array.length
     }
+  }
+
+  /**
+   * @param {number} start
+   * @param {number} end
+   * @returns {Array.<U8aTurtle>}
+   */
+  getAncestors (start = 0, end = this.index) {
+    if (start > this.index || start < 0) throw new Error('start out of range')
+    if (end > this.index || end < 0) throw new Error('end out of range')
+    const ancestors = new Array(end + 1 - start)
+    let index = end
+    let ancestor = this.getAncestorByIndex(index)
+    while (ancestor && index >= start) {
+      ancestors[index - start] = ancestor
+      --index
+      ancestor = ancestor.parent
+    }
+    return ancestors
   }
 
   /**
@@ -91,7 +111,7 @@ export class U8aTurtle {
   }
 
   slice (start = this.offset, end = this.length) {
-    return this.uint8Array.slice(this.#remapAddress(start), this.#remapAddress(end, true))
+    return this.uint8Array.subarray(this.#remapAddress(start), this.#remapAddress(end, true))
   }
 
   /**
@@ -115,10 +135,6 @@ export class U8aTurtle {
     if (address instanceof Uint8Array) return address
     u8aTurtle = u8aTurtle.getAncestorByAddress(address)
     const codecVersion = codec.getCodecTypeVersion(u8aTurtle.getByte(address))
-    if (!codecVersion) {
-      console.error(this)
-      throw new Error(`no CodecVersion found at #${address}, found: (${u8aTurtle.getByte(address)})`)
-    }
     return codecVersion.decode(u8aTurtle, address, options)
   }
 
@@ -133,16 +149,10 @@ export class U8aTurtle {
    * @returns {Array.<Uint8Array>}
    */
   exportUint8Arrays (start = 0, end = this.index) {
-    if (start > this.index || start < 0) throw new Error('start out of range')
-    if (end > this.index || end < 0) throw new Error('end out of range')
-    const uint8Arrays = new Array(1 + end - start)
-    let index = this.getAncestorByIndex(end)
-    while (index && index.index >= start) {
-      uint8Arrays[index.index - start] = index.uint8Array
-      index = index.parent
-    }
-    return uint8Arrays
+    return this.getAncestors(start, end).map(u8aTurtle => u8aTurtle.uint8Array)
   }
+
+  clone () { return fromUint8Arrays(this.exportUint8Arrays().map(uint8Array => new Uint8Array(uint8Array))) }
 }
 
 /**
@@ -172,4 +182,13 @@ export function findCommonAncestor (a, b) {
     b = b.parent
   }
   return a
+}
+
+/**
+ * @param {Array.<Uint8Array>} uint8Arrays
+ * @returns {U8aTurtle}
+ */
+export function fromUint8Arrays (uint8Arrays) {
+  if (!uint8Arrays?.length) throw new Error('empty uint8Arrays')
+  return uint8Arrays.reduce((u8aTurtle, uint8Array) => new U8aTurtle(uint8Array, u8aTurtle), undefined)
 }
