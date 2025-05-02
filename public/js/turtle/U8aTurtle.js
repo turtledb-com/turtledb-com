@@ -37,6 +37,25 @@ export class U8aTurtle {
   }
 
   /**
+   * @param {number} start
+   * @param {number} end
+   * @returns {Array.<U8aTurtle>}
+   */
+  getAncestors (start = 0, end = this.index) {
+    if (start > this.index || start < 0) throw new Error('start out of range')
+    if (end > this.index || end < 0) throw new Error('end out of range')
+    const ancestors = new Array(end + 1 - start)
+    let index = end
+    let ancestor = this.getAncestorByIndex(index)
+    while (ancestor && index >= start) {
+      ancestors[index - start] = ancestor
+      --index
+      ancestor = ancestor.parent
+    }
+    return ancestors
+  }
+
+  /**
    * @param {number} index
    * @param {number} tooHigh
    * @returns {U8aTurtle}
@@ -130,15 +149,7 @@ export class U8aTurtle {
    * @returns {Array.<Uint8Array>}
    */
   exportUint8Arrays (start = 0, end = this.index) {
-    if (start > this.index || start < 0) throw new Error('start out of range')
-    if (end > this.index || end < 0) throw new Error('end out of range')
-    const uint8Arrays = new Array(1 + end - start)
-    let index = this.getAncestorByIndex(end)
-    while (index && index.index >= start) {
-      uint8Arrays[index.index - start] = index.uint8Array
-      index = index.parent
-    }
-    return uint8Arrays
+    return this.getAncestors(start, end).map(u8aTurtle => u8aTurtle.uint8Array)
   }
 
   clone () { return fromUint8Arrays(this.exportUint8Arrays().map(uint8Array => new Uint8Array(uint8Array))) }

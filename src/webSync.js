@@ -20,10 +20,10 @@ import { TurtleBranchMultiplexer } from '../public/js/turtle/connections/TurtleB
  */
 export async function webSync (port, basePublicKey, turtleDB, https, insecure, certpath) {
   const app = express()
-  app.use((req, _res, next) => {
-    console.log(req.method, req.url)
-    next()
-  })
+  // app.use((req, _res, next) => {
+  //   console.log(req.method, req.url)
+  //   next()
+  // })
   app.use(async (req, res, next) => {
     const matchGroups = req.url.match(/\/(?<urlPublicKey>[0-9A-Za-z]{41,51})\/(?<relativePath>.*)$/)?.groups
     let type = extname(req.url)

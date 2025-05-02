@@ -33,7 +33,7 @@
   "scripts": {
     "go": "./bin/turtledb-com.js -i --username david --password secret --insecure --https",
     "repl": "./bin/server.js --interactive",
-    "start": "concurrently -p time --restart-tries 10 --restart-after exponential -c cyan,magenta -n webserver,s3peer \"$npm_execpath run webserver.prod\" \"$npm_execpath run s3peer.prod\"",
+    "start": "./bin/turtledb-com.js -i",
     "dev": "node --inspect ./bin/webserver.js --path public:/ --path test --insecure --https --s3host turtledb.com --s3port 1024",
     "dev.fs": "./bin/fspeer.js --s3host localhost --s3port 1024 --path ./public/",
     "dev.web": "node --inspect ./bin/webserver.js --path public:/ --path test --insecure --https --s3port 1024",

@@ -60,7 +60,7 @@ const contentTypeByExtension = {
 
 serviceWorkerGlobalScope.addEventListener('fetch', fetchEvent => {
   const url = fetchEvent.request.url
-  console.log('service-worker fetch', url)
+  // console.log('service-worker fetch', url)
   fetchEvent.respondWith((async () => {
     let extension = url.split(/[#?]/)[0].split('.').pop()
     const matchGroups = url.match(/\/(?<publicKey>[0-9A-Za-z]{41,51})\/(?<relativePath>.*)$/)?.groups
@@ -74,7 +74,7 @@ serviceWorkerGlobalScope.addEventListener('fetch', fetchEvent => {
       const body = turtleBranch.lookup('document', 'value', 'fs', relativePath)
       if (body) {
         const contentType = contentTypeByExtension[extension]
-        console.log({ publicKey, relativePath, extension, contentType })
+        // console.log({ publicKey, relativePath, extension, contentType })
         return new Response(new Blob([body], { headers: { type: contentType } }), { headers: { 'Content-Type': contentType } })
       }
     }
