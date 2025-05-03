@@ -26,8 +26,8 @@ const getTBMuxForClient = client => {
       for await (const u8aTurtle of tbMux.outgoingBranch.u8aTurtleGenerator()) {
         // if (ws.readyState !== ws.OPEN) break
         // ws.send(u8aTurtle.uint8Array)
-        const allClients = serviceWorkerGlobalScope.clients.matchAll()
-        console.log(allClients, client)
+        const allClients = await serviceWorkerGlobalScope.clients.matchAll()
+        console.log(`allClients.includes(client): ${allClients.includes(client)}`)
         client.postMessage(u8aTurtle.uint8Array.buffer)
       }
     })()
