@@ -2,13 +2,13 @@
 
 import chalk from 'chalk'
 import { join } from 'path'
-import { Committer } from '../public/js/dataModel/Committer.js'
+import { Committer } from '../cv6t981m0a2ou7fil4f88ujf6kpj2lojceycv1gdcq23wlzqi2/js/dataModel/Committer.js'
 import { watchfs } from '../src/watchfs.js'
-import { hashNameAndPassword } from '../public/js/utils/crypto.js'
-import { globalRunner, runnerRecaller, urlToName } from '../public/test/Runner.js'
-import { TEST, SUITE, RUNNER, RUNNING, WAIT, PASS, FAIL } from '../public/test/constants.js'
+import { hashNameAndPassword } from '../cv6t981m0a2ou7fil4f88ujf6kpj2lojceycv1gdcq23wlzqi2/js/utils/crypto.js'
+import { globalRunner, runnerRecaller, urlToName } from '../cv6t981m0a2ou7fil4f88ujf6kpj2lojceycv1gdcq23wlzqi2/test/Runner.js'
+import { TEST, SUITE, RUNNER, RUNNING, WAIT, PASS, FAIL } from '../cv6t981m0a2ou7fil4f88ujf6kpj2lojceycv1gdcq23wlzqi2/test/constants.js'
 import { program } from 'commander'
-import { defaultCPK } from '../public/js/constants.js'
+import { defaultCPK } from '../cv6t981m0a2ou7fil4f88ujf6kpj2lojceycv1gdcq23wlzqi2/js/constants.js'
 
 program
   .name('test')
@@ -83,7 +83,7 @@ const runnerToString = (runner = globalRunner, indent = '', isLastChild = true) 
 
 const privateKey = await hashNameAndPassword('test', 'test')
 const committer = new Committer('test', privateKey, runnerRecaller) // TODO: maybe add a no-key committer for cases like this?
-const root = join(import.meta.dirname, '../public')
+const root = join(import.meta.dirname, '../cv6t981m0a2ou7fil4f88ujf6kpj2lojceycv1gdcq23wlzqi2')
 
 await watchfs(committer, runnerRecaller, root, '', true)
 
@@ -110,7 +110,7 @@ runnerRecaller.watch('test runner', async () => {
     const paths = Object.keys(fsRefs).filter(path => /\.test\.js$/.test(path))
     globalRunner.clearChildren()
     await Promise.all(paths.map(async path => {
-      const importPath = `${join('../public', path)}?address=${fsRefs[path]}&cpk=${defaultCPK}&head=${committer.length - 1}`
+      const importPath = `${join('../cv6t981m0a2ou7fil4f88ujf6kpj2lojceycv1gdcq23wlzqi2', path)}?address=${fsRefs[path]}&cpk=${defaultCPK}&head=${committer.length - 1}`
       try {
         await import(importPath)
       } catch (error) {

@@ -4,10 +4,10 @@ import { manageCert } from './manageCert.js'
 import { createServer as createHttpsServer } from 'https'
 import { createServer as createHttpServer } from 'http'
 import { WebSocketServer } from 'ws'
-import { TurtleBranchMultiplexer } from '../public/js/turtle/connections/TurtleBranchMultiplexer.js'
+import { TurtleBranchMultiplexer } from '../cv6t981m0a2ou7fil4f88ujf6kpj2lojceycv1gdcq23wlzqi2/js/turtle/connections/TurtleBranchMultiplexer.js'
 
 /**
- * @typedef {import('../public/js/turtle/connections/TurtleDB.js').TurtleDB} TurtleDB
+ * @typedef {import('../cv6t981m0a2ou7fil4f88ujf6kpj2lojceycv1gdcq23wlzqi2/js/turtle/connections/TurtleDB.js').TurtleDB} TurtleDB
  */
 
 /**
@@ -46,7 +46,7 @@ export async function webSync (port, basePublicKey, turtleDB, https, insecure, c
       next()
     }
   })
-  const fullpath = join(process.cwd(), 'public')
+  const fullpath = join(process.cwd(), basePublicKey)
   app.use(express.static(fullpath))
 
   let server

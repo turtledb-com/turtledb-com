@@ -7,9 +7,6 @@ coverage/
 # Dependency directories
 node_modules/
 
-# secp256k1 to be copied
-public/js/utils/noble-secp256k1.js
-
 # self signed certs for dev go here
 dev/
 

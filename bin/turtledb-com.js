@@ -2,18 +2,18 @@
 
 import { start } from 'repl'
 import { Option, program } from 'commander'
-import { Signer } from '../public/js/turtle/Signer.js'
+import { Signer } from '../cv6t981m0a2ou7fil4f88ujf6kpj2lojceycv1gdcq23wlzqi2/js/turtle/Signer.js'
 import { question } from 'readline-sync'
-import { TurtleDictionary } from '../public/js/turtle/TurtleDictionary.js'
-import { Workspace } from '../public/js/turtle/Workspace.js'
+import { TurtleDictionary } from '../cv6t981m0a2ou7fil4f88ujf6kpj2lojceycv1gdcq23wlzqi2/js/turtle/TurtleDictionary.js'
+import { Workspace } from '../cv6t981m0a2ou7fil4f88ujf6kpj2lojceycv1gdcq23wlzqi2/js/turtle/Workspace.js'
 import { fsSync } from '../src/fsSync.js'
 import { webSync } from '../src/webSync.js'
-import { Recaller } from '../public/js/utils/Recaller.js'
+import { Recaller } from '../cv6t981m0a2ou7fil4f88ujf6kpj2lojceycv1gdcq23wlzqi2/js/utils/Recaller.js'
 import { S3Client } from '@aws-sdk/client-s3'
 import { S3Updater } from '../src/S3Updater.js'
-import { TurtleBranchUpdater } from '../public/js/turtle/connections/TurtleBranchUpdater.js'
-import { AS_REFS } from '../public/js/turtle/codecs/CodecType.js'
-import { TurtleDB } from '../public/js/turtle/connections/TurtleDB.js'
+import { TurtleBranchUpdater } from '../cv6t981m0a2ou7fil4f88ujf6kpj2lojceycv1gdcq23wlzqi2/js/turtle/connections/TurtleBranchUpdater.js'
+import { AS_REFS } from '../cv6t981m0a2ou7fil4f88ujf6kpj2lojceycv1gdcq23wlzqi2/js/turtle/codecs/CodecType.js'
+import { TurtleDB } from '../cv6t981m0a2ou7fil4f88ujf6kpj2lojceycv1gdcq23wlzqi2/js/turtle/connections/TurtleDB.js'
 
 program
   .name('turtledb-com')
@@ -25,7 +25,6 @@ program
   .addOption(new Option('--s3-access-key-id <string>', 'accessKeyId for s3').env('TURTLEDB_S3_ACCESS_KEY_ID'))
   .addOption(new Option('--s3-secret-access-key <string>', 'secretAccessKey for s3').env('TURTLEDB_S3_SECRET_ACCESS_KEY'))
   .option('--nos3', 'disable S3', false)
-  .option('-f, --fsdir <path...>', 'file paths of directories to sync files from', [])
   .option('-n, --fsname <name...>', 'names of turtles to sync files with', [])
   .option('-j, --fsobj <name...>', 'name of objects in turtles to store files in (default: fs)', [])
   .option('-b, --base <name>', 'name of turtle to use for web assets', 'public')
@@ -41,7 +40,7 @@ program
 const options = program.opts()
 options.username ??= question('username: ')
 options.password ??= question('password: ', { hideEchoBack: true })
-const { username, password, s3EndPoint, s3Region, s3Bucket, s3AccessKeyId, s3SecretAccessKey, nos3, fsdir, fsname, fsobj, base, port, /* originHost, originPort, */ https, insecure, certpath, interactive } = options
+const { username, password, s3EndPoint, s3Region, s3Bucket, s3AccessKeyId, s3SecretAccessKey, nos3, fsname, fsobj, base, port, /* originHost, originPort, */ https, insecure, certpath, interactive } = options
 
 const signer = new Signer(username, password)
 const recaller = new Recaller('turtledb-com')
@@ -88,12 +87,8 @@ if (interactive) {
   replServer.on('exit', process.exit)
 }
 
-for (let i = 0; i < Math.max(fsdir.length, fsname.length); ++i) {
-  const path = fsdir[i] ?? fsname[i]
-  const name = fsname[i] ?? fsdir[i]
-  const { publicKey } = await signer.makeKeysFor(name)
-  const workspace = new Workspace(name, signer, await turtleDB.summonBoundTurtleBranch(publicKey, name))
-  fsSync(workspace, path, fsobj[i])
+for (let i = 0; i < fsname.length; ++i) {
+  fsSync(fsname[i], turtleDB, signer, fsobj[i])
 }
 
 if (port) {

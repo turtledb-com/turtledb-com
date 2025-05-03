@@ -1,9 +1,9 @@
 import { GetObjectCommand, ListObjectsV2Command, PutObjectCommand } from '@aws-sdk/client-s3'
-import { Committer } from '../public/js/dataModel/Committer.js'
-import { Recaller } from '../public/js/utils/Recaller.js'
-import { KIND, getCodecs } from '../public/js/dataModel/CODECS.js'
-import { Upserter } from '../public/js/dataModel/Upserter.js'
-import { Uint8ArrayLayerPointer } from '../public/js/dataModel/Uint8ArrayLayerPointer.js'
+import { Committer } from '../cv6t981m0a2ou7fil4f88ujf6kpj2lojceycv1gdcq23wlzqi2/js/dataModel/Committer.js'
+import { Recaller } from '../cv6t981m0a2ou7fil4f88ujf6kpj2lojceycv1gdcq23wlzqi2/js/utils/Recaller.js'
+import { KIND, getCodecs } from '../cv6t981m0a2ou7fil4f88ujf6kpj2lojceycv1gdcq23wlzqi2/js/dataModel/CODECS.js'
+import { Upserter } from '../cv6t981m0a2ou7fil4f88ujf6kpj2lojceycv1gdcq23wlzqi2/js/dataModel/Upserter.js'
+import { Uint8ArrayLayerPointer } from '../cv6t981m0a2ou7fil4f88ujf6kpj2lojceycv1gdcq23wlzqi2/js/dataModel/Uint8ArrayLayerPointer.js'
 
 export const s3PeerRecaller = new Recaller('S3Peer.js')
 

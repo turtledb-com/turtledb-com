@@ -1,7 +1,9 @@
 import { Recaller } from '../../utils/Recaller.js'
 import { TurtleBranch } from '../TurtleBranch.js'
+import { Workspace } from '../Workspace.js'
 
 /**
+ * @typedef {import('../Signer.js').Signer} Signer
  * @typedef {(turtleBranchStatus) => Promise.<void>} Binding
  * @typedef {{
  *   turtleBranchPromise: Promise.<TurtleBranch>,
@@ -28,6 +30,51 @@ export class TurtleDB {
   constructor (name, recaller = new Recaller(name)) {
     this.name = name
     this.recaller = recaller
+  }
+
+  /**
+   * @param {Signer} signer
+   * @param {string} name
+   */
+  async makeWorkspace (signer, name) {
+    const { publicKey } = await signer.makeKeysFor(name)
+    const turtleBranch = await this.summonBoundTurtleBranch(publicKey, name)
+    return new Workspace(name, signer, turtleBranch)
+  }
+
+  /**
+   * get a TurtleBranch and init if required
+   * @param {string} publicKey
+   * @param {string} [name=publicKey]
+   * @param {Set<any>} [tags=new Set()]
+   * @return {Promise.<TurtleBranch>}
+   */
+  async summonBoundTurtleBranch (publicKey, name = publicKey, tags = new Set()) {
+    if (!publicKey) throw new Error('TurtleBranch must have publicKey')
+    let status = this.#statuses[publicKey]
+    if (!status) {
+      const turtleBranch = new TurtleBranch(name)
+      status = {
+        publicKey,
+        tags,
+        turtleBranch,
+        bindingInProgress: null,
+        bindings: new Set()
+      }
+      this.#statuses[publicKey] = status
+      status.turtleBranchPromise = (async () => {
+        for (const binding of this.#bindings) {
+          status.bindingInProgress = binding
+          await binding(status)
+          status.bindings.add(binding)
+        }
+        return turtleBranch
+      })()
+    } else {
+      status.tags = status.tags.union(tags)
+    }
+    this.recaller.reportKeyMutation(this, STATUSES_OWN_KEYS, 'summonBoundTurtleBranch', this.name)
+    return status.turtleBranchPromise
   }
 
   /**
@@ -82,41 +129,6 @@ export class TurtleDB {
       return true
     }
     return false
-  }
-
-  /**
-   * get a TurtleBranch and init if required
-   * @param {string} publicKey
-   * @param {string} [name=publicKey]
-   * @param {Set<any>} [tags=new Set()]
-   * @return {Promise.<TurtleBranch>}
-   */
-  async summonBoundTurtleBranch (publicKey, name = publicKey, tags = new Set()) {
-    if (!publicKey) throw new Error('TurtleBranch must have publicKey')
-    let status = this.#statuses[publicKey]
-    if (!status) {
-      const turtleBranch = new TurtleBranch(name)
-      status = {
-        publicKey,
-        tags,
-        turtleBranch,
-        bindingInProgress: null,
-        bindings: new Set()
-      }
-      this.#statuses[publicKey] = status
-      status.turtleBranchPromise = (async () => {
-        for (const binding of this.#bindings) {
-          status.bindingInProgress = binding
-          await binding(status)
-          status.bindings.add(binding)
-        }
-        return turtleBranch
-      })()
-    } else {
-      status.tags = status.tags.union(tags)
-    }
-    this.recaller.reportKeyMutation(this, STATUSES_OWN_KEYS, 'summonBoundTurtleBranch', this.name)
-    return status.turtleBranchPromise
   }
 
   /**

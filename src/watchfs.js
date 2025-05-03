@@ -1,7 +1,7 @@
 import { watch } from 'chokidar'
 import { dirname, join, parse, relative } from 'path'
 import { mkdirSync, readFileSync, rmSync, writeFileSync } from 'fs'
-import { getCodecs, KIND } from '../public/js/dataModel/CODECS.js'
+import { getCodecs, KIND } from '../cv6t981m0a2ou7fil4f88ujf6kpj2lojceycv1gdcq23wlzqi2/js/dataModel/CODECS.js'
 
 export const ignored = /(?:\/node_modules\b|\/\..*|.*\.ico$|\.lock$|~$)/i
 

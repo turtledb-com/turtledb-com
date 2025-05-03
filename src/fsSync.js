@@ -1,9 +1,14 @@
 import { watch } from 'chokidar'
-import { readFile, unlink, writeFile } from 'fs/promises'
-import { join, relative } from 'path'
-import { AS_REFS } from '../public/js/turtle/codecs/CodecType.js'
+import { mkdir, readFile, unlink, writeFile } from 'fs/promises'
+import { dirname, join, relative } from 'path'
+import { AS_REFS } from '../cv6t981m0a2ou7fil4f88ujf6kpj2lojceycv1gdcq23wlzqi2/js/turtle/codecs/CodecType.js'
+import { existsSync, mkdirSync } from 'fs'
 
-/** @typedef {import('../public/js/turtle/Workspace.js').Workspace} Workspace */
+/**
+ * @typedef {import('../cv6t981m0a2ou7fil4f88ujf6kpj2lojceycv1gdcq23wlzqi2/js/turtle/connections/TurtleDB.js').TurtleDB} TurtleDB
+ * @typedef {import('../cv6t981m0a2ou7fil4f88ujf6kpj2lojceycv1gdcq23wlzqi2/js/turtle/Signer.js').Signer} Signer
+ * @typedef {import('../cv6t981m0a2ou7fil4f88ujf6kpj2lojceycv1gdcq23wlzqi2/js/turtle/Workspace.js').Workspace} Workspace
+ */
 
 export const ignored = /(?:\/node_modules\b|\/\..*|.*\.ico$|\.lock$|~$)/i
 
@@ -11,11 +16,15 @@ const UPDATED_FILE = 'updated file'
 const REMOVED_FILE = 'removed file'
 
 /**
- * @param {Workspace} workspace
- * @param {string} [root=workspace.name]
+ * @param {string} name
+ * @param {TurtleDB} turtleDB
+ * @param {Signer} signer
  * @param {string} [jspath='fs']
  */
-export function fsSync (workspace, root = workspace.name, jspath = 'fs') {
+export async function fsSync (name, turtleDB, signer, jspath = 'fs') {
+  const workspace = await turtleDB.makeWorkspace(signer, name)
+  const { publicKey: root } = await signer.makeKeysFor(name)
+  if (!existsSync(root)) mkdirSync(root)
   let skipCommit = false
   let nextTurnPromise
   const nextTurn = async () => {
@@ -25,7 +34,7 @@ export function fsSync (workspace, root = workspace.name, jspath = 'fs') {
     await previousPromise
     return endTurn
   }
-  let jsobj = workspace.committedBranch.lookup('document', 'value', jspath) ?? {}
+  let jsobj = {}
 
   const nextActionsByPath = {}
   let isHandlingChokidar
@@ -95,7 +104,7 @@ export function fsSync (workspace, root = workspace.name, jspath = 'fs') {
         const path = join(root, relativePath)
         if (newJsobj[relativePath] !== jsobj[relativePath]) {
           console.log('adding from committedBranch changes', relativePath)
-          changes.push(writeFile(path, newJsobj[relativePath]))
+          changes.push(mkdir(dirname(path), { recursive: true }).then(() => writeFile(path, newJsobj[relativePath])))
         }
       }
       if (changes.length) console.log('fs update from workspace.committedBranch, changes.length', changes.length)
