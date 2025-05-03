@@ -64,6 +64,12 @@ export async function webSync (port, basePublicKey, turtleDB, https, insecure, c
 
   wss.on('connection', async ws => {
     ++connectionCount
+    const _connectionCount = connectionCount
+    // keep alive
+    const intervalId = setInterval(() => {
+      if (_connectionCount !== connectionCount) clearInterval(intervalId)
+      else ws.send(new Uint8Array())
+    }, 20000)
     const tbMux = new TurtleBranchMultiplexer(`server-tbMux-to-ws#${connectionCount}`, true, turtleDB)
     ;(async () => {
       for await (const u8aTurtle of tbMux.outgoingBranch.u8aTurtleGenerator()) {
@@ -78,6 +84,7 @@ export async function webSync (port, basePublicKey, turtleDB, https, insecure, c
       ws.onclose = resolve
       ws.onerror = reject
     })
+    clearInterval(intervalId)
     tbMux.stop()
   })
 

@@ -10,7 +10,7 @@ import { TurtleDB } from './js/turtle/connections/TurtleDB.js'
 const url = `wss://${location.host}`
 const turtleDB = new TurtleDB('service-worker')
 
-console.log('service-worker started')
+console.log('-- service-worker started')
 /** @type {ServiceWorkerGlobalScope} */
 const serviceWorkerGlobalScope = self
 
@@ -36,15 +36,15 @@ const getTBMuxForClient = client => {
 }
 
 serviceWorkerGlobalScope.addEventListener('install', async () => {
-  console.log('service-worker install')
+  console.log('-- service-worker install')
 })
 
 serviceWorkerGlobalScope.addEventListener('activate', async () => {
-  console.log('service-worker activate')
+  console.log('-- service-worker activate')
 })
 
 serviceWorkerGlobalScope.addEventListener('message', async messageEvent => {
-  console.log('service-worker activate')
+  console.log('-- service-worker activate')
   const tbMux = getTBMuxForClient(messageEvent.source)
   tbMux.incomingBranch.append(new Uint8Array(messageEvent.data))
 })
@@ -86,7 +86,7 @@ serviceWorkerGlobalScope.addEventListener('fetch', fetchEvent => {
   let t = 100
   let connectionCount = 0
   while (true) {
-    console.log('-- creating new websocket and mux')
+    console.time('-- creating new websocket and mux')
     const tbMux = new TurtleBranchMultiplexer(`websocket#${connectionCount}`, false, turtleDB)
     for (const publicKey of turtleDB.getPublicKeys()) {
       await tbMux.getTurtleBranchUpdater(publicKey)
@@ -115,7 +115,8 @@ serviceWorkerGlobalScope.addEventListener('fetch', fetchEvent => {
         console.log('-- onopen', { _connectionCount })
       }
       ws.onmessage = event => {
-        tbMux.incomingBranch.append(new Uint8Array(event.data))
+        if (event.data.length) tbMux.incomingBranch.append(new Uint8Array(event.data))
+        else console.log('-- keep-alive')
       }
       await new Promise((resolve, reject) => {
         ws.onclose = resolve
@@ -126,9 +127,10 @@ serviceWorkerGlobalScope.addEventListener('fetch', fetchEvent => {
     }
     tbMux.stop()
     turtleDB.unbind(tbMuxBinding)
+    console.timeEnd('-- creating new websocket and mux')
     t = Math.min(t, 2 * 60 * 1000) // 2 minutes max (unjittered)
     t = t * (1 + Math.random()) // exponential backoff and some jitter
-    console.log('waiting', t, 'ms')
+    console.log(`-- waiting ${t} ms`)
     await new Promise(resolve => setTimeout(resolve, t))
   }
 })()

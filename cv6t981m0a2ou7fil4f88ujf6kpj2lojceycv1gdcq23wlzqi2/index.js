@@ -51,7 +51,7 @@ try {
   const { serviceWorker } = navigator
   if (!serviceWorker || allServiceWorkers.has(serviceWorker)) throw new Error('no serviceWorker')
   const { active } = await serviceWorker.ready
-  console.log({ active })
+  console.log(`active ${active}`)
   allServiceWorkers.add(serviceWorker)
   const tbMux = new TurtleBranchMultiplexer('service-worker')
   window.tbMux = tbMux
@@ -79,7 +79,7 @@ console.warn('unable to connect through service-worker, trying direct websocket 
 let t = 100
 let connectionCount = 0
 while (true) {
-  console.log('-- creating new websocket and mux')
+  console.log(' ^^^^^^^ creating new websocket and mux')
   const tbMux = new TurtleBranchMultiplexer(`websocket#${connectionCount}`, false, turtleDB)
   for (const publicKey of turtleDB.getPublicKeys()) {
     await tbMux.getTurtleBranchUpdater(publicKey)
@@ -122,7 +122,7 @@ while (true) {
       console.log('\n\n(warmup) testBranch.index:', window.testBranch?.index)
     }
     ws.onmessage = event => {
-      tbMux.incomingBranch.append(new Uint8Array(event.data))
+      if (event.data.length) tbMux.incomingBranch.append(new Uint8Array(event.data))
     }
     await new Promise((resolve, reject) => {
       ws.onclose = resolve
