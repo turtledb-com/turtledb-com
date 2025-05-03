@@ -40,7 +40,7 @@ export async function webSync (port, basePublicKey, turtleDB, https, insecure, c
       res.type(type)
       res.send(body)
     } else if (req.url.match(/^\/$|^\/index.html?$/)) {
-      console.log(req.url)
+      // console.log(req.url)
       res.redirect(`/${basePublicKey}/`)
     } else {
       next()
@@ -70,7 +70,7 @@ export async function webSync (port, basePublicKey, turtleDB, https, insecure, c
       if (_connectionCount !== connectionCount) clearInterval(intervalId)
       else ws.send(new Uint8Array())
     }, 20000)
-    const tbMux = new TurtleBranchMultiplexer(`server-tbMux-to-ws#${connectionCount}`, true, turtleDB)
+    const tbMux = new TurtleBranchMultiplexer(`ws_connection_#${connectionCount}`, true, turtleDB)
     ;(async () => {
       for await (const u8aTurtle of tbMux.outgoingBranch.u8aTurtleGenerator()) {
         if (ws.readyState !== ws.OPEN) break

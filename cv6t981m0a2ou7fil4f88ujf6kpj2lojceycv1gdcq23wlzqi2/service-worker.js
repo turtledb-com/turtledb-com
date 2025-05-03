@@ -1,11 +1,10 @@
 /// <reference no-default-lib="true"/>
 /// <reference lib="esnext"/>
 /// <reference lib="webworker"/>
+/* global self, location, WebSocket */
 
 import { TurtleBranchMultiplexer } from './js/turtle/connections/TurtleBranchMultiplexer.js'
 import { TurtleDB } from './js/turtle/connections/TurtleDB.js'
-
-/* global self, location, WebSocket */
 
 const url = `wss://${location.host}`
 const turtleDB = new TurtleDB('service-worker')
@@ -22,11 +21,13 @@ const tbMuxAndClientById = {}
  */
 const getTBMuxForClient = client => {
   if (!tbMuxAndClientById[client.id]) {
-    const tbMux = new TurtleBranchMultiplexer(client.id, true, turtleDB)
+    const tbMux = new TurtleBranchMultiplexer(`client_connection_#${client.id}`, true, turtleDB)
     ;(async () => {
       for await (const u8aTurtle of tbMux.outgoingBranch.u8aTurtleGenerator()) {
         // if (ws.readyState !== ws.OPEN) break
         // ws.send(u8aTurtle.uint8Array)
+        const allClients = serviceWorkerGlobalScope.clients.matchAll()
+        console.log(allClients, client)
         client.postMessage(u8aTurtle.uint8Array.buffer)
       }
     })()
@@ -86,8 +87,9 @@ serviceWorkerGlobalScope.addEventListener('fetch', fetchEvent => {
   let t = 100
   let connectionCount = 0
   while (true) {
+    console.log('-- connecting')
     console.time('-- creating new websocket and mux')
-    const tbMux = new TurtleBranchMultiplexer(`websocket#${connectionCount}`, false, turtleDB)
+    const tbMux = new TurtleBranchMultiplexer(`websocket_connection_#${connectionCount}`, false, turtleDB)
     for (const publicKey of turtleDB.getPublicKeys()) {
       await tbMux.getTurtleBranchUpdater(publicKey)
     }
@@ -115,7 +117,7 @@ serviceWorkerGlobalScope.addEventListener('fetch', fetchEvent => {
         console.log('-- onopen', { _connectionCount })
       }
       ws.onmessage = event => {
-        if (event.data.length) tbMux.incomingBranch.append(new Uint8Array(event.data))
+        if (event.data.byteLength) tbMux.incomingBranch.append(new Uint8Array(event.data))
         else console.log('-- keep-alive')
       }
       await new Promise((resolve, reject) => {
