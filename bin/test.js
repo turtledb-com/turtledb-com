@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 
+/*
 import chalk from 'chalk'
 import { join } from 'path'
 import { Committer } from '../cv6t981m0a2ou7fil4f88ujf6kpj2lojceycv1gdcq23wlzqi2/js/dataModel/Committer.js'
@@ -128,3 +129,5 @@ runnerRecaller.watch('test runner', async () => {
     }
   }
 })
+
+*/

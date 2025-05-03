@@ -37,7 +37,7 @@ export class TurtleBranchMultiplexer extends TurtleTalker {
       const uint8Array = u8aTurtle.lookup(address)
       const turtleBranchUpdater = await this.getTurtleBranchUpdater(name, publicKey)
       turtleBranchUpdater.incomingBranch.append(uint8Array)
-      console.log(JSON.stringify(this.name), '<- incoming <-', publicKey, '<-', name, '<-', turtleBranchUpdater.incomingBranch.lookup('uint8ArrayAddresses'))
+      console.log(`${publicKey} <- incoming <- ${JSON.stringify(this.name)} ${turtleBranchUpdater.incomingBranch.lookup('uint8ArrayAddresses').toString()}`)
     }
   }
 
@@ -53,7 +53,7 @@ export class TurtleBranchMultiplexer extends TurtleTalker {
     this.outgoingDictionary.upsert(update)
     this.outgoingDictionary.squash(this.outgoingBranch.index + 1)
     this.outgoingBranch.u8aTurtle = this.outgoingDictionary.u8aTurtle
-    console.log(JSON.stringify(this.name), '-> outgoing ->', publicKey, '->', name, '->', turtleBranchUpdater.outgoingBranch.lookup('uint8ArrayAddresses'))
+    console.log(`${publicKey} -> outgoing -> ${JSON.stringify(this.name)} ${turtleBranchUpdater.outgoingBranch.lookup('uint8ArrayAddresses').toString()}`)
   }
 
   /**
