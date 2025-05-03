@@ -17,6 +17,7 @@ import { TurtleDB } from '../cv6t981m0a2ou7fil4f88ujf6kpj2lojceycv1gdcq23wlzqi2/
 
 program
   .name('turtledb-com')
+  .version(process.env.npm_package_version)
   .addOption(new Option('--username <string>', 'username to use for Signer').env('TURTLEDB_USERNAME'))
   .addOption(new Option('--password <string>', 'password to use for Signer').env('TURTLEDB_PASSWORD'))
   .addOption(new Option('--s3-end-point <string>', 'endPoint for s3 (like "https://sfo3.digitaloceanspaces.com")').env('TURTLEDB_S3_END_POINT'))
