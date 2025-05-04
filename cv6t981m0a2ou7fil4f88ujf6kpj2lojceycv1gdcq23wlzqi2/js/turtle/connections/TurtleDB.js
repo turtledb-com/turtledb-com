@@ -37,9 +37,14 @@ export class TurtleDB {
    * @param {string} name
    */
   async makeWorkspace (signer, name) {
-    const { publicKey } = await signer.makeKeysFor(name)
-    const turtleBranch = await this.summonBoundTurtleBranch(publicKey, name)
-    return new Workspace(name, signer, turtleBranch)
+    try {
+      const { publicKey } = await signer.makeKeysFor(name)
+      console.log({ publicKey })
+      const turtleBranch = await this.summonBoundTurtleBranch(publicKey, name)
+      return new Workspace(name, signer, turtleBranch)
+    } catch (error) {
+      console.error(error)
+    }
   }
 
   /**
@@ -63,12 +68,16 @@ export class TurtleDB {
       }
       this.#statuses[publicKey] = status
       status.turtleBranchPromise = (async () => {
-        for (const binding of this.#bindings) {
-          status.bindingInProgress = binding
-          await binding(status)
-          status.bindings.add(binding)
+        try {
+          for (const binding of this.#bindings) {
+            status.bindingInProgress = binding
+            await binding(status)
+            status.bindings.add(binding)
+          }
+          return turtleBranch
+        } catch (error) {
+          console.error(error)
         }
-        return turtleBranch
       })()
     } else {
       status.tags = status.tags.union(tags)

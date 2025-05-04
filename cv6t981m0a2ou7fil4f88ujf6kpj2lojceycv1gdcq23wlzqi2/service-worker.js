@@ -79,7 +79,11 @@ serviceWorkerGlobalScope.addEventListener('fetch', fetchEvent => {
         return new Response(new Blob([body], { headers: { type: contentType } }), { headers: { 'Content-Type': contentType } })
       }
     }
-    return fetch(fetchEvent.request)
+    try {
+      return fetch(fetchEvent.request)
+    } catch (error) {
+      console.error(error)
+    }
   })())
 })
 
@@ -87,8 +91,8 @@ serviceWorkerGlobalScope.addEventListener('fetch', fetchEvent => {
   let t = 100
   let connectionCount = 0
   while (true) {
-    console.log('-- connecting')
-    console.time('-- creating new websocket and mux')
+    console.log('-- creating new websocket and mux')
+    console.time('-- websocket lifespan')
     const tbMux = new TurtleBranchMultiplexer(`websocket_connection_#${connectionCount}`, false, turtleDB)
     for (const publicKey of turtleDB.getPublicKeys()) {
       await tbMux.getTurtleBranchUpdater(publicKey)
@@ -129,10 +133,10 @@ serviceWorkerGlobalScope.addEventListener('fetch', fetchEvent => {
     }
     tbMux.stop()
     turtleDB.unbind(tbMuxBinding)
-    console.timeEnd('-- creating new websocket and mux')
+    console.timeEnd('-- websocket lifespan')
     t = Math.min(t, 2 * 60 * 1000) // 2 minutes max (unjittered)
     t = t * (1 + Math.random()) // exponential backoff and some jitter
-    console.log(`-- waiting ${t} ms`)
+    console.log(`-- waiting ${(t / 1000).toFixed(2)}s`)
     await new Promise(resolve => setTimeout(resolve, t))
   }
 })()

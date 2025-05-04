@@ -37,7 +37,7 @@ try {
     '/service-worker.js',
     { type: 'module', scope: '/' }
   )
-  console.log('register complete', serviceWorkerRegistration)
+  console.log(' ^^^^^^^ register complete', serviceWorkerRegistration)
   serviceWorkerRegistration.addEventListener('updatefound', () => {
     console.log('service-worker update found')
   })
@@ -91,12 +91,14 @@ while (true) {
     // console.log('tbMuxBinding', { publicKey })
   }
   turtleDB.bind(tbMuxBinding)
-  let _connectionCount
+  let connectionIndex
   try {
+    connectionIndex = ++connectionCount
     const ws = new WebSocket(url)
     window.tbMux = tbMux
     ws.binaryType = 'arraybuffer'
     ws.onopen = async () => {
+      console.log(' ^^^^^^^ onopen', { connectionIndex })
       ;(async () => {
         for await (const u8aTurtle of tbMux.outgoingBranch.u8aTurtleGenerator()) {
           if (ws.readyState !== ws.OPEN) break
@@ -104,21 +106,6 @@ while (true) {
         }
       })()
       t = 100
-
-      _connectionCount = ++connectionCount
-      console.log('-- onopen', { _connectionCount })
-      const signer = new Signer('david', 'secret')
-      const keys = await signer.makeKeysFor('test')
-      console.log({ keys })
-      console.log('\n\n(warmup)')
-      console.log('(warmup) about to getTurtleBranchByPublicKey', keys.publicKey)
-      window.testBranch = await turtleDB.summonBoundTurtleBranch(keys.publicKey, 'test')
-      console.log('(warmup) set window.testBranch')
-      window.testWorkspace = new Workspace('test', signer, window.testBranch)
-      console.log('(warmup) set window.testWorkspace')
-      const result = await window.testWorkspace.commit({ random: Math.random() }, new Date())
-      console.log('(warmup) commit result', result)
-      console.log('\n\n(warmup) testBranch.index:', window.testBranch?.index)
     }
     ws.onmessage = event => {
       if (event.data.length) tbMux.incomingBranch.append(new Uint8Array(event.data))
@@ -135,6 +122,6 @@ while (true) {
   turtleDB.unbind(tbMuxBinding)
   t = Math.min(t, 2 * 60 * 1000) // 2 minutes max (unjittered)
   t = t * (1 + Math.random()) // exponential backoff and some jitter
-  console.log('waiting', t, 'ms')
+  console.log(` ^^^^^^^ waiting ${(t / 1000).toFixed(2)} ms`)
   await new Promise(resolve => setTimeout(resolve, t))
 }

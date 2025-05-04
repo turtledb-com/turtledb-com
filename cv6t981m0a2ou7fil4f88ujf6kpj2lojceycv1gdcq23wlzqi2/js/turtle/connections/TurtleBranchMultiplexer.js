@@ -32,12 +32,19 @@ export class TurtleBranchMultiplexer extends TurtleTalker {
   }
 
   async appendGeneratedIncomingForever () {
-    for await (const u8aTurtle of this.incomingBranch.u8aTurtleGenerator()) {
-      const { address, name, publicKey } = u8aTurtle.lookup()
-      const uint8Array = u8aTurtle.lookup(address)
-      const turtleBranchUpdater = await this.getTurtleBranchUpdater(name, publicKey)
-      turtleBranchUpdater.incomingBranch.append(uint8Array)
-      console.log(`${publicKey} <- incoming <- ${JSON.stringify(this.name)} ${turtleBranchUpdater.incomingBranch.lookup('uint8ArrayAddresses').toString()}`)
+    try {
+      for await (const u8aTurtle of this.incomingBranch.u8aTurtleGenerator()) {
+        const { address, name, publicKey } = u8aTurtle.lookup()
+        if (!(address || publicKey)) {
+          throw new Error('address or publicKey required')
+        }
+        const uint8Array = u8aTurtle.lookup(address)
+        const turtleBranchUpdater = await this.getTurtleBranchUpdater(name, publicKey)
+        turtleBranchUpdater.incomingBranch.append(uint8Array)
+        console.log(`${publicKey} <- incoming <- ${JSON.stringify(this.name)} ${turtleBranchUpdater.incomingBranch.lookup('uint8ArrayAddresses')}`)
+      }
+    } catch (error) {
+      console.error(error)
     }
   }
 
@@ -62,10 +69,12 @@ export class TurtleBranchMultiplexer extends TurtleTalker {
    * @returns {TurtleBranchUpdater}
    */
   async getTurtleBranchUpdater (name = '', publicKey = '', turtleBranch) {
+    if (!name && !publicKey) throw new Error('no name or publicKey')
     publicKey ||= name
     name ||= publicKey
     if (!this.#updatersByCpk[publicKey]) {
       this.#updatersByCpk[publicKey] = (async () => {
+        console.log({ publicKey })
         turtleBranch ??= await this.turtleDB.summonBoundTurtleBranch(publicKey, name)
         const updater = new TurtleBranchUpdater(name, turtleBranch, publicKey, this.Xours)
         ;(async () => {
