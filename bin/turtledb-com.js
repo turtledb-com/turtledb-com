@@ -16,8 +16,6 @@ import { TurtleBranchUpdater } from '../cv6t981m0a2ou7fil4f88ujf6kpj2lojceycv1gd
 import { AS_REFS } from '../cv6t981m0a2ou7fil4f88ujf6kpj2lojceycv1gdcq23wlzqi2/js/turtle/codecs/CodecType.js'
 import { TurtleDB } from '../cv6t981m0a2ou7fil4f88ujf6kpj2lojceycv1gdcq23wlzqi2/js/turtle/connections/TurtleDB.js'
 import { TurtleBranchMultiplexer } from '../cv6t981m0a2ou7fil4f88ujf6kpj2lojceycv1gdcq23wlzqi2/js/turtle/connections/TurtleBranchMultiplexer.js'
-import { combineUint8ArrayLikes } from '../cv6t981m0a2ou7fil4f88ujf6kpj2lojceycv1gdcq23wlzqi2/js/utils/combineUint8ArrayLikes.js'
-import { combineUint8Arrays } from '../cv6t981m0a2ou7fil4f88ujf6kpj2lojceycv1gdcq23wlzqi2/js/utils/combineUint8Arrays.js'
 
 program
   .name('turtledb-com')
@@ -51,11 +49,6 @@ const { username, password, s3EndPoint, s3Region, s3Bucket, s3AccessKeyId, s3Sec
 const signer = new Signer(username, password)
 const recaller = new Recaller('turtledb-com')
 const turtleDB = new TurtleDB('turtledb-com', recaller)
-
-const _encodeUint8Array = uint8Array => {
-  const encodedLength = new Uint32Array([uint8Array.length])
-  return combineUint8ArrayLikes([encodedLength, uint8Array])
-}
 
 if (!disableS3 && (s3EndPoint || s3Region || s3Bucket || s3AccessKeyId || s3SecretAccessKey)) {
   if (!s3EndPoint || !s3Region || !s3Bucket || !s3AccessKeyId || !s3SecretAccessKey) {
@@ -111,11 +104,10 @@ if (!disableS3 && (s3EndPoint || s3Region || s3Bucket || s3AccessKeyId || s3Secr
         socket.on('connect', () => {
           ;(async () => {
             try {
-              for await (const u8aTurtle of tbMux.outgoingBranch.u8aTurtleGenerator()) {
+              for await (const chunk of tbMux.makeReadableStream()) {
                 if (socket.closed) break
-                // console.log('origin u8aTurtleGenerator', u8aTurtle.uint8Array)
-                if (socket.write(Buffer.from(_encodeUint8Array(u8aTurtle.uint8Array)))) {
-                  console.log('originHost outgoing data', u8aTurtle.uint8Array)
+                if (socket.write(chunk)) {
+                  // console.log('originHost outgoing data', chunk)
                 } else {
                   console.warn('socket failed to write', socket)
                 }
@@ -128,19 +120,10 @@ if (!disableS3 && (s3EndPoint || s3Region || s3Bucket || s3AccessKeyId || s3Secr
           _connectionCount = ++connectionCount
           console.log('-- onopen', { _connectionCount })
         })
-        let inProgress = new Uint8Array()
-        let totalLength
+        const streamWriter = tbMux.makeWritableStream().getWriter()
         socket.on('data', buffer => {
-          inProgress = combineUint8Arrays([inProgress, new Uint8Array(buffer)])
-          if (inProgress.length < 4) return
-          totalLength = new Uint32Array(inProgress.slice(0, 4).buffer)[0]
-          while (inProgress.length >= totalLength + 4) {
-            const uint8Array = inProgress.slice(4, totalLength + 4)
-            inProgress = inProgress.slice(totalLength + 4)
-            totalLength = new Uint32Array(inProgress.slice(0, 4).buffer)[0]
-            console.log('originHost incoming data', uint8Array)
-            tbMux.incomingBranch.append(uint8Array)
-          }
+          // console.log('originHost incoming data', buffer)
+          streamWriter.write(buffer)
         })
         await new Promise((resolve, reject) => {
           socket.on('close', resolve)
@@ -172,21 +155,13 @@ if (turtlePort) {
     try {
       ++connectionCount
       console.log('turtle connection', connectionCount)
-      // const _connectionCount = connectionCount
-      // keep alive
-      // const intervalId = setInterval(() => {
-      //   if (_connectionCount !== connectionCount) clearInterval(intervalId)
-      //   else ws.send(new Uint8Array())
-      // }, 20000)
       tbMux = new TurtleBranchMultiplexer(`turtle_connection_#${connectionCount}`, true, turtleDB)
       ;(async () => {
         try {
-          for await (const u8aTurtle of tbMux.outgoingBranch.u8aTurtleGenerator()) {
-            // console.log('writy', socket.closed)
+          for await (const chunk of tbMux.makeReadableStream()) {
             if (socket.closed) break
-            // console.log('turtlePort u8aTurtleGenerator', u8aTurtle.uint8Array)
-            if (socket.write(Buffer.from(_encodeUint8Array(u8aTurtle.uint8Array)))) {
-              console.log('turtleHost outgoing data', u8aTurtle.uint8Array)
+            if (socket.write(chunk)) {
+              // console.log('originHost outgoing data', chunk)
             } else {
               console.warn('socket failed to write', socket)
             }
@@ -195,26 +170,16 @@ if (turtlePort) {
           console.error(error)
         }
       })()
-      let inProgress = new Uint8Array()
-      let totalLength
+      const streamWriter = tbMux.makeWritableStream().getWriter()
       socket.on('data', buffer => {
-        inProgress = combineUint8Arrays([inProgress, new Uint8Array(buffer)])
-        if (inProgress.length < 4) return
-        totalLength = new Uint32Array(inProgress.slice(0, 4).buffer)[0]
-        while (inProgress.length >= totalLength + 4) {
-          const uint8Array = inProgress.slice(4, totalLength + 4)
-          inProgress = inProgress.slice(totalLength + 4)
-          totalLength = new Uint32Array(inProgress.slice(0, 4).buffer)[0]
-          console.log('originHost incoming data', uint8Array)
-          tbMux.incomingBranch.append(uint8Array)
-        }
+        // console.log('turtleHost incoming data', buffer)
+        streamWriter.write(buffer)
       })
 
       await new Promise((resolve, reject) => {
         socket.on('close', resolve)
         socket.on('error', reject)
       })
-    // clearInterval(intervalId)
     } catch (error) {
       console.error(error)
       throw error
