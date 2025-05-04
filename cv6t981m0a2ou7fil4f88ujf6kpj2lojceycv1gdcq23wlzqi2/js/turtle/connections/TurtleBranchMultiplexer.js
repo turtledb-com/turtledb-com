@@ -45,6 +45,7 @@ export class TurtleBranchMultiplexer extends TurtleTalker {
       }
     } catch (error) {
       console.error(error)
+      throw error
     }
   }
 

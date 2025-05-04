@@ -114,9 +114,10 @@ if (!disableS3 && (s3EndPoint || s3Region || s3Bucket || s3AccessKeyId || s3Secr
               for await (const u8aTurtle of tbMux.outgoingBranch.u8aTurtleGenerator()) {
                 if (socket.closed) break
                 // console.log('origin u8aTurtleGenerator', u8aTurtle.uint8Array)
-                console.log('originHost outgoing data', u8aTurtle.uint8Array)
-                if (!socket.write(Buffer.from(_encodeUint8Array(u8aTurtle.uint8Array)))) {
-                  console.log('false')
+                if (socket.write(Buffer.from(_encodeUint8Array(u8aTurtle.uint8Array)))) {
+                  console.log('originHost outgoing data', u8aTurtle.uint8Array)
+                } else {
+                  console.warn('socket failed to write', socket)
                 }
               }
             } catch (error) {
@@ -136,6 +137,7 @@ if (!disableS3 && (s3EndPoint || s3Region || s3Bucket || s3AccessKeyId || s3Secr
           while (inProgress.length >= totalLength + 4) {
             const uint8Array = inProgress.slice(4, totalLength + 4)
             inProgress = inProgress.slice(totalLength + 4)
+            totalLength = new Uint32Array(inProgress.slice(0, 4).buffer)[0]
             console.log('originHost incoming data', uint8Array)
             tbMux.incomingBranch.append(uint8Array)
           }
@@ -145,7 +147,12 @@ if (!disableS3 && (s3EndPoint || s3Region || s3Bucket || s3AccessKeyId || s3Secr
           socket.on('error', reject)
         })
       } catch (error) {
-        console.error(error)
+        if (error?.code === 'ECONNREFUSED') {
+          console.log('-- connection refused')
+        } else {
+          console.error(error)
+          throw error
+        }
       }
       tbMux.stop()
       turtleDB.unbind(tbMuxBinding)
@@ -178,9 +185,10 @@ if (turtlePort) {
             // console.log('writy', socket.closed)
             if (socket.closed) break
             // console.log('turtlePort u8aTurtleGenerator', u8aTurtle.uint8Array)
-            console.log('turtleHost outgoing data', u8aTurtle.uint8Array)
-            if (!socket.write(Buffer.from(_encodeUint8Array(u8aTurtle.uint8Array)))) {
-              console.log('falsy')
+            if (socket.write(Buffer.from(_encodeUint8Array(u8aTurtle.uint8Array)))) {
+              console.log('turtleHost outgoing data', u8aTurtle.uint8Array)
+            } else {
+              console.warn('socket failed to write', socket)
             }
           }
         } catch (error) {
@@ -196,6 +204,7 @@ if (turtlePort) {
         while (inProgress.length >= totalLength + 4) {
           const uint8Array = inProgress.slice(4, totalLength + 4)
           inProgress = inProgress.slice(totalLength + 4)
+          totalLength = new Uint32Array(inProgress.slice(0, 4).buffer)[0]
           console.log('originHost incoming data', uint8Array)
           tbMux.incomingBranch.append(uint8Array)
         }
@@ -208,6 +217,7 @@ if (turtlePort) {
     // clearInterval(intervalId)
     } catch (error) {
       console.error(error)
+      throw error
     }
     tbMux?.stop?.()
   })
