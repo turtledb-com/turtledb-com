@@ -21,7 +21,7 @@ const tbMuxAndClientById = {}
  */
 const getTBMuxForClient = client => {
   if (!tbMuxAndClientById[client.id]) {
-    const tbMux = new TurtleBranchMultiplexer(`client_connection_#${client.id}`, true, turtleDB)
+    const tbMux = new TurtleBranchMultiplexer(`client_#${client.id}`, true, turtleDB)
     ;(async () => {
       for await (const u8aTurtle of tbMux.outgoingBranch.u8aTurtleGenerator()) {
         // if (ws.readyState !== ws.OPEN) break
@@ -40,12 +40,14 @@ serviceWorkerGlobalScope.addEventListener('install', async () => {
   console.log('-- service-worker install')
 })
 
-serviceWorkerGlobalScope.addEventListener('activate', async () => {
+serviceWorkerGlobalScope.addEventListener('activate', async event => {
   console.log('-- service-worker activate')
+  event.waitUntil(serviceWorkerGlobalScope.clients.claim())
+  console.log('-- service-worker activate clients claimed')
 })
 
 serviceWorkerGlobalScope.addEventListener('message', async messageEvent => {
-  console.log('-- service-worker activate')
+  // console.log('-- service-worker message')
   const tbMux = getTBMuxForClient(messageEvent.source)
   tbMux.incomingBranch.append(new Uint8Array(messageEvent.data))
 })
@@ -94,7 +96,7 @@ serviceWorkerGlobalScope.addEventListener('fetch', fetchEvent => {
     const _connectionCount = ++connectionCount
     console.log('-- creating new websocket and mux')
     console.time('-- websocket lifespan')
-    const tbMux = new TurtleBranchMultiplexer(`websocket_connection_#${connectionCount}`, false, turtleDB)
+    const tbMux = new TurtleBranchMultiplexer(`websocket_#${connectionCount}`, false, turtleDB)
     for (const publicKey of turtleDB.getPublicKeys()) {
       await tbMux.getTurtleBranchUpdater(publicKey)
     }
