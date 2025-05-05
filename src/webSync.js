@@ -20,30 +20,37 @@ import { TurtleBranchMultiplexer } from '../cv6t981m0a2ou7fil4f88ujf6kpj2lojceyc
  */
 export async function webSync (port, basePublicKey, turtleDB, https, insecure, certpath) {
   const app = express()
-  // app.use((req, _res, next) => {
-  //   console.log(req.method, req.url)
-  //   next()
-  // })
+  app.use((req, _res, next) => {
+    console.log(req.method, req.url)
+    next()
+  })
   app.use(async (req, res, next) => {
-    const matchGroups = req.url.match(/\/(?<urlPublicKey>[0-9A-Za-z]{41,51})\/(?<relativePath>.*)$/)?.groups
-    let type = extname(req.url)
-    if (matchGroups) {
-      let { urlPublicKey, relativePath } = matchGroups
-      if (!relativePath.length || relativePath.endsWith('/')) {
-        type = 'html'
-        relativePath = `${relativePath}index.html`
-      }
-      const turtle = await turtleDB.summonBoundTurtleBranch(urlPublicKey)
-      if (!turtle) return next()
-      const body = turtle.lookup('document', 'value', 'fs', relativePath)
-      if (!body) return next()
-      res.type(type)
-      res.send(body)
-    } else if (req.url.match(/^\/$|^\/index.html?$/)) {
+    try {
+      const matchGroups = req.url.match(/\/(?<urlPublicKey>[0-9A-Za-z]{41,51})\/(?<relativePath>.*)$/)?.groups
+      let type = extname(req.url)
+      if (matchGroups) {
+        let { urlPublicKey, relativePath } = matchGroups
+        if (!relativePath.length || relativePath.endsWith('/')) {
+          type = 'html'
+          relativePath = `${relativePath}index.html`
+        }
+        console.log(urlPublicKey)
+        const turtle = await turtleDB.summonBoundTurtleBranch(urlPublicKey)
+        console.log('next')
+        if (!turtle) return next()
+        const body = turtle.lookup('document', 'value', 'fs', relativePath)
+        if (!body) return next()
+        res.type(type)
+        res.send(body)
+      } else if (req.url.match(/^\/$|^\/index.html?$/)) {
       // console.log(req.url)
-      res.redirect(`/${basePublicKey}/`)
-    } else {
-      next()
+        res.redirect(`/${basePublicKey}/`)
+      } else {
+        next()
+      }
+    } catch (error) {
+      console.error(error)
+      throw error
     }
   })
   const fullpath = join(process.cwd(), basePublicKey)
@@ -65,6 +72,7 @@ export async function webSync (port, basePublicKey, turtleDB, https, insecure, c
   wss.on('connection', async ws => {
     ++connectionCount
     const _connectionCount = connectionCount
+    console.log('new connection', _connectionCount)
     // keep alive
     const intervalId = setInterval(() => {
       if (_connectionCount !== connectionCount) clearInterval(intervalId)
@@ -78,7 +86,7 @@ export async function webSync (port, basePublicKey, turtleDB, https, insecure, c
       }
     })()
     ws.on('message', buffer => tbMux.incomingBranch.append(new Uint8Array(buffer)))
-    ws.on('close', (code, reason) => console.log('connection closed', { code, reason }))
+    ws.on('close', (code, reason) => console.log('connection closed', _connectionCount))
     ws.on('error', error => console.error('connection error', { name: error.name, message: error.message }))
     await new Promise((resolve, reject) => {
       ws.onclose = resolve

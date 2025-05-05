@@ -4,6 +4,8 @@ import { AbstractUpdater } from './AbstractUpdater.js'
 
 /** @typedef {import('../TurtleBranch.js').TurtleBranch} TurtleBranch */
 
+const allUpdaters = new Set()
+
 export class TurtleBranchUpdater extends AbstractUpdater {
   /**
    * @param {string} name
@@ -14,6 +16,7 @@ export class TurtleBranchUpdater extends AbstractUpdater {
    */
   constructor (name, turtleBranch, publicKey, Xours, recaller = new Recaller(name)) {
     super(name, publicKey, Xours, recaller)
+    allUpdaters.add(this)
     this.turtleBranch = turtleBranch
     /** @type {U8aTurtle} */
     let lastU8aTurtle
@@ -28,6 +31,7 @@ export class TurtleBranchUpdater extends AbstractUpdater {
             incomingUint8ArrayAddresses.length = 0
           }
         }
+        console.log(allUpdaters.size)
         this.update(incomingUint8ArrayAddresses)
         lastU8aTurtle = this.turtleBranch.u8aTurtle
       }

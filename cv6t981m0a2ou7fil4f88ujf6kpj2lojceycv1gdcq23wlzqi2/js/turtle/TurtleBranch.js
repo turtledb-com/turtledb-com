@@ -100,18 +100,17 @@ export class TurtleBranch {
    * @returns {WritableStream}
    */
   makeWritableStream () {
-    let inProgress = new Uint8Array()
-    let totalLength
+    let u8aProgress = new Uint8Array()
+    let u8aLength
     const turtleBranch = this
     return new WritableStream({
       write (chunk) {
-        inProgress = combineUint8Arrays([inProgress, chunk])
-        if (inProgress.length < 4) return
-        totalLength = new Uint32Array(inProgress.slice(0, 4).buffer)[0]
-        if (inProgress.length < totalLength + 4) return
-        const uint8Array = inProgress.slice(4, totalLength + 4)
-        turtleBranch.append(uint8Array)
-        inProgress = inProgress.slice(totalLength + 4)
+        u8aProgress = combineUint8Arrays([u8aProgress, chunk])
+        while (u8aProgress.length > 4 && u8aProgress.length > (u8aLength = new Uint32Array(u8aProgress.slice(0, 4).buffer)[0])) {
+          const uint8Array = u8aProgress.slice(4, u8aLength + 4)
+          turtleBranch.append(uint8Array)
+          u8aProgress = u8aProgress.slice(u8aLength + 4)
+        }
       }
     })
   }
