@@ -25,7 +25,7 @@
     "standard": "^17.1.2"
   },
   "scripts": {
-    "start": "./bin/turtledb-com.js -i",
+    "start": "./bin/turtledb-com.js -i -t 1024",
     "dev": "./bin/turtledb-com.js -i --insecure --https --web-port 8080 --turtle-port 1024 --fs-name public --disable-s3",
     "dev1": "./bin/turtledb-com.js -i --insecure --https --web-port 8081 --turtle-port 1025 --origin-port 1024 --origin-host localhost --disable-s3",
     "dev2": "./bin/turtledb-com.js -i --insecure --https --web-port 8082 --origin-port 1025 --origin-host localhost --turtle-port 0 --disable-s3",
