@@ -41,7 +41,8 @@ export class TurtleBranchMultiplexer extends TurtleTalker {
         const uint8Array = u8aTurtle.lookup(address)
         const turtleBranchUpdater = await this.getTurtleBranchUpdater(name, publicKey)
         turtleBranchUpdater.incomingBranch.append(uint8Array)
-        console.log(`${publicKey} <- incoming <- ${JSON.stringify(this.name)} ${turtleBranchUpdater.incomingBranch.lookup('uint8ArrayAddresses')}`)
+        _logUpdate(this, turtleBranchUpdater, true)
+        // console.log(`${publicKey} <- incoming <- ${JSON.stringify(this.name)} ${turtleBranchUpdater.incomingBranch.lookup('uint8ArrayAddresses')}`)
       }
     } catch (error) {
       console.error(error)
@@ -61,7 +62,8 @@ export class TurtleBranchMultiplexer extends TurtleTalker {
     this.outgoingDictionary.upsert(update)
     this.outgoingDictionary.squash(this.outgoingBranch.index + 1)
     this.outgoingBranch.u8aTurtle = this.outgoingDictionary.u8aTurtle
-    console.log(`${publicKey} -> outgoing -> ${JSON.stringify(this.name)} ${turtleBranchUpdater.outgoingBranch.lookup('uint8ArrayAddresses').toString()}`)
+    _logUpdate(this, turtleBranchUpdater, false)
+    // console.log(`${publicKey} -> outgoing -> ${JSON.stringify(this.name)} ${turtleBranchUpdater.outgoingBranch.lookup('uint8ArrayAddresses').toString()}`)
   }
 
   /**
@@ -75,7 +77,7 @@ export class TurtleBranchMultiplexer extends TurtleTalker {
     name ||= publicKey
     if (!this.#updatersByCpk[publicKey]) {
       this.#updatersByCpk[publicKey] = (async () => {
-        console.log({ publicKey })
+        // console.log({ publicKey })
         turtleBranch ??= await this.turtleDB.summonBoundTurtleBranch(publicKey, name)
         const updater = new TurtleBranchUpdater(name, turtleBranch, publicKey, this.Xours)
         ;(async () => {
@@ -97,4 +99,31 @@ export class TurtleBranchMultiplexer extends TurtleTalker {
   get publicKeys () {
     return Object.keys(this.#updatersByCpk)
   }
+}
+
+/**
+ *
+ * @param {TurtleBranchMultiplexer} tbMux
+ * @param {TurtleBranchUpdater} tbUpdater
+ * @param {boolean} isIncoming
+ */
+function _logUpdate (tbMux, tbUpdater, isIncoming) {
+  const separator = isIncoming ? ' <- ' : ' -> '
+  const tbMuxBranch = isIncoming ? tbMux.incomingBranch : tbMux.outgoingBranch
+  const type = isIncoming ? '(incoming)' : '(outgoing)'
+  let publicKey = tbMuxBranch.lookup('publicKey')
+  publicKey = `<${publicKey.slice(0, 4)}...${publicKey.slice(-4)}>`
+  const tbUpdaterBranch = isIncoming ? tbUpdater.incomingBranch : tbUpdater.outgoingBranch
+  const uint8ArrayAddresses = tbUpdaterBranch.lookup('uint8ArrayAddresses')
+  // console.log(uint8ArrayAddresses, uint8ArrayAddresses.length, Object.keys(uint8ArrayAddresses))
+  let prettyAddresses = []
+  let i = 0
+  for (const key of Object.keys(uint8ArrayAddresses)) {
+    if (+key - i) prettyAddresses.push(`empty × ${+key - i}`)
+    prettyAddresses.push(uint8ArrayAddresses[key])
+    i = +key + 1
+  }
+  if (uint8ArrayAddresses.length - i) prettyAddresses.push(`empty × ${uint8ArrayAddresses.length - i}`)
+  prettyAddresses = `[${prettyAddresses.join(', ')}]`
+  console.log(`${[publicKey, type, JSON.stringify(tbMux.name), prettyAddresses].join(separator)}`)
 }

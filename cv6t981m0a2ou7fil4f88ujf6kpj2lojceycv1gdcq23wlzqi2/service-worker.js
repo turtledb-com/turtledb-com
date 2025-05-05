@@ -91,6 +91,7 @@ serviceWorkerGlobalScope.addEventListener('fetch', fetchEvent => {
   let t = 100
   let connectionCount = 0
   while (true) {
+    const _connectionCount = ++connectionCount
     console.log('-- creating new websocket and mux')
     console.time('-- websocket lifespan')
     const tbMux = new TurtleBranchMultiplexer(`websocket_connection_#${connectionCount}`, false, turtleDB)
@@ -98,26 +99,28 @@ serviceWorkerGlobalScope.addEventListener('fetch', fetchEvent => {
       await tbMux.getTurtleBranchUpdater(publicKey)
     }
     const tbMuxBinding = async status => {
-    // console.log('tbMuxBinding about to get next', { publicKey })
+      console.log('tbMuxBinding about to get next', { _connectionCount })
       const updater = await tbMux.getTurtleBranchUpdater(status.turtleBranch.name, status.publicKey, status.turtleBranch)
-      // console.log('tbMuxBinding about to await settle', { updater })
+      console.log('tbMuxBinding about to await settle', { updater })
       await updater.settle
-    // console.log('tbMuxBinding', { publicKey })
+      console.log('tbMuxBinding', { _connectionCount })
     }
     turtleDB.bind(tbMuxBinding)
-    let _connectionCount
     try {
       const ws = new WebSocket(url)
       ws.binaryType = 'arraybuffer'
       ws.onopen = async () => {
         ;(async () => {
-          for await (const u8aTurtle of tbMux.outgoingBranch.u8aTurtleGenerator()) {
-            if (ws.readyState !== ws.OPEN) break
-            ws.send(u8aTurtle.uint8Array)
+          try {
+            for await (const u8aTurtle of tbMux.outgoingBranch.u8aTurtleGenerator()) {
+              if (ws.readyState !== ws.OPEN) break
+              ws.send(u8aTurtle.uint8Array)
+            }
+          } catch (error) {
+            console.error(error)
           }
         })()
         t = 100
-        _connectionCount = ++connectionCount
         console.log('-- onopen', { _connectionCount })
       }
       ws.onmessage = event => {

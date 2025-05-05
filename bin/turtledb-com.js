@@ -109,7 +109,8 @@ if (!disableS3 && (s3EndPoint || s3Region || s3Bucket || s3AccessKeyId || s3Secr
                 if (socket.write(chunk)) {
                   // console.log('originHost outgoing data', chunk)
                 } else {
-                  console.warn('socket failed to write', socket)
+                  console.warn('socket failed to write')
+                  // break
                 }
               }
             } catch (error) {
@@ -152,10 +153,10 @@ if (turtlePort) {
   let connectionCount = 0
   const server = createServer(async socket => {
     let tbMux
+    const _connectionCount = ++connectionCount
     try {
-      ++connectionCount
-      console.log('turtle connection', connectionCount)
-      tbMux = new TurtleBranchMultiplexer(`turtle_connection_#${connectionCount}`, true, turtleDB)
+      console.log('turtle connection', _connectionCount)
+      tbMux = new TurtleBranchMultiplexer(`turtle_connection_#${_connectionCount}`, true, turtleDB)
       ;(async () => {
         try {
           for await (const chunk of tbMux.makeReadableStream()) {
@@ -163,7 +164,8 @@ if (turtlePort) {
             if (socket.write(chunk)) {
               // console.log('originHost outgoing data', chunk)
             } else {
-              console.warn('socket failed to write', socket)
+              console.warn('socket failed to write')
+              // break
             }
           }
         } catch (error) {
@@ -181,8 +183,12 @@ if (turtlePort) {
         socket.on('error', reject)
       })
     } catch (error) {
-      console.error(error)
-      throw error
+      if (error.code === 'ECONNRESET') {
+        console.warn('ECONNRESET', _connectionCount)
+      } else {
+        console.error(error)
+        throw error
+      }
     }
     tbMux?.stop?.()
   })
