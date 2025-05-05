@@ -20,20 +20,25 @@ const tbMuxAndClientById = {}
  * @returns {TurtleBranchMultiplexer}
  */
 const getTBMuxForClient = client => {
-  if (!tbMuxAndClientById[client.id]) {
-    const tbMux = new TurtleBranchMultiplexer(`client_#${client.id}`, true, turtleDB)
-    ;(async () => {
-      for await (const u8aTurtle of tbMux.outgoingBranch.u8aTurtleGenerator()) {
+  try {
+    if (!tbMuxAndClientById[client.id]) {
+      const tbMux = new TurtleBranchMultiplexer(`client_#${client.id}`, true, turtleDB)
+      ;(async () => {
+        for await (const u8aTurtle of tbMux.outgoingBranch.u8aTurtleGenerator()) {
         // if (ws.readyState !== ws.OPEN) break
         // ws.send(u8aTurtle.uint8Array)
-        const allClients = await serviceWorkerGlobalScope.clients.matchAll()
-        console.log(`allClients.includes(client): ${allClients.includes(client)}`)
-        client.postMessage(u8aTurtle.uint8Array.buffer)
-      }
-    })()
-    tbMuxAndClientById[client.id] = { tbMux, client }
+          const allClients = await serviceWorkerGlobalScope.clients.matchAll()
+          console.log(`allClients.includes(client): ${allClients.includes(client)}`)
+          client.postMessage(u8aTurtle.uint8Array.buffer)
+        }
+      })()
+      tbMuxAndClientById[client.id] = { tbMux, client }
+    }
+    return tbMuxAndClientById[client.id].tbMux
+  } catch (error) {
+    console.error(error)
+    throw error
   }
-  return tbMuxAndClientById[client.id].tbMux
 }
 
 serviceWorkerGlobalScope.addEventListener('install', async () => {
