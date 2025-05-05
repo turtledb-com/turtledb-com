@@ -42,7 +42,6 @@ export class TurtleBranchMultiplexer extends TurtleTalker {
         const turtleBranchUpdater = await this.getTurtleBranchUpdater(name, publicKey)
         turtleBranchUpdater.incomingBranch.append(uint8Array)
         _logUpdate(this, turtleBranchUpdater, true)
-        // console.log(`${publicKey} <- incoming <- ${JSON.stringify(this.name)} ${turtleBranchUpdater.incomingBranch.lookup('uint8ArrayAddresses')}`)
       }
     } catch (error) {
       console.error(error)
@@ -63,7 +62,6 @@ export class TurtleBranchMultiplexer extends TurtleTalker {
     this.outgoingDictionary.squash(this.outgoingBranch.index + 1)
     this.outgoingBranch.u8aTurtle = this.outgoingDictionary.u8aTurtle
     _logUpdate(this, turtleBranchUpdater, false)
-    // console.log(`${publicKey} -> outgoing -> ${JSON.stringify(this.name)} ${turtleBranchUpdater.outgoingBranch.lookup('uint8ArrayAddresses').toString()}`)
   }
 
   /**
@@ -110,12 +108,11 @@ export class TurtleBranchMultiplexer extends TurtleTalker {
 function _logUpdate (tbMux, tbUpdater, isIncoming) {
   const separator = isIncoming ? ' <- ' : ' -> '
   const tbMuxBranch = isIncoming ? tbMux.incomingBranch : tbMux.outgoingBranch
+  const tbUpdaterBranch = isIncoming ? tbUpdater.incomingBranch : tbUpdater.outgoingBranch
   const type = isIncoming ? '(incoming)' : '(outgoing)'
   let publicKey = tbMuxBranch.lookup('publicKey')
   publicKey = `<${publicKey.slice(0, 4)}...${publicKey.slice(-4)}>`
-  const tbUpdaterBranch = isIncoming ? tbUpdater.incomingBranch : tbUpdater.outgoingBranch
   const uint8ArrayAddresses = tbUpdaterBranch.lookup('uint8ArrayAddresses')
-  // console.log(uint8ArrayAddresses, uint8ArrayAddresses.length, Object.keys(uint8ArrayAddresses))
   let prettyAddresses = []
   let i = 0
   for (const key of Object.keys(uint8ArrayAddresses)) {
@@ -124,6 +121,6 @@ function _logUpdate (tbMux, tbUpdater, isIncoming) {
     i = +key + 1
   }
   if (uint8ArrayAddresses.length - i) prettyAddresses.push(`empty × ${uint8ArrayAddresses.length - i}`)
-  prettyAddresses = `[${prettyAddresses.join(', ')}]`
+  prettyAddresses = `(${uint8ArrayAddresses.length}) [${prettyAddresses.join(', ')}]`
   console.log(`${[publicKey, type, JSON.stringify(tbMux.name), prettyAddresses].join(separator)}`)
 }
