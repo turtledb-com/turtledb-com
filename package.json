@@ -27,7 +27,7 @@
   "scripts": {
     "start": "./bin/turtledb-com.js -i -p 8080 -t 1024",
     "dev": "./bin/turtledb-com.js -i --insecure --https --web-port 8080 --fs-name public --disable-s3",
-    "dev0": "./bin/turtledb-com.js -i --insecure --https --web-port 8080 -o turtledb.com --turtle-port 1024 --fs-name public --disable-s3",
+    "sync": "./bin/turtledb-com.js -i --insecure --https --web-port 8080 -o turtledb.com --turtle-port 1024 --fs-name public --disable-s3",
     "dev1": "./bin/turtledb-com.js -i --insecure --https --web-port 8081 --turtle-port 1025 --origin-port 1024 --origin-host localhost --disable-s3",
     "dev2": "./bin/turtledb-com.js -i --insecure --https --web-port 8082 --origin-port 1025 --origin-host localhost --turtle-port 0 --disable-s3",
     "canary": "open '/Applications/Google Chrome Canary.app' --args --auto-open-devtools-for-tabs --allow-insecure-localhost --ignore-certificate-errors --unsafely-treat-insecure-origin-as-secure=https://localhost:8080/ https://localhost:8080/",

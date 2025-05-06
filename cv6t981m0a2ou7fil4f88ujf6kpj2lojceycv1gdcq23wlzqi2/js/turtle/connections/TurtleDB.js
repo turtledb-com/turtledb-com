@@ -58,7 +58,7 @@ export class TurtleDB {
     if (!publicKey) throw new Error('TurtleBranch must have publicKey')
     let status = this.#statuses[publicKey]
     if (!status) {
-      const turtleBranch = new TurtleBranch(name)
+      const turtleBranch = new TurtleBranch(name, this.recaller)
       status = {
         publicKey,
         tags,
