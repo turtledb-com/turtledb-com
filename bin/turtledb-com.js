@@ -30,8 +30,10 @@ program
   .option('--disable-s3', 'disable S3', false)
   .option('-n, --fs-name <name...>', 'names of turtles to sync files with', [])
   .option('-j, --fs-obj <name...>', 'name of objects in turtles to store files in (default: fs)', [])
+  .option('-k, --fs-public-key <name...>', 'public key of turtles to sync files with', [])
+  .option('--fs-public-key-obj <name...>', 'name of objects in readonly turtles to store files in (default: fs)', [])
   .option('-w, --web-base <name>', 'name of turtle to use for web assets', 'public')
-  .option('-p, --web-port <number>', 'web server port number', x => +x, 8080)
+  .option('-p, --web-port <number>', 'web server port number', x => +x, 0)
   .option('-o, --origin-host <path>', 'path to server to sync with', '')
   .option('-q, --origin-port <number>', 'port of server to sync with', x => +x, 1024)
   .option('-t, --turtle-port <number>', 'port to open to sync with', x => +x, 0)
@@ -44,7 +46,7 @@ program
 const options = program.opts()
 options.username ??= question('username: ')
 options.password ??= question('password: ', { hideEchoBack: true })
-const { username, password, s3EndPoint, s3Region, s3Bucket, s3AccessKeyId, s3SecretAccessKey, disableS3, fsName, fsObj, webBase, webPort, originHost, originPort, turtlePort, https, insecure, certpath, interactive } = options
+const { username, password, s3EndPoint, s3Region, s3Bucket, s3AccessKeyId, s3SecretAccessKey, disableS3, fsName, fsObj, fsPublicKey, fsPublicKeyObj, webBase, webPort, originHost, originPort, turtlePort, https, insecure, certpath, interactive } = options
 
 const signer = new Signer(username, password)
 const recaller = new Recaller('turtledb-com')
@@ -213,6 +215,10 @@ if (interactive) {
 
 for (let i = 0; i < fsName.length; ++i) {
   fsSync(fsName[i], turtleDB, signer, fsObj[i])
+}
+
+for (let i = 0; i < fsPublicKey.length; ++i) {
+  fsSync(fsPublicKey[i], turtleDB, undefined, fsPublicKeyObj[i])
 }
 
 if (webPort) {
