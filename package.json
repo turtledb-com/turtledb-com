@@ -1,14 +1,12 @@
 {
   "name": "turtledb-com",
-  "version": "0.2.7",
+  "version": "0.2.8",
   "description": "A humanly achievable way to create humanly useful applications",
   "type": "module",
   "repository": "git@github.com:turtledb-com/turtledb-com.git",
   "author": "David Tudury <david.tudury@gmail.com>",
   "license": "AGPL-3.0",
-  "bin": {
-    "turtledb-com": "./bin/turtledb-com.js"
-  },
+  "main": "./bin/turtledb-com.js",
   "dependencies": {
     "@aws-sdk/client-s3": "^3.782.0",
     "@noble/secp256k1": "^2.2.3",

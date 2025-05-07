@@ -1,9 +1,9 @@
 /* global location, WebSocket */
 import { TurtleBranchMultiplexer } from '../turtle/connections/TurtleBranchMultiplexer.js'
-import { Recaller } from './Recaller.js'
 
 /**
  * @typedef {import('../turtle/connections/TurtleDB.js').TurtleDB} TurtleDB
+ * @typedef {import('./Recaller.js').Recaller} Recaller
  */
 
 const allServiceWorkers = new Set()
@@ -11,6 +11,7 @@ const allServiceWorkers = new Set()
 /**
  * @param {TurtleDB} turtleDB
  * @param {(tbMux: TurtleBranchMultiplexer) => void} callback
+ * @param {Recaller} [recaller=turtleDB.recaller]
  */
 export async function webSocketMuxFactory (turtleDB, callback, recaller = turtleDB.recaller) {
   const url = `wss://${location.host}`
@@ -21,7 +22,7 @@ export async function webSocketMuxFactory (turtleDB, callback, recaller = turtle
     )
     console.log(' ^^^^^^^ register complete', serviceWorkerRegistration)
     serviceWorkerRegistration.addEventListener('updatefound', () => {
-      console.log('service-worker update found')
+      console.log(' ^^^^^^^ service-worker update found')
     })
     try {
       console.log(' ^^^^^^^ serviceWorkerRegistration.update()')
@@ -37,11 +38,11 @@ export async function webSocketMuxFactory (turtleDB, callback, recaller = turtle
     const tbMux = new TurtleBranchMultiplexer('serviceWorker', false, turtleDB, recaller)
     callback(tbMux)
     const tbMuxBinding = async status => {
-      // console.log('tbMuxBinding about to get next', { publicKey })
+      console.log(' ^^^^^^^ tbMuxBinding about to get next')
       const updater = await tbMux.getTurtleBranchUpdater(status.turtleBranch.name, status.publicKey, status.turtleBranch)
-      // console.log('tbMuxBinding about to await settle', { updater })
+      console.log(' ^^^^^^^ tbMuxBinding about to await settle', { updater })
       await updater.settle
-      // console.log('tbMuxBinding', { publicKey })
+      console.log(' ^^^^^^^ tbMuxBinding settled')
     }
     turtleDB.bind(tbMuxBinding)
     serviceWorker.onmessage = event => {
@@ -55,7 +56,7 @@ export async function webSocketMuxFactory (turtleDB, callback, recaller = turtle
     console.error(error)
   }
 
-  console.warn('unable to connect through service-worker, trying direct websocket connection')
+  console.warn(' ^^^^^^^ unable to connect through service-worker, trying direct websocket connection')
 
   let t = 100
   let connectionCount = 0
@@ -66,11 +67,11 @@ export async function webSocketMuxFactory (turtleDB, callback, recaller = turtle
       await tbMux.getTurtleBranchUpdater(publicKey)
     }
     const tbMuxBinding = async status => {
-      // console.log('tbMuxBinding about to get next', { publicKey })
+      // console.log(' ^^^^^^^ tbMuxBinding about to get next', { publicKey })
       const updater = await tbMux.getTurtleBranchUpdater(status.turtleBranch.name, status.publicKey, status.turtleBranch)
-      // console.log('tbMuxBinding about to await settle', { updater })
+      // console.log(' ^^^^^^^ tbMuxBinding about to await settle', { updater })
       await updater.settle
-      // console.log('tbMuxBinding', { publicKey })
+      // console.log(' ^^^^^^^ tbMuxBinding', { publicKey })
     }
     turtleDB.bind(tbMuxBinding)
     let connectionIndex
