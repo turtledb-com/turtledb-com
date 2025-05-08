@@ -70,27 +70,26 @@ serviceWorkerGlobalScope.addEventListener('fetch', fetchEvent => {
   const url = new URL(fetchEvent.request.url)
   const { pathname, searchParams } = url
   const matchGroups = pathname.match(/\/(?<urlPublicKey>[0-9A-Za-z]{41,51})(?<slash>\/?)(?<relativePath>.*)$/)?.groups
-  console.log(fetchEvent.request.url, pathname, searchParams, matchGroups)
   // console.log('service-worker fetch', url)
   try {
     if (matchGroups?.urlPublicKey) {
-      let { urlPublicKey, slash, relativePath } = matchGroups
+      const { urlPublicKey, slash, relativePath } = matchGroups
+      const isDir = !relativePath || relativePath.endsWith('/')
       if (!slash) {
-        url.pathname = `/${urlPublicKey}/${relativePath}}`
-        console.log(url, url.toString())
+        url.pathname = `/${urlPublicKey}/${relativePath}`
+      }
+      if (isDir) {
+        url.pathname = `${url.pathname}index.html`
+      }
+      if (!slash || isDir) {
         fetchEvent.respondWith(Response.redirect(url.toString(), 301))
       } else {
-        if (!relativePath.length || relativePath.endsWith('/')) {
-          relativePath = `${relativePath}index.html`
-        }
         const type = pathname.split('.').pop()
         const contentType = contentTypeByExtension[type]
         fetchEvent.respondWith(turtleDB.summonBoundTurtleBranch(urlPublicKey).then(turtleBranch => {
-          const body = turtleBranch.lookup('document', 'value', 'fs', relativePath)
+          const body = turtleBranch?.lookup?.('document', 'value', 'fs', relativePath)
           if (body) {
-            console.log({ urlPublicKey, relativePath, type, contentType })
             const response = new Response(new Blob([body], { headers: { type: contentType } }), { headers: { 'Content-Type': contentType } })
-            console.log(response)
             return response
           }
         }))

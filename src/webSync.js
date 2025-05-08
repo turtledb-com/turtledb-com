@@ -25,34 +25,37 @@ export async function webSync (port, basePublicKey, turtleDB, https, insecure, c
     next()
   })
   app.use(async (req, res, next) => {
+    const url = new URL(req.url, 'https://turtledb.com')
+    const { pathname, searchParams } = url
+    const matchGroups = pathname.match(/\/(?<urlPublicKey>[0-9A-Za-z]{41,51})(?<slash>\/?)(?<relativePath>.*)$/)?.groups
+    // console.log('service-worker fetch', url)
     try {
-      const { pathname, searchParams } = new URL(req.url, 'https://turtledb.com')
-      const matchGroups = pathname.match(/\/(?<urlPublicKey>[0-9A-Za-z]{41,51})(?<slash>\/?)(?<relativePath>.*)$/)?.groups
-      let type = extname(pathname)
-      if (matchGroups) {
-        console.log(matchGroups)
-        let { urlPublicKey, relativePath } = matchGroups
-        console.log(relativePath)
-        if (!relativePath.length || relativePath.endsWith('/')) {
-          type = 'html'
-          relativePath = `${relativePath}index.html`
+      if (matchGroups?.urlPublicKey) {
+        const { urlPublicKey, slash, relativePath } = matchGroups
+        const isDir = !relativePath || relativePath.endsWith('/')
+        if (!slash) {
+          url.pathname = `/${urlPublicKey}/${relativePath}`
         }
-        console.log(urlPublicKey)
-        const turtle = await turtleDB.summonBoundTurtleBranch(urlPublicKey)
-        console.log('next')
-        if (!turtle) return next()
-        const body = turtle.lookup('document', 'value', 'fs', relativePath)
-        if (!body) return next()
-        res.type(type)
-        res.send(body)
-      } else if (pathname.match(/^\/$|^\/index.html?$/)) {
-        res.redirect(`/${basePublicKey}/`)
-      } else {
-        next()
+        if (isDir) {
+          url.pathname = `${url.pathname}index.html`
+        }
+        if (!slash || isDir) {
+          // fetchEvent.respondWith(Response.redirect(url.toString(), 301))
+          res.redirect(301, url.toString())
+        } else {
+          const type = pathname.split('.').pop()
+          const turtleBranch = await turtleDB.summonBoundTurtleBranch(urlPublicKey)
+          const body = turtleBranch?.lookup?.('document', 'value', 'fs', relativePath)
+          if (body) {
+            res.type(type)
+            res.send(body)
+          } else {
+            next()
+          }
+        }
       }
     } catch (error) {
       console.error(error)
-      throw error
     }
   })
   const fullpath = join(process.cwd(), basePublicKey)
