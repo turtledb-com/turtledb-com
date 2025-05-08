@@ -1,4 +1,3 @@
-import { globalRunner, urlToName } from '../../test/Runner.js'
 import { handleNextTick } from '../utils/nextTick.js'
 import { proxyWithRecaller } from '../utils/proxyWithRecaller.js'
 import { Recaller } from '../utils/Recaller.js'
@@ -9,8 +8,9 @@ import { toCombinedVersion } from '../utils/toCombinedVersion.js'
 import { toSubVersions } from '../utils/toSubVersions.js'
 import { toVersionCount } from '../utils/toVersionCount.js'
 import { zabacaba } from '../utils/zabacaba.js'
+import { globalTestRunner, urlToName } from '../utils/TestRunner.js'
 
-globalRunner.describe(urlToName(import.meta.url), suite => {
+globalTestRunner.describe(urlToName(import.meta.url), suite => {
   suite.it('goes from path to host/bale/cpk and back', ({ assert }) => {
     ; [
       ['turtledb.com/a/a', ['a', 'a', 'turtledb.com'], 'a'],

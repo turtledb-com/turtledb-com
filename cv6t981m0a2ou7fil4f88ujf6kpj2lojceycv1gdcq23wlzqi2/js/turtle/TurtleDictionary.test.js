@@ -1,4 +1,4 @@
-import { globalRunner, urlToName } from '../../test/Runner.js'
+import { globalTestRunner, urlToName } from '../utils/TestRunner.js'
 import { ATOMIC_UINT8ARRAY, OPAQUE_UINT8ARRAY } from './codecs/codec.js'
 import { AS_REFS } from './codecs/CodecType.js'
 import { Commit } from './codecs/Commit.js'
@@ -6,7 +6,7 @@ import { CompactPublicKey } from './codecs/CompactPublicKey.js'
 import { Signer } from './Signer.js'
 import { TurtleDictionary } from './TurtleDictionary.js'
 
-globalRunner.describe(urlToName(import.meta.url), suite => {
+globalTestRunner.describe(urlToName(import.meta.url), suite => {
   suite.it('encodes and decodes', ({ assert }) => {
     const dictionary = new TurtleDictionary('codec test')
     const arrayWithX = ['a', 'b', 'c']

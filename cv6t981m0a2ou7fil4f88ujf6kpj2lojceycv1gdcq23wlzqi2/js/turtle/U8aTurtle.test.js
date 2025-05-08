@@ -1,7 +1,7 @@
-import { globalRunner, urlToName } from '../../test/Runner.js'
+import { globalTestRunner, urlToName } from '../utils/TestRunner.js'
 import { findCommonAncestor, fromUint8Arrays, squashTurtle, U8aTurtle } from './U8aTurtle.js'
 
-globalRunner.describe(urlToName(import.meta.url), suite => {
+globalTestRunner.describe(urlToName(import.meta.url), suite => {
   suite.it('constructs correctly', ({ assert }) => {
     console.log('running suite')
     const a = new U8aTurtle(new Uint8Array([0, 1, 2, 3]))

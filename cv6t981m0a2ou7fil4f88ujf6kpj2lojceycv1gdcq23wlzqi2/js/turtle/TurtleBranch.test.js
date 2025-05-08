@@ -1,8 +1,8 @@
-import { globalRunner, urlToName } from '../../test/Runner.js'
 import { handleNextTick, tics } from '../utils/nextTick.js'
+import { globalTestRunner, urlToName } from '../utils/TestRunner.js'
 import { TurtleBranch } from './TurtleBranch.js'
 
-globalRunner.describe(urlToName(import.meta.url), suite => {
+globalTestRunner.describe(urlToName(import.meta.url), suite => {
   suite.it('passes through U8aTurtle changes', ({ assert }) => {
     const branch = new TurtleBranch('branch')
     const indices = []

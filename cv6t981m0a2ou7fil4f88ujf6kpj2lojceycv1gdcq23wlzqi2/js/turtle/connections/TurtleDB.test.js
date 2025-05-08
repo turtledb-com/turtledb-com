@@ -1,8 +1,8 @@
-import { globalRunner, urlToName } from '../../../test/Runner.js'
 import { tics } from '../../utils/nextTick.js'
+import { globalTestRunner, urlToName } from '../../utils/TestRunner.js'
 import { TurtleDB } from './TurtleDB.js'
 
-globalRunner.describe(urlToName(import.meta.url), suite => {
+globalTestRunner.describe(urlToName(import.meta.url), suite => {
   suite.it('correctly makes branches', async ({ assert }) => {
     const turtleDB = new TurtleDB('test1')
     turtleDB.bind(async status => {

@@ -1,8 +1,8 @@
-import { globalRunner, urlToName } from '../../test/Runner.js'
 import { Recaller } from './Recaller.js'
+import { globalTestRunner, urlToName } from './TestRunner.js'
 import { handleNextTick } from './nextTick.js'
 
-globalRunner.describe(urlToName(import.meta.url), suite => {
+globalTestRunner.describe(urlToName(import.meta.url), suite => {
   suite.it('calls watched functions when accessed values change', ({ assert }) => {
     const recaller = new Recaller('calls watched functions')
     const a = {}

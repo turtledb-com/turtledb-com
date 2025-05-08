@@ -1,7 +1,7 @@
-import { globalRunner, urlToName } from '../../test/Runner.js'
 import { NestedSet } from './NestedSet.js'
+import { globalTestRunner, urlToName } from './TestRunner.js'
 
-globalRunner.describe(urlToName(import.meta.url), suite => {
+globalTestRunner.describe(urlToName(import.meta.url), suite => {
   suite.it('adds, gets values, and calculates size', ({ assert }) => {
     const nestedSet = new NestedSet()
     nestedSet.add(1, 2, 3)

@@ -1,5 +1,5 @@
-import { globalRunner, urlToName } from '../../../test/Runner.js'
 import { tics } from '../../utils/nextTick.js'
+import { globalTestRunner, urlToName } from '../../utils/TestRunner.js'
 import { Signer } from '../Signer.js'
 import { TurtleBranch } from '../TurtleBranch.js'
 import { Workspace } from '../Workspace.js'
@@ -10,7 +10,7 @@ const commitSettle = async () => {
   await tics(10) // , 'a sending, b verifying and updating')
 }
 
-globalRunner.describe(urlToName(import.meta.url), suite => {
+globalTestRunner.describe(urlToName(import.meta.url), suite => {
   suite.it('syncs SimpleAsyncTurtleBranch', async ({ assert }) => {
     const signer = new Signer('test-user', 'p@$$w0rd')
     const aWorkspace = new Workspace('test', signer)

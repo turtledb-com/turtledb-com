@@ -1,10 +1,10 @@
-import { globalRunner, urlToName } from '../../../test/Runner.js'
 import { tics } from '../../utils/nextTick.js'
+import { globalTestRunner, urlToName } from '../../utils/TestRunner.js'
 import { Signer } from '../Signer.js'
 import { Workspace } from '../Workspace.js'
 import { TurtleBranchMultiplexer } from './TurtleBranchMultiplexer.js'
 
-globalRunner.describe(urlToName(import.meta.url), suite => {
+globalTestRunner.describe(urlToName(import.meta.url), suite => {
   suite.it('syncs multiple SimpleAsyncTurtleBranch', async ({ assert }) => {
     const signer = new Signer('username', 'password')
     const name = 'test'

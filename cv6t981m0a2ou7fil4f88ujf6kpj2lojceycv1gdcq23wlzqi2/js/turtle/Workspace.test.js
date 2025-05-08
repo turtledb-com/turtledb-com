@@ -1,4 +1,4 @@
-import { globalRunner, urlToName } from '../../test/Runner.js'
+import { globalTestRunner, urlToName } from '../utils/TestRunner.js'
 import { Signer } from './Signer.js'
 import { TurtleBranch } from './TurtleBranch.js'
 import { Workspace } from './Workspace.js'
@@ -10,7 +10,7 @@ const tics = async (count, ticLabel = '') => {
   }
 }
 
-globalRunner.describe(urlToName(import.meta.url), suite => {
+globalTestRunner.describe(urlToName(import.meta.url), suite => {
   suite.it('handles commits', async ({ assert }) => {
     const signer = new Signer('test1', 'password1')
     const committedBranch1 = new TurtleBranch('committedBranch1')

@@ -67,31 +67,38 @@ const contentTypeByExtension = {
 }
 
 serviceWorkerGlobalScope.addEventListener('fetch', fetchEvent => {
-  const url = fetchEvent.request.url
+  const url = new URL(fetchEvent.request.url)
+  const { pathname, searchParams } = url
+  const matchGroups = pathname.match(/\/(?<urlPublicKey>[0-9A-Za-z]{41,51})(?<slash>\/?)(?<relativePath>.*)$/)?.groups
+  console.log(fetchEvent.request.url, pathname, searchParams, matchGroups)
   // console.log('service-worker fetch', url)
-  fetchEvent.respondWith((async () => {
-    let extension = url.split(/[#?]/)[0].split('.').pop()
-    const matchGroups = url.match(/\/(?<publicKey>[0-9A-Za-z]{41,51})\/(?<relativePath>.*)$/)?.groups
-    if (matchGroups) {
-      let { publicKey, relativePath } = matchGroups
-      if (!relativePath.length || relativePath.endsWith('/')) {
-        extension = 'html'
-        relativePath = `${relativePath}index.html`
-      }
-      const turtleBranch = await turtleDB.summonBoundTurtleBranch(publicKey)
-      const body = turtleBranch.lookup('document', 'value', 'fs', relativePath)
-      if (body) {
-        const contentType = contentTypeByExtension[extension]
-        // console.log({ publicKey, relativePath, extension, contentType })
-        return new Response(new Blob([body], { headers: { type: contentType } }), { headers: { 'Content-Type': contentType } })
+  try {
+    if (matchGroups?.urlPublicKey) {
+      let { urlPublicKey, slash, relativePath } = matchGroups
+      if (!slash) {
+        url.pathname = `/${urlPublicKey}/${relativePath}}`
+        console.log(url, url.toString())
+        fetchEvent.respondWith(Response.redirect(url.toString(), 301))
+      } else {
+        if (!relativePath.length || relativePath.endsWith('/')) {
+          relativePath = `${relativePath}index.html`
+        }
+        const type = pathname.split('.').pop()
+        const contentType = contentTypeByExtension[type]
+        fetchEvent.respondWith(turtleDB.summonBoundTurtleBranch(urlPublicKey).then(turtleBranch => {
+          const body = turtleBranch.lookup('document', 'value', 'fs', relativePath)
+          if (body) {
+            console.log({ urlPublicKey, relativePath, type, contentType })
+            const response = new Response(new Blob([body], { headers: { type: contentType } }), { headers: { 'Content-Type': contentType } })
+            console.log(response)
+            return response
+          }
+        }))
       }
     }
-    try {
-      return fetch(fetchEvent.request)
-    } catch (error) {
-      console.error(error)
-    }
-  })())
+  } catch (error) {
+    console.error(error)
+  }
 })
 
 ;(async () => {

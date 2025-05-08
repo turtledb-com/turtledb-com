@@ -26,10 +26,13 @@ export async function webSync (port, basePublicKey, turtleDB, https, insecure, c
   })
   app.use(async (req, res, next) => {
     try {
-      const matchGroups = req.url.match(/\/(?<urlPublicKey>[0-9A-Za-z]{41,51})\/(?<relativePath>.*)$/)?.groups
-      let type = extname(req.url)
+      const { pathname, searchParams } = new URL(req.url, 'https://turtledb.com')
+      const matchGroups = pathname.match(/\/(?<urlPublicKey>[0-9A-Za-z]{41,51})(?<slash>\/?)(?<relativePath>.*)$/)?.groups
+      let type = extname(pathname)
       if (matchGroups) {
+        console.log(matchGroups)
         let { urlPublicKey, relativePath } = matchGroups
+        console.log(relativePath)
         if (!relativePath.length || relativePath.endsWith('/')) {
           type = 'html'
           relativePath = `${relativePath}index.html`
@@ -42,8 +45,7 @@ export async function webSync (port, basePublicKey, turtleDB, https, insecure, c
         if (!body) return next()
         res.type(type)
         res.send(body)
-      } else if (req.url.match(/^\/$|^\/index.html?$/)) {
-      // console.log(req.url)
+      } else if (pathname.match(/^\/$|^\/index.html?$/)) {
         res.redirect(`/${basePublicKey}/`)
       } else {
         next()
