@@ -1,5 +1,5 @@
 import express from 'express'
-import { join, extname } from 'path'
+import { join } from 'path'
 import { manageCert } from './manageCert.js'
 import { createServer as createHttpsServer } from 'https'
 import { createServer as createHttpServer } from 'http'
@@ -45,7 +45,8 @@ export async function webSync (port, basePublicKey, turtleDB, https, insecure, c
         } else {
           const type = pathname.split('.').pop()
           const turtleBranch = await turtleDB.summonBoundTurtleBranch(urlPublicKey)
-          const body = turtleBranch?.lookup?.('document', 'value', 'fs', relativePath)
+          const address = +searchParams.get('address')
+          const body = address ? turtleBranch.lookup(address) : turtleBranch?.lookup?.('document', 'value', 'fs', relativePath)
           if (body) {
             res.type(type)
             res.send(body)
@@ -53,6 +54,10 @@ export async function webSync (port, basePublicKey, turtleDB, https, insecure, c
             next()
           }
         }
+      } else if (pathname === '/') {
+        res.redirect(301, `/${basePublicKey}/index.html`)
+      } else {
+        next()
       }
     } catch (error) {
       console.error(error)
