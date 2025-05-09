@@ -88,11 +88,15 @@ webSocketMuxFactory(turtleDB, async tbMux => {
           margin: 0.2rem 1rem;
           border-radius: 0.5rem;
           color: #888;
+          background: linear-gradient(white, rgb(239, 247, 247));
+        }
+        .runner-card:open {
+          padding: 0.5rem 1rem;
         }
         .${RUNNER} {
         }
-        .${SUITE} {
-          margin-top: 1rem;
+        .${SUITE}:open {
+          margin: 1rem;
         }
         .${TEST} {
         }
@@ -123,7 +127,7 @@ webSocketMuxFactory(turtleDB, async tbMux => {
         @media (prefers-color-scheme: dark) {
           .runner-card {
             border-left: 1px solid #444;
-            background: black;
+            background: linear-gradient(rgb(31, 63, 47), black);
           }
           .${PASS} .type,
           .${PASS} .run-state {

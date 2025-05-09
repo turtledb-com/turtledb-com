@@ -8,12 +8,21 @@
     <script type="module" src="test.js"></script>
     <link rel="icon" href="/tinker.svg" />
     <style>
+      html {
+        background: white;
+      }
       body {
-        margin: 4rem 3rem;
+        margin: 3rem 3rem;
+        padding: 2rem 1rem;
+        border-radius: 0.5rem;
+        background: linear-gradient(white, rgb(239, 247, 247));
       }
       @media (prefers-color-scheme: dark) {
-        body {
+        html {
           background: black;
+        }
+        body {
+          background: linear-gradient(rgb(31, 63, 47), black);
         }
       }
     </style>
