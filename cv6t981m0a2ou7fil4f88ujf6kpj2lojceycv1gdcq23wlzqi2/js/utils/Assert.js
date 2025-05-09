@@ -1,4 +1,4 @@
-// import { ASSERTION, FAIL } from './constants.js'
+import { AS_REFS } from '../turtle/codecs/CodecType.js'
 import { TestRunnerError } from './TestRunner.js'
 import { ASSERTION, FAIL } from './TestRunnerConstants.js'
 
@@ -16,8 +16,7 @@ const TON = {
 
 export class Assert {
   /**
-   *
-   * @param {import ('./Runner.js').Runner} runner
+   * @param {import ('./TestRunner.js').TestRunner} runner
    */
   constructor (runner) {
     this.runner = runner
@@ -84,32 +83,32 @@ export class Assert {
 
 /**
  *
- * @param {import('../js/dataModel/Uint8ArrayLayer.js').Uint8ArrayLayer} uint8ArrayLayer
+ * @param {import('../turtle/TurtleBranch.js').TurtleBranch} turtleBranch
  * @param {number} a
  * @param {number} b
  * @param {string} prefix
  */
-export function printDiff (uint8ArrayLayer, a, b, indent = '') {
+export function printDiff (turtleBranch, a, b, indent = '') {
   if (a === undefined || b === undefined) {
     if (a) {
-      console.log(`${indent}${JSON.stringify(uint8ArrayLayer.getValue(a))} !== undefined`)
+      console.log(`${indent}${JSON.stringify(turtleBranch.lookup(a))} !== undefined`)
     } else {
-      console.log(`${indent}undefined !== ${JSON.stringify(uint8ArrayLayer.getValue(b))}`)
+      console.log(`${indent}undefined !== ${JSON.stringify(turtleBranch.lookup(b))}`)
     }
     return
   }
   if (indent.length > 20) return
-  const aRefs = uint8ArrayLayer.getRefs(a)
-  const bRefs = uint8ArrayLayer.getRefs(b)
+  const aRefs = turtleBranch.lookup(a, AS_REFS)
+  const bRefs = turtleBranch.lookup(b, AS_REFS)
   if (aRefs && bRefs && typeof aRefs === 'object' && typeof bRefs === 'object') {
     const attributes = new Set([...Object.keys(aRefs), ...Object.keys(bRefs)])
     for (const attribute of attributes) {
       if (aRefs[attribute] !== bRefs[attribute]) {
         console.log(`${indent}${attribute} - a:${a}, b:${b}`)
-        printDiff(uint8ArrayLayer, aRefs[attribute], bRefs[attribute], `${indent}  `)
+        printDiff(turtleBranch, aRefs[attribute], bRefs[attribute], `${indent}  `)
       }
     }
   } else {
-    console.log(`${indent}${JSON.stringify(uint8ArrayLayer.getValue(a))} !== ${JSON.stringify(uint8ArrayLayer.getValue(b))}`)
+    console.log(`${indent}${JSON.stringify(turtleBranch.lookup(a))} !== ${JSON.stringify(turtleBranch.lookup(b))}`)
   }
 }

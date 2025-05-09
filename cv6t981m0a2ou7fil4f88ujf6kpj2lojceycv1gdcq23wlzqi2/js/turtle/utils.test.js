@@ -28,8 +28,8 @@ globalTestRunner.describe(urlToName(import.meta.url), suite => {
     const obj = { a: 1, b: 2 }
     ;[
       { b: 3, c: [1, 2, 3] },
-      { c: [1, 2, 3,,,] },
-      { c: [, 2] }
+      { c: [1, 2, 3,,,] }, // eslint-disable-line no-sparse-arrays
+      { c: [, 2] } // eslint-disable-line no-sparse-arrays
     ].forEach(vector => {
       softSet(obj, vector)
       assert.equal(obj, vector)

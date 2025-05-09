@@ -85,10 +85,10 @@ globalTestRunner.describe(urlToName(import.meta.url), suite => {
     originalTalker.start()
     cloneTalker.start()
     await commitSettle()
-    assert.equal(originalTalker.turtleBranch.lookup(), cloneTalker.turtleBranch.lookup())
+    assert.equal(JSON.stringify(originalTalker.turtleBranch.lookup()), JSON.stringify(cloneTalker.turtleBranch.lookup()))
     await aWorkspace.commit(4, 'four')
     await commitSettle()
-    assert.equal(originalTalker.turtleBranch.lookup(), cloneTalker.turtleBranch.lookup())
+    assert.equal(JSON.stringify(originalTalker.turtleBranch.lookup()), JSON.stringify(cloneTalker.turtleBranch.lookup()))
 
     const bWorkspace = new Workspace('test', signer)
     await bWorkspace.commit(5, 'five')
@@ -96,6 +96,6 @@ globalTestRunner.describe(urlToName(import.meta.url), suite => {
     await bWorkspace.commit(7, 'seven')
     originalTalker.turtleBranch.u8aTurtle = bWorkspace.u8aTurtle
     await commitSettle()
-    assert.equal(originalTalker.turtleBranch.lookup(), cloneTalker.turtleBranch.lookup())
+    assert.equal(JSON.stringify(originalTalker.turtleBranch.lookup()), JSON.stringify(cloneTalker.turtleBranch.lookup()))
   })
 })

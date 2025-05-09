@@ -1,7 +1,4 @@
-// import { Upserter } from '../js/dataModel/Upserter.js'
-// import { Recaller } from '../js/utils/Recaller.js'
-// import { Assert } from './Assert.js'
-
+import { TurtleDictionary } from '../turtle/TurtleDictionary.js'
 import { Assert } from './Assert.js'
 import { Recaller } from './Recaller.js'
 import { ERROR, FAIL, ONLY, PASS, RUNNER, RUNNING, SUITE, TEST, WAIT } from './TestRunnerConstants.js'
@@ -62,6 +59,7 @@ export class TestRunner {
     this.#runState = WAIT
     this.assert = new Assert(this)
     this.runIndex = 0
+    this.upserter = new TurtleDictionary(name, recaller)
   }
 
   async run () {

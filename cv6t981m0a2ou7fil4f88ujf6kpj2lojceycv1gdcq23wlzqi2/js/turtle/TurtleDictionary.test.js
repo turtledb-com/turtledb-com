@@ -76,7 +76,7 @@ globalTestRunner.describe(urlToName(import.meta.url), suite => {
     const commitAddressA = dictionary.upsert(commit)
     const commitAddressB = dictionary.upsert(commit)
     assert.notEqual(commitAddressA, commitAddressB)
-    assert.equal(dictionary.lookup(commitAddressA), dictionary.lookup(commitAddressB))
+    assert.equal(JSON.stringify(dictionary.lookup(commitAddressA)), JSON.stringify(dictionary.lookup(commitAddressB)))
     const commitRefs = dictionary.lookup(commitAddressA, AS_REFS)
     assert.equal(commitRefs.document, aAddress)
     const signature = new Uint8Array([...new Array(64)].map((_, i) => i))

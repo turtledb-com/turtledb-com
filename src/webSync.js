@@ -5,10 +5,13 @@ import { createServer as createHttpsServer } from 'https'
 import { createServer as createHttpServer } from 'http'
 import { WebSocketServer } from 'ws'
 import { TurtleBranchMultiplexer } from '../cv6t981m0a2ou7fil4f88ujf6kpj2lojceycv1gdcq23wlzqi2/js/turtle/connections/TurtleBranchMultiplexer.js'
+import { randomUUID } from 'crypto'
 
 /**
  * @typedef {import('../cv6t981m0a2ou7fil4f88ujf6kpj2lojceycv1gdcq23wlzqi2/js/turtle/connections/TurtleDB.js').TurtleDB} TurtleDB
  */
+
+const uuid = randomUUID()
 
 /**
  * @param {number} port
@@ -19,12 +22,19 @@ import { TurtleBranchMultiplexer } from '../cv6t981m0a2ou7fil4f88ujf6kpj2lojceyc
  * @param {string} certpath
  */
 export async function webSync (port, basePublicKey, turtleDB, https, insecure, certpath) {
+  const root = join(process.cwd(), basePublicKey)
   const app = express()
   app.use((req, _res, next) => {
     console.log(req.method, req.url)
     next()
   })
   app.use(async (req, res, next) => {
+    if (req.url === '/.well-known/appspecific/com.chrome.devtools.json') {
+      res.type('application/json')
+      console.log(JSON.stringify({ workspace: { uuid, root } }))
+      res.send(JSON.stringify({ workspace: { uuid, root } }))
+      return
+    }
     const url = new URL(req.url, 'https://turtledb.com')
     const { pathname, searchParams } = url
     const matchGroups = pathname.match(/\/(?<urlPublicKey>[0-9A-Za-z]{41,51})(?<slash>\/?)(?<relativePath>.*)$/)?.groups
@@ -63,8 +73,7 @@ export async function webSync (port, basePublicKey, turtleDB, https, insecure, c
       console.error(error)
     }
   })
-  const fullpath = join(process.cwd(), basePublicKey)
-  app.use(express.static(fullpath))
+  app.use(express.static(root))
 
   let server
   if (https || insecure) {
