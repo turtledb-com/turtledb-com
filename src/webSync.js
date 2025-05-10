@@ -20,8 +20,9 @@ const uuid = randomUUID()
  * @param {boolean} https
  * @param {boolean} insecure
  * @param {string} certpath
+ * @param {string} fallback
  */
-export async function webSync (port, basePublicKey, turtleDB, https, insecure, certpath) {
+export async function webSync (port, basePublicKey, turtleDB, https, insecure, certpath, fallback) {
   const root = join(process.cwd(), basePublicKey)
   const app = express()
   app.use((req, _res, next) => {
@@ -57,7 +58,7 @@ export async function webSync (port, basePublicKey, turtleDB, https, insecure, c
         res.redirect(301, url.toString())
       } else {
         const type = pathname.split('.').pop()
-        const turtleBranch = await turtleDB.summonBoundTurtleBranch(urlPublicKey)
+        const turtleBranch = await turtleDB.summonBoundTurtleBranch(fallback || urlPublicKey)
         const address = +searchParams.get('address')
         const body = address ? turtleBranch.lookup(address) : turtleBranch?.lookup?.('document', 'value', 'fs', relativePath)
         if (body) {

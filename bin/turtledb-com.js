@@ -37,6 +37,7 @@ program
   .option('--fs-public-key-obj <name...>', 'name of objects in readonly turtles to store files in (default: fs)', [])
   .option('-w, --web-base <name>', 'name of turtle to use for web assets', 'public')
   .option('-p, --web-port <number>', 'web server port number', x => +x, 0)
+  .option('--web-fallback <string>', 'compact public key to use as fallback', '')
   .option('-o, --origin-host <path>', 'path to server to sync with', '')
   .option('-q, --origin-port <number>', 'port of server to sync with', x => +x, 1024)
   .option('-t, --turtle-port <number>', 'port to open to sync with', x => +x, 0)
@@ -49,7 +50,7 @@ program
 const options = program.opts()
 options.username ??= question('username: ')
 options.password ??= question('password: ', { hideEchoBack: true })
-const { username, password, s3EndPoint, s3Region, s3Bucket, s3AccessKeyId, s3SecretAccessKey, disableS3, fsName, fsObj, fsPublicKey, fsPublicKeyObj, webBase, webPort, originHost, originPort, turtlePort, https, insecure, certpath, interactive } = options
+const { username, password, s3EndPoint, s3Region, s3Bucket, s3AccessKeyId, s3SecretAccessKey, disableS3, fsName, fsObj, fsPublicKey, fsPublicKeyObj, webBase, webPort, webFallback, originHost, originPort, turtlePort, https, insecure, certpath, interactive } = options
 
 const signer = new Signer(username, password)
 const recaller = new Recaller('turtledb-com')
@@ -226,5 +227,5 @@ for (let i = 0; i < fsPublicKey.length; ++i) {
 
 if (webPort) {
   const baseKeys = await signer.makeKeysFor(webBase)
-  webSync(webPort, baseKeys.publicKey, turtleDB, https, insecure, certpath)
+  webSync(webPort, baseKeys.publicKey, turtleDB, https, insecure, certpath, webFallback)
 }
