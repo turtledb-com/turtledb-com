@@ -45,7 +45,7 @@ export async function webSync (port, basePublicKey, turtleDB, https, insecure, c
     const matchGroups = pathname.match(/\/(?<urlPublicKey>[0-9A-Za-z]{41,51})(?<slash>\/?)(?<relativePath>.*)$/)?.groups
     // console.log('service-worker fetch', url)
     try {
-      const { urlPublicKey, slash, relativePath } = matchGroups ?? { urlPublicKey: basePublicKey, slash: '/', relativePath: pathname.slice(1) }
+      const { urlPublicKey, slash, relativePath } = matchGroups ?? { urlPublicKey: fallback || basePublicKey, slash: '/', relativePath: pathname.slice(1) }
       const isDir = !relativePath || relativePath.endsWith('/')
       if (!slash) {
         url.pathname = `/${urlPublicKey}/${relativePath}`
@@ -58,7 +58,7 @@ export async function webSync (port, basePublicKey, turtleDB, https, insecure, c
         res.redirect(301, url.toString())
       } else {
         const type = pathname.split('.').pop()
-        const turtleBranch = await turtleDB.summonBoundTurtleBranch(fallback || urlPublicKey)
+        const turtleBranch = await turtleDB.summonBoundTurtleBranch(urlPublicKey)
         const address = +searchParams.get('address')
         const body = address ? turtleBranch.lookup(address) : turtleBranch?.lookup?.('document', 'value', 'fs', relativePath)
         if (body) {
