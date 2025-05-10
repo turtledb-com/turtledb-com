@@ -37,37 +37,35 @@ export async function webSync (port, basePublicKey, turtleDB, https, insecure, c
     }
     const url = new URL(req.url, 'https://turtledb.com')
     const { pathname, searchParams } = url
+    if (pathname === '/') {
+      res.redirect(301, `/${basePublicKey}/index.html`)
+      return
+    }
     const matchGroups = pathname.match(/\/(?<urlPublicKey>[0-9A-Za-z]{41,51})(?<slash>\/?)(?<relativePath>.*)$/)?.groups
     // console.log('service-worker fetch', url)
     try {
-      if (matchGroups?.urlPublicKey) {
-        const { urlPublicKey, slash, relativePath } = matchGroups
-        const isDir = !relativePath || relativePath.endsWith('/')
-        if (!slash) {
-          url.pathname = `/${urlPublicKey}/${relativePath}`
-        }
-        if (isDir) {
-          url.pathname = `${url.pathname}index.html`
-        }
-        if (!slash || isDir) {
-          // fetchEvent.respondWith(Response.redirect(url.toString(), 301))
-          res.redirect(301, url.toString())
-        } else {
-          const type = pathname.split('.').pop()
-          const turtleBranch = await turtleDB.summonBoundTurtleBranch(urlPublicKey)
-          const address = +searchParams.get('address')
-          const body = address ? turtleBranch.lookup(address) : turtleBranch?.lookup?.('document', 'value', 'fs', relativePath)
-          if (body) {
-            res.type(type)
-            res.send(body)
-          } else {
-            next()
-          }
-        }
-      } else if (pathname === '/') {
-        res.redirect(301, `/${basePublicKey}/index.html`)
+      const { urlPublicKey, slash, relativePath } = matchGroups ?? { urlPublicKey: basePublicKey, slash: '/', relativePath: pathname.slice(1) }
+      const isDir = !relativePath || relativePath.endsWith('/')
+      if (!slash) {
+        url.pathname = `/${urlPublicKey}/${relativePath}`
+      }
+      if (isDir) {
+        url.pathname = `${url.pathname}index.html`
+      }
+      if (!slash || isDir) {
+        // fetchEvent.respondWith(Response.redirect(url.toString(), 301))
+        res.redirect(301, url.toString())
       } else {
-        next()
+        const type = pathname.split('.').pop()
+        const turtleBranch = await turtleDB.summonBoundTurtleBranch(urlPublicKey)
+        const address = +searchParams.get('address')
+        const body = address ? turtleBranch.lookup(address) : turtleBranch?.lookup?.('document', 'value', 'fs', relativePath)
+        if (body) {
+          res.type(type)
+          res.send(body)
+        } else {
+          next()
+        }
       }
     } catch (error) {
       console.error(error)

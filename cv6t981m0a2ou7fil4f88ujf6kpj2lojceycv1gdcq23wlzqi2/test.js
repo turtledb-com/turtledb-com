@@ -11,7 +11,7 @@ import { AS_REFS } from './js/turtle/codecs/CodecType.js'
 const recaller = new Recaller('test.js')
 const turtleDB = new TurtleDB('test.js', recaller)
 
-const cpk = document.baseURI.match(/(?<=\/)[0-9A-Za-z]{41,51}(?=\/)/)?.[0]
+const cpk = document.baseURI.match(/(?<=\/)[0-9A-Za-z]{41,51}(?=\/)/)?.[0] || 'cv6t981m0a2ou7fil4f88ujf6kpj2lojceycv1gdcq23wlzqi2'
 
 const path = ['document', 'value', 'fs']
 
