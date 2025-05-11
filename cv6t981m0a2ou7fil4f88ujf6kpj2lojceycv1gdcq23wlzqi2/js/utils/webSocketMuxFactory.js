@@ -36,7 +36,6 @@ export async function webSocketMuxFactory (turtleDB, callback, recaller = turtle
     const { active } = await serviceWorker.ready
     allServiceWorkers.add(serviceWorker)
     const tbMux = new TurtleBranchMultiplexer('serviceWorker', false, turtleDB, recaller)
-    callback(tbMux)
     const tbMuxBinding = async status => {
       console.log(' ^^^^^^^ tbMuxBinding about to get next')
       const updater = await tbMux.getTurtleBranchUpdater(status.turtleBranch.name, status.publicKey, status.turtleBranch)
@@ -49,6 +48,7 @@ export async function webSocketMuxFactory (turtleDB, callback, recaller = turtle
       tbMux.incomingBranch.append(new Uint8Array(event.data))
     }
     serviceWorker.startMessages()
+    callback(tbMux)
     for await (const u8aTurtle of tbMux.outgoingBranch.u8aTurtleGenerator()) {
       active.postMessage(u8aTurtle.uint8Array.buffer)
     }

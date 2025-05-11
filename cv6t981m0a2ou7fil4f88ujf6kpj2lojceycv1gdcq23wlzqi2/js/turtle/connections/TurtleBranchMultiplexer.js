@@ -23,7 +23,12 @@ export class TurtleBranchMultiplexer extends TurtleTalker {
     super(name, Xours, recaller)
     this.turtleDB = turtleDB
     this.outgoingDictionary = new TurtleDictionary(`TurtleBranchMultiplexer"${name}".outgoingDictionary`, recaller)
-    this.outgoingDictionary.u8aTurtleGenerator()
+    turtleDB.getPublicKeys().forEach(publicKey => {
+      turtleDB.getStatus(publicKey).turtleBranchPromise.then(turtleBranch => {
+        this.getTurtleBranchUpdater(turtleBranch.name, publicKey, turtleBranch)
+      })
+    })
+    // this.outgoingDictionary.u8aTurtleGenerator()
     this.appendGeneratedIncomingForever() // don't await
   }
 

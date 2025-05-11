@@ -5,6 +5,7 @@
 
 import { TurtleBranchMultiplexer } from './js/turtle/connections/TurtleBranchMultiplexer.js'
 import { TurtleDB } from './js/turtle/connections/TurtleDB.js'
+import { Signer } from './js/turtle/Signer.js'
 
 const url = `wss://${location.host}`
 const turtleDB = new TurtleDB('service-worker')
@@ -12,6 +13,8 @@ const turtleDB = new TurtleDB('service-worker')
 console.log('-- service-worker started')
 /** @type {ServiceWorkerGlobalScope} */
 const serviceWorkerGlobalScope = self
+serviceWorkerGlobalScope.turtleDB = turtleDB
+serviceWorkerGlobalScope.Signer = Signer
 
 /** @type {Object.<string, {tbMux:TurtleBranchMultiplexer, client:Client}} */
 const tbMuxAndClientById = {}
