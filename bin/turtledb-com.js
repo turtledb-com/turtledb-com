@@ -18,6 +18,10 @@ import { TurtleDB } from '../cv6t981m0a2ou7fil4f88ujf6kpj2lojceycv1gdcq23wlzqi2/
 import { TurtleBranchMultiplexer } from '../cv6t981m0a2ou7fil4f88ujf6kpj2lojceycv1gdcq23wlzqi2/js/turtle/connections/TurtleBranchMultiplexer.js'
 import { readFileSync } from 'fs'
 
+/**
+ * @typedef {import('../cv6t981m0a2ou7fil4f88ujf6kpj2lojceycv1gdcq23wlzqi2/js/turtle/connections/TurtleDB.js').TurtleBranchStatus} TurtleBranchStatus
+ */
+
 const { version } = JSON.parse(readFileSync(new URL('../package.json', import.meta.url)))
 
 program
@@ -92,12 +96,12 @@ if (!disableS3 && (s3EndPoint || s3Region || s3Bucket || s3AccessKeyId || s3Secr
       for (const publicKey of turtleDB.getPublicKeys()) {
         await tbMux.getTurtleBranchUpdater(publicKey)
       }
-      const tbMuxBinding = async status => {
+      const tbMuxBinding = async (/** @type {TurtleBranchStatus} */ status) => {
         try {
           // console.log('tbMuxBinding about to get next', status.publicKey)
           const updater = await tbMux.getTurtleBranchUpdater(status.turtleBranch.name, status.publicKey, status.turtleBranch)
           // console.log('tbMuxBinding about to await settle', updater.name)
-          await updater.settle
+          if (status.bindingInProgress !== tbMuxBinding) await updater.settle
           // console.log('tbMuxBinding settled')
         } catch (error) {
           console.error(error)
