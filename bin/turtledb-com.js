@@ -74,7 +74,7 @@ if (!disableS3 && (s3EndPoint || s3Region || s3Bucket || s3AccessKeyId || s3Secr
       secretAccessKey: s3SecretAccessKey
     }
   })
-  turtleDB.bind(async status => {
+  const tbMuxBinding = async (/** @type {TurtleBranchStatus} */ status) => {
     const turtleBranch = status.turtleBranch
     const name = turtleBranch.name
     const publicKey = status.publicKey
@@ -83,8 +83,9 @@ if (!disableS3 && (s3EndPoint || s3Region || s3Bucket || s3AccessKeyId || s3Secr
     s3Updater.connect(tbUpdater)
     s3Updater.start()
     tbUpdater.start()
-    await tbUpdater.settle
-  })
+    if (status.bindingInProgress !== tbMuxBinding) await tbUpdater.settle
+  }
+  turtleDB.bind(tbMuxBinding)
 } else if (originHost) {
   ;(async () => {
     let t = 100
