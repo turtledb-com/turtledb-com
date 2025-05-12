@@ -51,38 +51,12 @@ export class TurtleDB {
    * get a TurtleBranch and init if required
    * @param {string} publicKey
    * @param {string} [name=publicKey]
-   * @param {Set<any>} [tags=new Set()]
    * @return {Promise.<TurtleBranch>}
    */
-  async summonBoundTurtleBranch (publicKey, name = publicKey, tags = new Set()) {
+  async summonBoundTurtleBranch (publicKey, name = publicKey) {
     if (!publicKey) throw new Error('TurtleBranch must have publicKey')
-    let status = this.#statuses[publicKey]
-    if (!status) {
-      const turtleBranch = new TurtleBranch(name, this.recaller)
-      status = {
-        publicKey,
-        tags,
-        turtleBranch,
-        bindingInProgress: null,
-        bindings: new Set()
-      }
-      this.#statuses[publicKey] = status
-      status.turtleBranchPromise = (async () => {
-        try {
-          for (const binding of this.#bindings) {
-            status.bindingInProgress = binding
-            await binding(status)
-            status.bindings.add(binding)
-          }
-          return turtleBranch
-        } catch (error) {
-          console.error(error)
-        }
-      })()
-    } else {
-      status.tags = status.tags.union(tags)
-    }
-    this.recaller.reportKeyMutation(this, STATUSES_OWN_KEYS, 'summonBoundTurtleBranch', this.name)
+    const status = this.getStatus(publicKey, name)
+    if (status.turtleBranch.name === publicKey) status.turtleBranch.name = name
     return status.turtleBranchPromise
   }
 
@@ -144,8 +118,33 @@ export class TurtleDB {
    * @param {string} publicKey
    * @returns {TurtleBranchStatus}
    */
-  getStatus (publicKey) {
-    this.recaller.reportKeyAccess(this, STATUSES_OWN_KEYS, 'buildTurtleBranch', this.name)
+  getStatus (publicKey, name = publicKey) {
+    this.recaller.reportKeyAccess(this, STATUSES_OWN_KEYS, 'getStatus', this.name)
+    let status = this.#statuses[publicKey]
+    if (!status) {
+      const turtleBranch = new TurtleBranch(name, this.recaller)
+      status = {
+        publicKey,
+        tags: new Set(),
+        turtleBranch,
+        bindingInProgress: null,
+        bindings: new Set()
+      }
+      this.#statuses[publicKey] = status
+      this.recaller.reportKeyMutation(this, STATUSES_OWN_KEYS, 'getStatus', this.name)
+      status.turtleBranchPromise = (async () => {
+        try {
+          for (const binding of this.#bindings) {
+            status.bindingInProgress = binding
+            await binding(status)
+            status.bindings.add(binding)
+          }
+          return turtleBranch
+        } catch (error) {
+          console.error(error)
+        }
+      })()
+    }
     return this.#statuses[publicKey]
   }
 

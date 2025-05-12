@@ -7,6 +7,10 @@ import { TurtleBranchMultiplexer } from './js/turtle/connections/TurtleBranchMul
 import { TurtleDB } from './js/turtle/connections/TurtleDB.js'
 import { Signer } from './js/turtle/Signer.js'
 
+/**
+ * @typedef {import('./js/turtle/connections/TurtleDB.js').TurtleBranchStatus} TurtleBranchStatus
+ */
+
 const url = `wss://${location.host}`
 const turtleDB = new TurtleDB('service-worker')
 
@@ -115,11 +119,11 @@ serviceWorkerGlobalScope.addEventListener('fetch', fetchEvent => {
     for (const publicKey of turtleDB.getPublicKeys()) {
       await tbMux.getTurtleBranchUpdater(publicKey)
     }
-    const tbMuxBinding = async status => {
+    const tbMuxBinding = async (/** @type {TurtleBranchStatus} */ status) => {
       console.log('tbMuxBinding about to get next', { _connectionCount })
       const updater = await tbMux.getTurtleBranchUpdater(status.turtleBranch.name, status.publicKey, status.turtleBranch)
       console.log('tbMuxBinding about to await settle', { updater })
-      await updater.settle
+      if(status.bindingInProgress !== tbMuxBinding) await updater.settle
       console.log('tbMuxBinding', { _connectionCount })
     }
     turtleDB.bind(tbMuxBinding)

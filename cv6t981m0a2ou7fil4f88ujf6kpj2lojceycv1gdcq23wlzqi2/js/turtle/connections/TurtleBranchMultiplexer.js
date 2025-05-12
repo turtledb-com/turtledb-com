@@ -46,6 +46,7 @@ export class TurtleBranchMultiplexer extends TurtleTalker {
         const uint8Array = u8aTurtle.lookup(address)
         const turtleBranchUpdater = await this.getTurtleBranchUpdater(name, publicKey)
         turtleBranchUpdater.incomingBranch.append(uint8Array)
+        await turtleBranchUpdater.settle
         _logUpdate(this, turtleBranchUpdater, true)
       }
     } catch (error) {
@@ -82,6 +83,7 @@ export class TurtleBranchMultiplexer extends TurtleTalker {
       this.#updatersByCpk[publicKey] = (async () => {
         // console.log({ publicKey })
         turtleBranch ??= await this.turtleDB.summonBoundTurtleBranch(publicKey, name)
+        // turtleBranch ??= this.turtleDB.getStatus(publicKey, name).turtleBranch
         const updater = new TurtleBranchUpdater(name, turtleBranch, publicKey, this.Xours)
         ;(async () => {
           for await (const u8aTurtle of updater.outgoingBranch.u8aTurtleGenerator()) {
