@@ -41,9 +41,12 @@ export async function webSocketMuxFactory (turtleDB, callback, recaller = turtle
     const tbMuxBinding = async (/** @type {TurtleBranchStatus} */ status) => {
       console.log(' ^^^^^^^ tbMuxBinding about to get next')
       const updater = await tbMux.getTurtleBranchUpdater(status.turtleBranch.name, status.publicKey, status.turtleBranch)
-      console.log(' ^^^^^^^ tbMuxBinding about to await settle', { updater })
-      if(status.bindingInProgress !== tbMuxBinding) await updater.settle
-      console.log(' ^^^^^^^ tbMuxBinding settled')
+      // console.log(' ^^^^^^^ tbMuxBinding about to await settle', { updater })
+      // if(status.bindingInProgress !== tbMuxBinding) await updater.settle
+      // console.log(' ^^^^^^^ tbMuxBinding settled')
+      console.log('updater about to await settle', updater.name)
+      if (!status.bindings.has(tbMuxBinding)) await updater.settle
+      console.log('updater settled')
     }
     turtleDB.bind(tbMuxBinding)
     serviceWorker.onmessage = event => {
@@ -72,8 +75,11 @@ export async function webSocketMuxFactory (turtleDB, callback, recaller = turtle
       // console.log(' ^^^^^^^ tbMuxBinding about to get next', { publicKey })
       const updater = await tbMux.getTurtleBranchUpdater(status.turtleBranch.name, status.publicKey, status.turtleBranch)
       // console.log(' ^^^^^^^ tbMuxBinding about to await settle', { updater })
-      if(status.bindingInProgress !== tbMuxBinding) await updater.settle
+      // if(status.bindingInProgress !== tbMuxBinding) await updater.settle
       // console.log(' ^^^^^^^ tbMuxBinding', { publicKey })
+      console.log('updater about to await settle', updater.name)
+      if (!status.bindings.has(tbMuxBinding)) await updater.settle
+      console.log('updater settled')
     }
     turtleDB.bind(tbMuxBinding)
     let connectionIndex

@@ -83,7 +83,10 @@ if (!disableS3 && (s3EndPoint || s3Region || s3Bucket || s3AccessKeyId || s3Secr
     s3Updater.connect(tbUpdater)
     s3Updater.start()
     tbUpdater.start()
-    if (status.bindingInProgress !== tbMuxBinding) await tbUpdater.settle
+    // if (status.bindingInProgress !== tbMuxBinding) await tbUpdater.settle
+    console.log('tbUpdater about to await settle', tbUpdater.name)
+    if (!status.bindings.has(tbMuxBinding)) await tbUpdater.settle
+    console.log('tbUpdater settled')
   }
   turtleDB.bind(tbMuxBinding)
 } else if (originHost) {
@@ -101,9 +104,10 @@ if (!disableS3 && (s3EndPoint || s3Region || s3Bucket || s3AccessKeyId || s3Secr
         try {
           // console.log('tbMuxBinding about to get next', status.publicKey)
           const updater = await tbMux.getTurtleBranchUpdater(status.turtleBranch.name, status.publicKey, status.turtleBranch)
-          // console.log('tbMuxBinding about to await settle', updater.name)
-          if (status.bindingInProgress !== tbMuxBinding) await updater.settle
-          // console.log('tbMuxBinding settled')
+          // if (status.bindingInProgress !== tbMuxBinding) await updater.settle
+          console.log('updater about to await settle', updater.name)
+          if (!status.bindings.has(tbMuxBinding)) await updater.settle
+          console.log('updater settled')
         } catch (error) {
           console.error(error)
         }
