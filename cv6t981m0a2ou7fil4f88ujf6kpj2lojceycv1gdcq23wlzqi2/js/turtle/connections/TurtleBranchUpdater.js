@@ -31,29 +31,11 @@ export class TurtleBranchUpdater extends AbstractUpdater {
             incomingUint8ArrayAddresses.length = 0
           }
         }
-        console.log(allUpdaters.size)
+        console.log(`new TurtleBranchUpdater "${name}", #${allUpdaters.size}`)
         this.update(incomingUint8ArrayAddresses)
         lastU8aTurtle = this.turtleBranch.u8aTurtle
       }
     })
-  }
-
-  /**
-   * @type {Promise.<void>}
-   */
-  get settle () {
-    let resolve
-    const settlePromise = new Promise((...args) => { [resolve] = args })
-    const checkSettle = () => {
-      const incoming = this.incomingBranch.lookup()
-      console.log('checkSettle', this.turtleBranch.index + 1, '>=', incoming?.uint8ArrayAddresses?.length)
-      if (this.turtleBranch.index + 1 >= incoming?.uint8ArrayAddresses?.length) {
-        this.incomingBranch.recaller.unwatch(checkSettle)
-        resolve()
-      }
-    }
-    this.incomingBranch.recaller.watch(`TBMux"${this.name}".settle`, checkSettle)
-    return settlePromise
   }
 
   async getUint8ArraysLength () { return this.turtleBranch.index + 1 }
