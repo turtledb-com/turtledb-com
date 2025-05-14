@@ -1,7 +1,7 @@
 /* global location, WebSocket */
 import { TurtleBranchMultiplexer } from '../turtle/connections/TurtleBranchMultiplexer.js'
 
-  /**
+/**
  * @typedef {import('../turtle/connections/TurtleDB.js').TurtleDB} TurtleDB
  * @typedef {import('./Recaller.js').Recaller} Recaller
  * @typedef {import('../turtle/connections/TurtleDB.js').TurtleBranchStatus} TurtleBranchStatus
@@ -41,11 +41,8 @@ export async function webSocketMuxFactory (turtleDB, callback, recaller = turtle
     const tbMuxBinding = async (/** @type {TurtleBranchStatus} */ status) => {
       console.log(' ^^^^^^^ tbMuxBinding about to get next')
       const updater = await tbMux.getTurtleBranchUpdater(status.turtleBranch.name, status.publicKey, status.turtleBranch)
-      // console.log(' ^^^^^^^ tbMuxBinding about to await settle', { updater })
-      // if(status.bindingInProgress !== tbMuxBinding) await updater.settle
-      // console.log(' ^^^^^^^ tbMuxBinding settled')
       console.log('updater about to await settle', updater.name)
-      if (!status.bindings.has(tbMuxBinding)) await updater.settle
+      await updater.settle
       console.log('updater settled')
     }
     turtleDB.bind(tbMuxBinding)
@@ -74,11 +71,8 @@ export async function webSocketMuxFactory (turtleDB, callback, recaller = turtle
     const tbMuxBinding = async (/** @type {TurtleBranchStatus} */ status) => {
       // console.log(' ^^^^^^^ tbMuxBinding about to get next', { publicKey })
       const updater = await tbMux.getTurtleBranchUpdater(status.turtleBranch.name, status.publicKey, status.turtleBranch)
-      // console.log(' ^^^^^^^ tbMuxBinding about to await settle', { updater })
-      // if(status.bindingInProgress !== tbMuxBinding) await updater.settle
-      // console.log(' ^^^^^^^ tbMuxBinding', { publicKey })
       console.log('updater about to await settle', updater.name)
-      if (!status.bindings.has(tbMuxBinding)) await updater.settle
+      await updater.settle
       console.log('updater settled')
     }
     turtleDB.bind(tbMuxBinding)

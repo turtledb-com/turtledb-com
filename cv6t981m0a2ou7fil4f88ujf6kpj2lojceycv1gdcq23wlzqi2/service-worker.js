@@ -95,7 +95,7 @@ serviceWorkerGlobalScope.addEventListener('fetch', fetchEvent => {
         fetchEvent.respondWith(turtleDB.summonBoundTurtleBranch(urlPublicKey).then(turtleBranch => {
           const address = +searchParams.get('address')
           const body = address ? turtleBranch.lookup(address) : turtleBranch?.lookup?.('document', 'value', 'fs', relativePath)
-          console.log({turtleBranch, address, body})
+          console.log({ turtleBranch, address, body })
           if (body) {
             const contentType = contentTypeByExtension[type]
             const response = new Response(new Blob([body], { headers: { type: contentType } }), { headers: { 'Content-Type': contentType } })
@@ -123,10 +123,8 @@ serviceWorkerGlobalScope.addEventListener('fetch', fetchEvent => {
     const tbMuxBinding = async (/** @type {TurtleBranchStatus} */ status) => {
       console.log('tbMuxBinding about to get next', { _connectionCount })
       const updater = await tbMux.getTurtleBranchUpdater(status.turtleBranch.name, status.publicKey, status.turtleBranch)
-      // console.log('tbMuxBinding about to await settle', { updater })
-      // if(status.bindingInProgress !== tbMuxBinding) await updater.settle
       console.log('updater about to await settle', updater.name)
-      if (!status.bindings.has(tbMuxBinding)) await updater.settle
+      await updater.settle
       console.log('updater settled')
       console.log('tbMuxBinding', { _connectionCount })
     }

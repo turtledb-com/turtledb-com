@@ -104,9 +104,8 @@ if (!disableS3 && (s3EndPoint || s3Region || s3Bucket || s3AccessKeyId || s3Secr
         try {
           // console.log('tbMuxBinding about to get next', status.publicKey)
           const updater = await tbMux.getTurtleBranchUpdater(status.turtleBranch.name, status.publicKey, status.turtleBranch)
-          // if (status.bindingInProgress !== tbMuxBinding) await updater.settle
           console.log('updater about to await settle', updater.name)
-          if (!status.bindings.has(tbMuxBinding)) await updater.settle
+          await updater.settle
           console.log('updater settled')
         } catch (error) {
           console.error(error)
