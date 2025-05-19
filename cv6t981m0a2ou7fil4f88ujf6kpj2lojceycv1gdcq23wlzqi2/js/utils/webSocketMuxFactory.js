@@ -15,7 +15,6 @@ const allServiceWorkers = new Set()
  * @param {Recaller} [recaller=turtleDB.recaller]
  */
 export async function webSocketMuxFactory (turtleDB, callback, recaller = turtleDB.recaller) {
-  const url = `wss://${location.host}`
   try {
     const serviceWorkerRegistration = await navigator.serviceWorker.register(
       '/service-worker.js',
@@ -37,7 +36,6 @@ export async function webSocketMuxFactory (turtleDB, callback, recaller = turtle
     const { active } = await serviceWorker.ready
     allServiceWorkers.add(serviceWorker)
     const tbMux = new TurtleBranchMultiplexer('serviceWorker', false, turtleDB, recaller)
-    // callback(tbMux)
     const tbMuxBinding = async (/** @type {TurtleBranchStatus} */ status) => {
       console.log(' ^^^^^^^ tbMuxBinding about to get next')
       const updater = await tbMux.getTurtleBranchUpdater(status.turtleBranch.name, status.publicKey, status.turtleBranch)
@@ -50,7 +48,7 @@ export async function webSocketMuxFactory (turtleDB, callback, recaller = turtle
       tbMux.incomingBranch.append(new Uint8Array(event.data))
     }
     serviceWorker.startMessages()
-    callback(tbMux)
+    callback?.(tbMux)
     for await (const u8aTurtle of tbMux.outgoingBranch.u8aTurtleGenerator()) {
       active.postMessage(u8aTurtle.uint8Array.buffer)
     }
@@ -60,6 +58,11 @@ export async function webSocketMuxFactory (turtleDB, callback, recaller = turtle
 
   console.warn(' ^^^^^^^ unable to connect through service-worker, trying direct websocket connection')
 
+  withoutServiceWorker(turtleDB, callback)
+}
+
+export async function withoutServiceWorker (turtleDB, callback) {
+  const url = `wss://${location.host}`
   let t = 100
   let connectionCount = 0
   while (true) {
@@ -80,20 +83,25 @@ export async function webSocketMuxFactory (turtleDB, callback, recaller = turtle
     try {
       connectionIndex = ++connectionCount
       const ws = new WebSocket(url)
-      callback(tbMux)
+      callback?.(tbMux)
       ws.binaryType = 'arraybuffer'
       ws.onopen = async () => {
         console.log(' ^^^^^^^ onopen', { connectionIndex })
         ;(async () => {
-          for await (const u8aTurtle of tbMux.outgoingBranch.u8aTurtleGenerator()) {
-            if (ws.readyState !== ws.OPEN) break
-            ws.send(u8aTurtle.uint8Array)
+          try {
+            for await (const u8aTurtle of tbMux.outgoingBranch.u8aTurtleGenerator()) {
+              if (ws.readyState !== ws.OPEN) break
+              ws.send(u8aTurtle.uint8Array)
+            }
+          } catch (error) {
+            console.error(error)
           }
         })()
         t = 100
       }
       ws.onmessage = event => {
-        if (event.data.length) tbMux.incomingBranch.append(new Uint8Array(event.data))
+        if (event.data.byteLength) tbMux.incomingBranch.append(new Uint8Array(event.data))
+        else console.log('-- keep-alive')
       }
       await new Promise((resolve, reject) => {
         ws.onclose = resolve
@@ -103,7 +111,7 @@ export async function webSocketMuxFactory (turtleDB, callback, recaller = turtle
       console.error(error)
     }
     tbMux.stop()
-    callback() // delete old tbMux
+    callback?.() // delete old tbMux
     turtleDB.unbind(tbMuxBinding)
     t = Math.min(t, 2 * 60 * 1000) // 2 minutes max (unjittered)
     t = t * (1 + Math.random()) // exponential backoff and some jitter

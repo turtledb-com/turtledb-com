@@ -74,7 +74,7 @@ export class AbstractUpdater extends TurtleTalker {
         if (i === length) { // we don't have this one yet
           if (this.publicKey) {
             const previousUint8Array = i && await this.getUint8Array(i - 1)
-            if (!(await verifyCommitU8a(this.publicKey, incomingUint8Array, previousUint8Array))) {
+            if (this.Xours && !(await verifyCommitU8a(this.publicKey, incomingUint8Array, previousUint8Array))) {
               if (this.Xours) {
                 incomingUint8ArrayAddresses.length = Math.max(i - 1, 0)
               }

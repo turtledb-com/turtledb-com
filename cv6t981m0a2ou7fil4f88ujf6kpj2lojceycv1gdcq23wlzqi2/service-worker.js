@@ -1,17 +1,17 @@
 /// <reference no-default-lib="true"/>
 /// <reference lib="esnext"/>
 /// <reference lib="webworker"/>
-/* global self, location, WebSocket */
+/* global self */
 
 import { TurtleBranchMultiplexer } from './js/turtle/connections/TurtleBranchMultiplexer.js'
 import { TurtleDB } from './js/turtle/connections/TurtleDB.js'
 import { Signer } from './js/turtle/Signer.js'
+import { withoutServiceWorker } from './js/utils/webSocketMuxFactory.js'
 
 /**
  * @typedef {import('./js/turtle/connections/TurtleDB.js').TurtleBranchStatus} TurtleBranchStatus
  */
 
-const url = `wss://${location.host}`
 const turtleDB = new TurtleDB('service-worker')
 
 console.log('-- service-worker started')
@@ -108,60 +108,4 @@ serviceWorkerGlobalScope.addEventListener('fetch', fetchEvent => {
   }
 })
 
-;(async () => {
-  let t = 100
-  let connectionCount = 0
-  while (true) {
-    const _connectionCount = ++connectionCount
-    console.log('-- creating new websocket and mux')
-    console.time('-- websocket lifespan')
-    const tbMux = new TurtleBranchMultiplexer(`websocket_#${connectionCount}`, false, turtleDB)
-    for (const publicKey of turtleDB.getPublicKeys()) {
-      await tbMux.getTurtleBranchUpdater(publicKey)
-    }
-    const tbMuxBinding = async (/** @type {TurtleBranchStatus} */ status) => {
-      console.log('tbMuxBinding about to get next', { _connectionCount })
-      const updater = await tbMux.getTurtleBranchUpdater(status.turtleBranch.name, status.publicKey, status.turtleBranch)
-      console.log('updater about to await settle', updater.name)
-      await updater.settle
-      console.log('updater settled')
-      console.log('tbMuxBinding', { _connectionCount })
-    }
-    turtleDB.bind(tbMuxBinding)
-    try {
-      const ws = new WebSocket(url)
-      ws.binaryType = 'arraybuffer'
-      ws.onopen = async () => {
-        ;(async () => {
-          try {
-            for await (const u8aTurtle of tbMux.outgoingBranch.u8aTurtleGenerator()) {
-              if (ws.readyState !== ws.OPEN) break
-              ws.send(u8aTurtle.uint8Array)
-            }
-          } catch (error) {
-            console.error(error)
-          }
-        })()
-        t = 100
-        console.log('-- onopen', { _connectionCount })
-      }
-      ws.onmessage = event => {
-        if (event.data.byteLength) tbMux.incomingBranch.append(new Uint8Array(event.data))
-        else console.log('-- keep-alive')
-      }
-      await new Promise((resolve, reject) => {
-        ws.onclose = resolve
-        ws.onerror = reject
-      })
-    } catch (error) {
-      console.error(error)
-    }
-    tbMux.stop()
-    turtleDB.unbind(tbMuxBinding)
-    console.timeEnd('-- websocket lifespan')
-    t = Math.min(t, 2 * 60 * 1000) // 2 minutes max (unjittered)
-    t = t * (1 + Math.random()) // exponential backoff and some jitter
-    console.log(`-- waiting ${(t / 1000).toFixed(2)}s`)
-    await new Promise(resolve => setTimeout(resolve, t))
-  }
-})()
+withoutServiceWorker(turtleDB)
