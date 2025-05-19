@@ -12,10 +12,10 @@ export class Workspace extends TurtleDictionary {
   /**
    * @param {string} name
    * @param {Signer} signer
-   * @param {TurtleBranch} [committedBranch=new TurtleBranch(`${name}.committedBranch`)]
    * @param {Recaller} [recaller=new Recaller(name)]
+   * @param {TurtleBranch} [committedBranch=new TurtleBranch(`${name}.committedBranch`, recaller)]
    */
-  constructor (name, signer, committedBranch = new TurtleBranch(`${name}.committedBranch`), recaller = new Recaller(name)) {
+  constructor (name, signer, recaller = new Recaller(name), committedBranch = new TurtleBranch(`${name}.committedBranch`, recaller)) {
     super(name, recaller, committedBranch.u8aTurtle)
     this.signer = signer
     this.committedBranch = committedBranch

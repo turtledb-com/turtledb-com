@@ -95,7 +95,6 @@ serviceWorkerGlobalScope.addEventListener('fetch', fetchEvent => {
         fetchEvent.respondWith(turtleDB.summonBoundTurtleBranch(urlPublicKey).then(turtleBranch => {
           const address = +searchParams.get('address')
           const body = address ? turtleBranch.lookup(address) : turtleBranch?.lookup?.('document', 'value', 'fs', relativePath)
-          console.log({ turtleBranch, address, body })
           if (body) {
             const contentType = contentTypeByExtension[type]
             const response = new Response(new Blob([body], { headers: { type: contentType } }), { headers: { 'Content-Type': contentType } })

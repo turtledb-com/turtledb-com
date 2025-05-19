@@ -41,7 +41,7 @@ export class TurtleDB {
       const { publicKey } = await signer.makeKeysFor(name)
       console.log({ publicKey })
       const turtleBranch = await this.summonBoundTurtleBranch(publicKey, name)
-      return new Workspace(name, signer, turtleBranch)
+      return new Workspace(name, signer, this.recaller, turtleBranch)
     } catch (error) {
       console.error(error)
     }
