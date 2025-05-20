@@ -3,6 +3,7 @@ import { TurtleDictionary } from '../TurtleDictionary.js'
 import { TurtleBranchUpdater } from './TurtleBranchUpdater.js'
 import { TurtleDB } from './TurtleDB.js'
 import { TurtleTalker } from './TurtleTalker.js'
+import { b36ToUint8Array } from '../utils.js'
 
 /**
  * @typedef {import('../U8aTurtle.js').U8aTurtle} U8aTurtle
@@ -45,7 +46,7 @@ export class TurtleBranchMultiplexer extends TurtleTalker {
         const uint8Array = u8aTurtle.lookup(address)
         const turtleBranchUpdater = await this.getTurtleBranchUpdater(name, publicKey)
         turtleBranchUpdater.incomingBranch.append(uint8Array)
-        _logUpdate(this, turtleBranchUpdater, true)
+        _logUpdate(this.name, publicKey, turtleBranchUpdater, true)
       }
     } catch (error) {
       console.error(error)
@@ -65,7 +66,7 @@ export class TurtleBranchMultiplexer extends TurtleTalker {
     this.outgoingDictionary.upsert(update)
     this.outgoingDictionary.squash(this.outgoingBranch.index + 1)
     this.outgoingBranch.u8aTurtle = this.outgoingDictionary.u8aTurtle
-    _logUpdate(this, turtleBranchUpdater, false)
+    _logUpdate(this.name, publicKey, turtleBranchUpdater, false)
   }
 
   /**
@@ -110,25 +111,28 @@ export class TurtleBranchMultiplexer extends TurtleTalker {
  * @param {TurtleBranchUpdater} tbUpdater
  * @param {boolean} isIncoming
  */
-function _logUpdate (tbMux, tbUpdater, isIncoming) {
-  const separator = isIncoming ? ' <- ' : ' -> '
-  const tbMuxBranch = isIncoming ? tbMux.incomingBranch : tbMux.outgoingBranch
+function _logUpdate (name, publicKey, tbUpdater, isIncoming) {
+  const separator = isIncoming ? '\x1b[35m <- \x1b[m' : '\x1b[36m -> \x1b[m'
+  // const tbMuxBranch = isIncoming ? tbMux.incomingBranch : tbMux.outgoingBranch
   const tbUpdaterBranch = isIncoming ? tbUpdater.incomingBranch : tbUpdater.outgoingBranch
-  const type = isIncoming ? '(incoming)' : '(outgoing)'
-  let publicKey = tbMuxBranch.lookup('publicKey')
+  const type = isIncoming ? '\x1b[35m(incoming)\x1b[m' : '\x1b[36m(outgoing)\x1b[m'
+  // let publicKey = tbMuxBranch.lookup('publicKey')
+  const [r0, g0, b0, r1, g1, b1] = b36ToUint8Array(publicKey).slice(-6).map(v => Math.round(255 - v * v / 255).toString())
+  const bg = [40, 41, 42, 43, 44, 45, 46, 47, 100, 101, 102, 103, 104, 105, 106, 107][b36ToUint8Array(publicKey)[0] % 16]
+  const colorBlock = `\x1b[48;2;${r0};${g0};${b0};38;2;${r1};${g1};${b1}m▌••🐢••▐\x1b[m`
+  let prettyAddresses = []
   publicKey = `<${publicKey.slice(0, 4)}...${publicKey.slice(-4)}>`
   const uint8ArrayAddresses = tbUpdaterBranch.lookup('uint8ArrayAddresses')
-  let prettyAddresses = []
   const leftmost = uint8ArrayAddresses.findIndex(x => x !== undefined)
   if (leftmost === -1) {
-    prettyAddresses.push(`empty × ${uint8ArrayAddresses.length}`)
+    prettyAddresses.push(`\x1b[2mempty × ${uint8ArrayAddresses.length}]\x1b[m`)
   } else {
     if (leftmost > 0) {
-      prettyAddresses.push(`empty × ${leftmost}`)
+      prettyAddresses.push(`\x1b[2mempty × ${leftmost}\x1b[m`)
     }
     if (uint8ArrayAddresses.length > leftmost + 4) {
       prettyAddresses.push(uint8ArrayAddresses[leftmost])
-      prettyAddresses.push(`filled × ${uint8ArrayAddresses.length - leftmost - 2}`)
+      prettyAddresses.push(`\x1b[2mfilled × ${uint8ArrayAddresses.length - leftmost - 2}\x1b[m`)
       prettyAddresses.push(uint8ArrayAddresses[uint8ArrayAddresses.length - 1])
     } else {
       for (let i = leftmost; i < uint8ArrayAddresses.length; ++i) {
@@ -137,5 +141,5 @@ function _logUpdate (tbMux, tbUpdater, isIncoming) {
     }
   }
   prettyAddresses = `(${uint8ArrayAddresses.length}) [${prettyAddresses.join(', ')}]`
-  console.log(`${[publicKey, type, JSON.stringify(tbMux.name), prettyAddresses].join(separator)}`)
+  console.log(`${colorBlock} ${[publicKey, type, JSON.stringify(name), prettyAddresses].join(separator)}`)
 }
