@@ -1,6 +1,7 @@
 import { GetObjectCommand, ListObjectsV2Command, PutObjectCommand } from '@aws-sdk/client-s3'
 import { AbstractUpdater } from '../cv6t981m0a2ou7fil4f88ujf6kpj2lojceycv1gdcq23wlzqi2/js/turtle/connections/AbstractUpdater.js'
 import { verifyCommitU8a } from '../cv6t981m0a2ou7fil4f88ujf6kpj2lojceycv1gdcq23wlzqi2/js/turtle/Signer.js'
+import { logUpdate } from '../cv6t981m0a2ou7fil4f88ujf6kpj2lojceycv1gdcq23wlzqi2/js/turtle/connections/TurtleBranchMultiplexer.js'
 
 /**
  * @typedef {import('@aws-sdk/client-s3').S3Client} S3Client
@@ -59,7 +60,8 @@ export class S3Updater extends AbstractUpdater {
           }
         }
         this.#length = lengthGuess
-        console.log('(S3) length', this.name, this.#length)
+        const uint8ArrayAddresses = this.incomingBranch.lookup('uint8ArrayAddresses')
+        logUpdate(this.name, this.publicKey, uint8ArrayAddresses, true)
         resolve(this.#length)
       } catch (error) { reject(error) }
     }
@@ -110,7 +112,8 @@ export class S3Updater extends AbstractUpdater {
           Body: uint8Array,
           Key: S3Updater.indexToKey(this.publicKey, this.#length)
         }))
-        console.log('(S3) => outgoing =>', this.name, '=>', this.#length)
+        const uint8ArrayAddresses = this.outgoingBranch.lookup('uint8ArrayAddresses')
+        logUpdate(this.name, this.publicKey, uint8ArrayAddresses, false)
         ++this.#length
         resolve(uint8Array)
       } catch (error) { reject(error) }

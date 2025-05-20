@@ -46,7 +46,8 @@ export class TurtleBranchMultiplexer extends TurtleTalker {
         const uint8Array = u8aTurtle.lookup(address)
         const turtleBranchUpdater = await this.getTurtleBranchUpdater(name, publicKey)
         turtleBranchUpdater.incomingBranch.append(uint8Array)
-        _logUpdate(this.name, publicKey, turtleBranchUpdater, true)
+        const uint8ArrayAddresses = turtleBranchUpdater.incomingBranch.lookup('uint8ArrayAddresses')
+        logUpdate(this.name, publicKey, uint8ArrayAddresses, true)
       }
     } catch (error) {
       console.error(error)
@@ -66,7 +67,8 @@ export class TurtleBranchMultiplexer extends TurtleTalker {
     this.outgoingDictionary.upsert(update)
     this.outgoingDictionary.squash(this.outgoingBranch.index + 1)
     this.outgoingBranch.u8aTurtle = this.outgoingDictionary.u8aTurtle
-    _logUpdate(this.name, publicKey, turtleBranchUpdater, false)
+    const uint8ArrayAddresses = turtleBranchUpdater.outgoingBranch.lookup('uint8ArrayAddresses')
+    logUpdate(this.name, publicKey, uint8ArrayAddresses, false)
   }
 
   /**
@@ -106,23 +108,19 @@ export class TurtleBranchMultiplexer extends TurtleTalker {
 }
 
 /**
- *
- * @param {TurtleBranchMultiplexer} tbMux
- * @param {TurtleBranchUpdater} tbUpdater
+ * @param {string} name
+ * @param {string} publicKey
+ * @param {Array.<number>} uint8ArrayAddresses 
  * @param {boolean} isIncoming
  */
-function _logUpdate (name, publicKey, tbUpdater, isIncoming) {
+export function logUpdate (name, publicKey, uint8ArrayAddresses, isIncoming) {
   const separator = isIncoming ? '\x1b[35m <- \x1b[m' : '\x1b[36m -> \x1b[m'
-  // const tbMuxBranch = isIncoming ? tbMux.incomingBranch : tbMux.outgoingBranch
-  const tbUpdaterBranch = isIncoming ? tbUpdater.incomingBranch : tbUpdater.outgoingBranch
   const type = isIncoming ? '\x1b[35m(incoming)\x1b[m' : '\x1b[36m(outgoing)\x1b[m'
   // let publicKey = tbMuxBranch.lookup('publicKey')
   const [r0, g0, b0, r1, g1, b1] = b36ToUint8Array(publicKey).slice(-6).map(v => Math.round(255 - v * v / 255).toString())
-  const bg = [40, 41, 42, 43, 44, 45, 46, 47, 100, 101, 102, 103, 104, 105, 106, 107][b36ToUint8Array(publicKey)[0] % 16]
   const colorBlock = `\x1b[48;2;${r0};${g0};${b0};38;2;${r1};${g1};${b1}m▌••🐢••▐\x1b[m`
   let prettyAddresses = []
   publicKey = `<${publicKey.slice(0, 4)}...${publicKey.slice(-4)}>`
-  const uint8ArrayAddresses = tbUpdaterBranch.lookup('uint8ArrayAddresses')
   const leftmost = uint8ArrayAddresses.findIndex(x => x !== undefined)
   if (leftmost === -1) {
     prettyAddresses.push(`\x1b[2mempty × ${uint8ArrayAddresses.length}]\x1b[m`)

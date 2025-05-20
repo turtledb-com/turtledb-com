@@ -78,12 +78,11 @@ if (!disableS3 && (s3EndPoint || s3Region || s3Bucket || s3AccessKeyId || s3Secr
     const turtleBranch = status.turtleBranch
     const name = turtleBranch.name
     const publicKey = status.publicKey
-    const s3Updater = new S3Updater(`s3Updater"${name}"`, publicKey, recaller, s3Client, s3Bucket)
-    const tbUpdater = new TurtleBranchUpdater(`tbUpdater"${name}"`, turtleBranch, publicKey, false, recaller)
+    const s3Updater = new S3Updater(`to_S3_#${name}`, publicKey, recaller, s3Client, s3Bucket)
+    const tbUpdater = new TurtleBranchUpdater(`from_S3_#${name}`, turtleBranch, publicKey, false, recaller)
     s3Updater.connect(tbUpdater)
     s3Updater.start()
     tbUpdater.start()
-    // if (status.bindingInProgress !== tbMuxBinding) await tbUpdater.settle
     console.log('tbUpdater about to await settle', tbUpdater.name)
     if (!status.bindings.has(tbMuxBinding)) await tbUpdater.settle
     console.log('tbUpdater settled')
