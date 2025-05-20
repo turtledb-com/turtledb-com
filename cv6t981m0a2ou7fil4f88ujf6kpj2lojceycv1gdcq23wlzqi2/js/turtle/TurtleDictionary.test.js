@@ -2,9 +2,9 @@ import { globalTestRunner, urlToName } from '../utils/TestRunner.js'
 import { ATOMIC_UINT8ARRAY, OPAQUE_UINT8ARRAY } from './codecs/codec.js'
 import { AS_REFS } from './codecs/CodecType.js'
 import { Commit } from './codecs/Commit.js'
-import { CompactPublicKey } from './codecs/CompactPublicKey.js'
 import { Signer } from './Signer.js'
 import { TurtleDictionary } from './TurtleDictionary.js'
+import { b36ToUint8Array } from './utils.js'
 
 globalTestRunner.describe(urlToName(import.meta.url), suite => {
   suite.it('encodes and decodes', ({ assert }) => {
@@ -107,10 +107,10 @@ globalTestRunner.describe(urlToName(import.meta.url), suite => {
   suite.it('handles CPKs', async ({ assert }) => {
     const signer = new Signer('cpk', 'test')
     const { publicKey } = await signer.makeKeysFor('a')
-    const cpk = new CompactPublicKey(publicKey)
     const dictionary = new TurtleDictionary('atomic')
-    const address1 = dictionary.upsert(cpk.uint8Array, [ATOMIC_UINT8ARRAY])
-    assert.equal(dictionary.lookup(address1), cpk.uint8Array)
+    const uint8Array = b36ToUint8Array(publicKey)
+    const address1 = dictionary.upsert(uint8Array, [ATOMIC_UINT8ARRAY])
+    assert.equal(dictionary.lookup(address1), uint8Array)
   })
 })
 
