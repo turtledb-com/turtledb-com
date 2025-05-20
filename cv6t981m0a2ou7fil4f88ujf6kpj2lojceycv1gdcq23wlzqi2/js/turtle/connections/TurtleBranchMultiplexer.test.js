@@ -12,7 +12,7 @@ globalTestRunner.describe(urlToName(import.meta.url), suite => {
     const aTBMux = new TurtleBranchMultiplexer('a', true)
     const aTBUpdater = await aTBMux.getTurtleBranchUpdater('test-a', keys.publicKey)
 
-    const workspace = new Workspace(name, signer, aTBUpdater.turtleBranch)
+    const workspace = new Workspace(name, signer, aTBUpdater.turtleBranch.recaller, aTBUpdater.turtleBranch)
     await workspace.commit(1, 'one')
     await tics(1) // let the commit make it into aTBUpdater's outgoing branch (or else it will start settled at 0)
 

@@ -119,13 +119,23 @@ function _logUpdate (tbMux, tbUpdater, isIncoming) {
   publicKey = `<${publicKey.slice(0, 4)}...${publicKey.slice(-4)}>`
   const uint8ArrayAddresses = tbUpdaterBranch.lookup('uint8ArrayAddresses')
   let prettyAddresses = []
-  let i = 0
-  for (const key of Object.keys(uint8ArrayAddresses)) {
-    if (+key - i) prettyAddresses.push(`empty × ${+key - i}`)
-    prettyAddresses.push(uint8ArrayAddresses[key])
-    i = +key + 1
+  const leftmost = uint8ArrayAddresses.findIndex(x => x !== undefined)
+  if (leftmost === -1) {
+    prettyAddresses.push(`empty × ${uint8ArrayAddresses.length}`)
+  } else {
+    if (leftmost > 0) {
+      prettyAddresses.push(`empty × ${leftmost}`)
+    }
+    if (uint8ArrayAddresses.length > leftmost + 4) {
+      prettyAddresses.push(uint8ArrayAddresses[leftmost])
+      prettyAddresses.push(`filled × ${uint8ArrayAddresses.length - leftmost - 2}`)
+      prettyAddresses.push(uint8ArrayAddresses[uint8ArrayAddresses.length - 1])
+    } else {
+      for (let i = leftmost; i < uint8ArrayAddresses.length; ++i) {
+        prettyAddresses.push(uint8ArrayAddresses[i])
+      }
+    }
   }
-  if (uint8ArrayAddresses.length - i) prettyAddresses.push(`empty × ${uint8ArrayAddresses.length - i}`)
   prettyAddresses = `(${uint8ArrayAddresses.length}) [${prettyAddresses.join(', ')}]`
   console.log(`${[publicKey, type, JSON.stringify(tbMux.name), prettyAddresses].join(separator)}`)
 }

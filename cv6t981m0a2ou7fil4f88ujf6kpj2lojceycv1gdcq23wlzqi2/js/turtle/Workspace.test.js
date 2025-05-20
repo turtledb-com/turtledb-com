@@ -14,8 +14,8 @@ globalTestRunner.describe(urlToName(import.meta.url), suite => {
   suite.it('handles commits', async ({ assert }) => {
     const signer = new Signer('test1', 'password1')
     const committedBranch1 = new TurtleBranch('committedBranch1')
-    const workspace1 = new Workspace('workspace1', signer, committedBranch1)
-    const workspace2 = new Workspace('workspace2', signer, committedBranch1)
+    const workspace1 = new Workspace('workspace1', signer, committedBranch1.recaller, committedBranch1)
+    const workspace2 = new Workspace('workspace2', signer, committedBranch1.recaller, committedBranch1)
     await workspace1.commit('abcd', 'commit 1')
     assert.notEqual(JSON.stringify(workspace1.lookup()), JSON.stringify(workspace2.lookup()))
     await tics(2)
@@ -33,7 +33,7 @@ globalTestRunner.describe(urlToName(import.meta.url), suite => {
   suite.it('handles simultanous commits', async ({ assert }) => {
     const signer = new Signer('test1', 'password1')
     const committedBranch1 = new TurtleBranch('committedBranch1')
-    const workspace1 = new Workspace('workspace1', signer, committedBranch1)
+    const workspace1 = new Workspace('workspace1', signer, committedBranch1.recaller, committedBranch1)
     await Promise.all([
       workspace1.commit('one', 'commit 1'),
       workspace1.commit('two', 'commit 2')

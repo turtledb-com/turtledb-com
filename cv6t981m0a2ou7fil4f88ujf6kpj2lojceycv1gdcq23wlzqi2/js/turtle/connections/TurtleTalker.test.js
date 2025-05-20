@@ -17,7 +17,7 @@ globalTestRunner.describe(urlToName(import.meta.url), suite => {
     const keys = await signer.makeKeysFor(aWorkspace.name)
     const aTalker = new TurtleBranchUpdater('aTalker', aWorkspace.committedBranch)
     const b = new TurtleBranch('b')
-    const bTalker = new TurtleBranchUpdater('bTalker', b, keys.publicKey)
+    const bTalker = new TurtleBranchUpdater('bTalker', b, keys.publicKey, true)
 
     aTalker.connect(bTalker)
     aTalker.start()
@@ -38,20 +38,20 @@ globalTestRunner.describe(urlToName(import.meta.url), suite => {
 
     const unbrokenBranch = new TurtleBranch('unbroken', undefined, aWorkspace.committedBranch.u8aTurtle)
 
-    const brokenWorkspace = new Workspace('broken', signer, aWorkspace.committedBranch)
+    const brokenWorkspace = new Workspace('broken', signer, aWorkspace.committedBranch.recaller, aWorkspace.committedBranch)
     // const brokenKeys = await signer.makeKeysFor(brokenWorkspace.name)
     await brokenWorkspace.commit(2, 'two')
     await commitSettle()
     assert.equal(b.lookup()?.document?.value, Math.PI)
 
-    const unbrokenWorkspace = new Workspace('test', signer, unbrokenBranch)
+    const unbrokenWorkspace = new Workspace('test', signer, unbrokenBranch.recaller, unbrokenBranch)
     await unbrokenWorkspace.commit(4, 'four')
     aTalker.turtleBranch.u8aTurtle = unbrokenWorkspace.u8aTurtle
     await commitSettle()
     assert.equal(b.lookup()?.document?.value, 4)
 
     const a2 = new TurtleBranch('a2', undefined, aWorkspace.committedBranch.u8aTurtle)
-    const a2Workspace = new Workspace('test', signer, a2)
+    const a2Workspace = new Workspace('test', signer, a2.recaller, a2)
     const aTalker2 = new TurtleBranchUpdater('aTalker2', a2)
     const b2 = new TurtleBranch('b2', undefined, b.u8aTurtle)
     const bTalker2 = new TurtleBranchUpdater('bTalker2', b2, keys.publicKey)
