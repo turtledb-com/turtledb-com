@@ -95,7 +95,7 @@ if (!disableS3 && (s3EndPoint || s3Region || s3Bucket || s3AccessKeyId || s3Secr
     while (true) {
       console.log('-- creating new origin connection')
       console.time('-- origin connection lifespan')
-      const tbMux = new TurtleBranchMultiplexer(`origin_#${connectionCount}`, false, turtleDB)
+      const tbMux = new TurtleBranchMultiplexer(`origin_#${originHost}`, false, turtleDB)
       for (const publicKey of turtleDB.getPublicKeys()) {
         await tbMux.getTurtleBranchUpdater(tbMux.name, publicKey)
       }
@@ -169,7 +169,7 @@ if (turtlePort) {
     const _connectionCount = ++connectionCount
     try {
       console.log('turtle connection', _connectionCount)
-      tbMux = new TurtleBranchMultiplexer(`turtle_#${_connectionCount}`, true, turtleDB)
+      tbMux = new TurtleBranchMultiplexer(`outlet_#${_connectionCount}`, true, turtleDB)
       ;(async () => {
         try {
           for await (const chunk of tbMux.makeReadableStream()) {
