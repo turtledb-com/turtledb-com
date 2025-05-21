@@ -1,7 +1,6 @@
 import { GetObjectCommand, ListObjectsV2Command, PutObjectCommand } from '@aws-sdk/client-s3'
 import { AbstractUpdater } from '../cv6t981m0a2ou7fil4f88ujf6kpj2lojceycv1gdcq23wlzqi2/js/turtle/connections/AbstractUpdater.js'
 import { verifyCommitU8a } from '../cv6t981m0a2ou7fil4f88ujf6kpj2lojceycv1gdcq23wlzqi2/js/turtle/Signer.js'
-import { logUpdate } from '../cv6t981m0a2ou7fil4f88ujf6kpj2lojceycv1gdcq23wlzqi2/js/turtle/connections/TurtleBranchMultiplexer.js'
 
 /**
  * @typedef {import('@aws-sdk/client-s3').S3Client} S3Client
@@ -60,8 +59,6 @@ export class S3Updater extends AbstractUpdater {
           }
         }
         this.#length = lengthGuess
-        const uint8ArrayAddresses = this.incomingBranch.lookup('uint8ArrayAddresses')
-        logUpdate(this.name, this.publicKey, uint8ArrayAddresses, true)
         resolve(this.#length)
       } catch (error) { reject(error) }
     }
@@ -75,17 +72,16 @@ export class S3Updater extends AbstractUpdater {
   async getUint8Array (index) {
     await this.getUint8ArraysLength()
     if (index >= this.#length) return
-    if (!this.#getPromises[index]) {
+    for (let i = index; i < this.#length; ++i) {
+      if (this.#getPromises[i]) break
       let resolve, reject
-      this.#getPromises[index] = new Promise((...args) => { [resolve, reject] = args })
+      this.#getPromises[i] = new Promise((...args) => { [resolve, reject] = args })
       try {
         const object = await this.s3Client.send(new GetObjectCommand({
           Bucket: this.bucket,
-          Key: S3Updater.indexToKey(this.publicKey, index)
+          Key: S3Updater.indexToKey(this.publicKey, i)
         }))
-        const uint8Array = await object.Body.transformToByteArray()
-        console.log('(S3) <= incoming <=', this.name, '<=', index)
-        resolve(uint8Array)
+        object.Body.transformToByteArray().then(resolve)
       } catch (error) { reject(error) }
     }
     return this.#getPromises[index]
@@ -112,8 +108,6 @@ export class S3Updater extends AbstractUpdater {
           Body: uint8Array,
           Key: S3Updater.indexToKey(this.publicKey, this.#length)
         }))
-        const uint8ArrayAddresses = this.outgoingBranch.lookup('uint8ArrayAddresses')
-        logUpdate(this.name, this.publicKey, uint8ArrayAddresses, false)
         ++this.#length
         resolve(uint8Array)
       } catch (error) { reject(error) }

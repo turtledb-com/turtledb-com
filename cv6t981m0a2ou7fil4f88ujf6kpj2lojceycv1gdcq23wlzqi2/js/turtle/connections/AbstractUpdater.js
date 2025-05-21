@@ -2,7 +2,7 @@ import { Recaller } from '../../utils/Recaller.js'
 import { OPAQUE_UINT8ARRAY } from '../codecs/codec.js'
 import { verifyCommitU8a } from '../Signer.js'
 import { TurtleDictionary } from '../TurtleDictionary.js'
-import { deepEqualUint8Arrays } from '../utils.js'
+import { b36ToUint8Array, deepEqualUint8Arrays } from '../utils.js'
 import { TurtleTalker } from './TurtleTalker.js'
 
 export class AbstractUpdater extends TurtleTalker {
@@ -52,6 +52,7 @@ export class AbstractUpdater extends TurtleTalker {
     const outgoingTurtleTalk = { uint8ArrayAddresses: [], ts: new Date().getTime() }
     if (incomingUint8ArrayAddresses) { // they're ready
       // handle incoming message (if any exist)
+      logUpdate(this.name, this.publicKey, incomingUint8ArrayAddresses, true)
       for (const indexString in incomingUint8ArrayAddresses) {
         const i = +indexString
         const incomingAddress = incomingUint8ArrayAddresses[i]
@@ -109,6 +110,7 @@ export class AbstractUpdater extends TurtleTalker {
       this.outgoingDictionary.upsert(outgoingTurtleTalk)
       this.outgoingDictionary.squash(this.outgoingBranch.index + 1)
       this.outgoingBranch.u8aTurtle = this.outgoingDictionary.u8aTurtle
+      logUpdate(this.name, this.publicKey, outgoingTurtleTalk.uint8ArrayAddresses, false)
     }
 
     this.#isUpdating = false
@@ -132,4 +134,39 @@ export class AbstractUpdater extends TurtleTalker {
     this.incomingBranch.recaller.watch(`TBMux"${this.name}".settle`, checkSettle)
     return settlePromise
   }
+}
+
+/**
+ * @param {string} name
+ * @param {string} publicKey
+ * @param {Array.<number>} uint8ArrayAddresses 
+ * @param {boolean} isIncoming
+ */
+export function logUpdate (name, publicKey, uint8ArrayAddresses, isIncoming) {
+  const separator = isIncoming ? '\x1b[31m <- \x1b[m' : '\x1b[32m -> \x1b[m'
+  const type = isIncoming ? '\x1b[31m(incoming)\x1b[m' : '\x1b[32m(outgoing)\x1b[m'
+  // let publicKey = tbMuxBranch.lookup('publicKey')
+  const [r0, g0, b0, r1, g1, b1] = b36ToUint8Array(publicKey).slice(-6).map(v => Math.round(255 - v * v / 255).toString())
+  const colorBlock = `\x1b[48;2;${r0};${g0};${b0};38;2;${r1};${g1};${b1}m▛▞▖🐢▝▞▟\x1b[m`
+  let prettyAddresses = []
+  publicKey = `<${publicKey.slice(0, 4)}...${publicKey.slice(-4)}>`
+  const leftmost = uint8ArrayAddresses.findIndex(x => x !== undefined)
+  if (leftmost === -1) {
+    prettyAddresses.push(`\x1b[2mempty × ${uint8ArrayAddresses.length}]\x1b[m`)
+  } else {
+    if (leftmost > 0) {
+      prettyAddresses.push(`\x1b[2mempty × ${leftmost}\x1b[m`)
+    }
+    if (uint8ArrayAddresses.length > leftmost + 4) {
+      prettyAddresses.push(`\x1b[34m${uint8ArrayAddresses[leftmost]}\x1b[m]`)
+      prettyAddresses.push(`\x1b[2mfilled × ${uint8ArrayAddresses.length - leftmost - 2}\x1b[m`)
+      prettyAddresses.push(`\x1b[34m${uint8ArrayAddresses[uint8ArrayAddresses.length - 1]}\x1b[m]`)
+    } else {
+      for (let i = leftmost; i < uint8ArrayAddresses.length; ++i) {
+        prettyAddresses.push(`\x1b[34m${uint8ArrayAddresses[i]}\x1b[m]`)
+      }
+    }
+  }
+  prettyAddresses = `(${uint8ArrayAddresses.length}) [${prettyAddresses.join(', ')}]`
+  console.log(`${colorBlock} ${[publicKey, type, `\x1b[31m${JSON.stringify(name)}\x1b[m`, prettyAddresses].join(separator)}`)
 }

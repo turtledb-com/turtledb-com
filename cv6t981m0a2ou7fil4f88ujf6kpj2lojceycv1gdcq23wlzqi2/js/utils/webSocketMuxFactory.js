@@ -38,7 +38,7 @@ export async function webSocketMuxFactory (turtleDB, callback, recaller = turtle
     const tbMux = new TurtleBranchMultiplexer('serviceWorker', false, turtleDB, recaller)
     const tbMuxBinding = async (/** @type {TurtleBranchStatus} */ status) => {
       console.log(' ^^^^^^^ tbMuxBinding about to get next')
-      const updater = await tbMux.getTurtleBranchUpdater(status.turtleBranch.name, status.publicKey, status.turtleBranch)
+      const updater = await tbMux.getTurtleBranchUpdater(tbMux.name, status.publicKey, status.turtleBranch)
       console.log('updater about to await settle', updater.name)
       await updater.settle
       console.log('updater settled')
@@ -69,11 +69,11 @@ export async function withoutServiceWorker (turtleDB, callback) {
     console.log(' ^^^^^^^ creating new websocket and mux')
     const tbMux = new TurtleBranchMultiplexer(`backup_websocket_#${connectionCount}`, false, turtleDB)
     for (const publicKey of turtleDB.getPublicKeys()) {
-      await tbMux.getTurtleBranchUpdater(publicKey)
+      await tbMux.getTurtleBranchUpdater(tbMux.name, publicKey)
     }
     const tbMuxBinding = async (/** @type {TurtleBranchStatus} */ status) => {
       // console.log(' ^^^^^^^ tbMuxBinding about to get next', { publicKey })
-      const updater = await tbMux.getTurtleBranchUpdater(status.turtleBranch.name, status.publicKey, status.turtleBranch)
+      const updater = await tbMux.getTurtleBranchUpdater(tbMux.name, status.publicKey, status.turtleBranch)
       console.log('updater about to await settle', updater.name)
       await updater.settle
       console.log('updater settled')

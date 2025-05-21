@@ -97,12 +97,12 @@ if (!disableS3 && (s3EndPoint || s3Region || s3Bucket || s3AccessKeyId || s3Secr
       console.time('-- origin connection lifespan')
       const tbMux = new TurtleBranchMultiplexer(`origin_#${connectionCount}`, false, turtleDB)
       for (const publicKey of turtleDB.getPublicKeys()) {
-        await tbMux.getTurtleBranchUpdater(publicKey)
+        await tbMux.getTurtleBranchUpdater(tbMux.name, publicKey)
       }
       const tbMuxBinding = async (/** @type {TurtleBranchStatus} */ status) => {
         try {
           // console.log('tbMuxBinding about to get next', status.publicKey)
-          const updater = await tbMux.getTurtleBranchUpdater(status.turtleBranch.name, status.publicKey, status.turtleBranch)
+          const updater = await tbMux.getTurtleBranchUpdater(tbMux.name, status.publicKey, status.turtleBranch)
           console.log('updater about to await settle', updater.name)
           await updater.settle
           console.log('updater settled')
