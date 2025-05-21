@@ -143,30 +143,30 @@ export class AbstractUpdater extends TurtleTalker {
  * @param {boolean} isIncoming
  */
 export function logUpdate (name, publicKey, uint8ArrayAddresses, isIncoming) {
-  const separator = isIncoming ? '\x1b[31m <- \x1b[m' : '\x1b[32m -> \x1b[m'
-  const type = isIncoming ? '\x1b[31m(incoming)\x1b[m' : '\x1b[32m(outgoing)\x1b[m'
+  const separator = isIncoming ? '\x1b[31m <- \x1b[0m' : '\x1b[32m -> \x1b[0m'
+  const type = isIncoming ? '\x1b[31m(incoming)\x1b[0m' : '\x1b[32m(outgoing)\x1b[0m'
   // let publicKey = tbMuxBranch.lookup('publicKey')
   const [r0, g0, b0, r1, g1, b1] = b36ToUint8Array(publicKey).slice(-6).map(v => Math.round(255 - v * v / 255).toString())
-  const colorBlock = `\x1b[48;2;${r0};${g0};${b0};38;2;${r1};${g1};${b1}m▛▞▖🐢▝▞▟\x1b[m`
+  const colorBlock = `\x1b[48;2;${r0};${g0};${b0};38;2;${r1};${g1};${b1}m▛▞▖🐢▝▞▟\x1b[0m`
   let prettyAddresses = []
   publicKey = `<${publicKey.slice(0, 4)}...${publicKey.slice(-4)}>`
   const leftmost = uint8ArrayAddresses.findIndex(x => x !== undefined)
   if (leftmost === -1) {
-    prettyAddresses.push(`\x1b[2mempty × ${uint8ArrayAddresses.length}]\x1b[m`)
+    prettyAddresses.push(`\x1b[2mempty × ${uint8ArrayAddresses.length}]\x1b[0m`)
   } else {
     if (leftmost > 0) {
-      prettyAddresses.push(`\x1b[2mempty × ${leftmost}\x1b[m`)
+      prettyAddresses.push(`\x1b[2mempty × ${leftmost}\x1b[0m`)
     }
     if (uint8ArrayAddresses.length > leftmost + 4) {
-      prettyAddresses.push(`\x1b[34m${uint8ArrayAddresses[leftmost]}\x1b[m]`)
-      prettyAddresses.push(`\x1b[2mfilled × ${uint8ArrayAddresses.length - leftmost - 2}\x1b[m`)
-      prettyAddresses.push(`\x1b[34m${uint8ArrayAddresses[uint8ArrayAddresses.length - 1]}\x1b[m]`)
+      prettyAddresses.push(`\x1b[34m${uint8ArrayAddresses[leftmost]}\x1b[m0`)
+      prettyAddresses.push(`\x1b[2mfilled × ${uint8ArrayAddresses.length - leftmost - 2}\x1b[0m`)
+      prettyAddresses.push(`\x1b[34m${uint8ArrayAddresses[uint8ArrayAddresses.length - 1]}\x1b[0m`)
     } else {
       for (let i = leftmost; i < uint8ArrayAddresses.length; ++i) {
-        prettyAddresses.push(`\x1b[34m${uint8ArrayAddresses[i]}\x1b[m]`)
+        prettyAddresses.push(`\x1b[34m${uint8ArrayAddresses[i]}\x1b[0m`)
       }
     }
   }
   prettyAddresses = `(${uint8ArrayAddresses.length}) [${prettyAddresses.join(', ')}]`
-  console.log(`${colorBlock} ${[publicKey, type, `\x1b[31m${JSON.stringify(name)}\x1b[m`, prettyAddresses].join(separator)}`)
+  console.log(`${colorBlock} ${[publicKey, type, `\x1b[31m${JSON.stringify(name)}\x1b[0m`, prettyAddresses].join(separator)}`)
 }
