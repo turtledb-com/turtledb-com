@@ -61,7 +61,7 @@ program
   .option('--web-fallback <string>', 'compact public key to use as fallback', 'cv6t981m0a2ou7fil4f88ujf6kpj2lojceycv1gdcq23wlzqi2')
   .option('-o, --origin-host <path>', 'path to server to sync with', '')
   .option('-q, --origin-port <number>', 'port of server to sync with', x => +x, 1024)
-  .option('-t, --turtle-port <number>', 'port to open to sync with', x => +x, 0)
+  .option('-t, --outlet-port <number>', 'port to open to sync with', x => +x, 0)
   .option('--https', 'use https', false)
   .option('--insecure', '(local dev) allow unauthorized', false)
   .option('--certpath <string>', '(local dev) path to self-cert', 'dev/cert.json')
