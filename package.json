@@ -25,6 +25,8 @@
   },
   "scripts": {
     "start": "./bin/turtledb-com.js -i -p 8080 -t 1024",
+    "proxy": "./bin/turtledb-com.js -c configs/dev.json --disable-s3",
+    "d": "./bin/turtledb-com.js dev",
     "dev": "./bin/turtledb-com.js -i --insecure --https --web-port 8080 --fs-name public --disable-s3",
     "sync": "./bin/turtledb-com.js -i --insecure --https --web-port 8080 -o turtledb.com --outlet-port 1024 --fs-name public --disable-s3",
     "syncs3": "./bin/turtledb-com.js -i --insecure --https --web-port 8080 --outlet-port 1024 --fs-name public",

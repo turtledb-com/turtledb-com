@@ -17,9 +17,20 @@ import { AS_REFS } from '../cv6t981m0a2ou7fil4f88ujf6kpj2lojceycv1gdcq23wlzqi2/j
 import { TurtleDB } from '../cv6t981m0a2ou7fil4f88ujf6kpj2lojceycv1gdcq23wlzqi2/js/turtle/connections/TurtleDB.js'
 import { TurtleBranchMultiplexer } from '../cv6t981m0a2ou7fil4f88ujf6kpj2lojceycv1gdcq23wlzqi2/js/turtle/connections/TurtleBranchMultiplexer.js'
 import { readFileSync } from 'fs'
+import mirror from '../configs/mirror.json' with { type: 'json' }
 
 /**
  * @typedef {import('../cv6t981m0a2ou7fil4f88ujf6kpj2lojceycv1gdcq23wlzqi2/js/turtle/connections/TurtleDB.js').TurtleBranchStatus} TurtleBranchStatus
+ */
+
+/**
+ * @typedef {{endpoint: string, region: string, bucket: string, accessKeyId: string, secretAccessKey: string}} TDBConfigS3
+ * @typedef {Array.<{name: string, obj: string}>} TDBConfigFsReadWrite
+ * @typedef {Array.<{key: string, obj: string}>} TDBConfigFsReadOnly
+ * @typedef {{name: string, key: string, port: number, fallback: string, https: boolean, insecure: boolean, certpath: string}} TDBConfigWeb
+ * @typedef {{host: string, port: number}} TDBConfigOrigin
+ * @typedef {{port: number}} TDBConfigOutlet
+ * @typedef {{username: string, password: string, interactive: boolean, s3: TDBConfigS3, fsReadWrite: TDBConfigFsReadWrite, fsReadOnly: TDBConfigFsReadOnly, web: TDBConfigWeb, origin: TDBConfigOrigin, outlet: TDBConfigOutlet}} TDBConfig
  */
 
 const { version } = JSON.parse(readFileSync(new URL('../package.json', import.meta.url)))
@@ -36,7 +47,23 @@ program
   .argument('[string]', 'username for Signer')
   .action((fsName, username) => {
     console.log({fsName, username})
-    getConfigFromOptions()
+    getConfigFromOptions({
+      "interactive": true,
+      "fsReadOnly": [
+        {
+          "key": "cv6t981m0a2ou7fil4f88ujf6kpj2lojceycv1gdcq23wlzqi2",
+          "obj": "fs"
+        }
+      ],
+      "web": {
+        "key": "cv6t981m0a2ou7fil4f88ujf6kpj2lojceycv1gdcq23wlzqi2",
+        "port": 8080,
+        "fallback": "cv6t981m0a2ou7fil4f88ujf6kpj2lojceycv1gdcq23wlzqi2",
+        "https": true,
+        "insecure": true,
+        "certpath": "dev/cert.json"
+      }
+    })
   })
 program
   .command('default', {isDefault: true})
@@ -66,25 +93,64 @@ program
   .option('--insecure', '(local dev) allow unauthorized', false)
   .option('--certpath <string>', '(local dev) path to self-cert', 'dev/cert.json')
   .option('-i, --interactive', 'flag to start repl')
+  .option('-c, --default-config <string>', 'path to a .json TDBConfig file to use')
   .parse()
 
-function getConfigFromOptions () {
+/**
+ * @param {TDBConfig} a 
+ * @param {TDBConfig} b 
+ * @returns {TDBConfig}
+ */
+function combineConfigs (a, b) {
+  return {
+    username: Object.hasOwn(a, 'username') ? a.username : b.username,
+    password: Object.hasOwn(a, 'password') ? a.password : b.password,
+    interactive: Object.hasOwn(a, 'interactive') ? a.interactive : b.interactive,
+    s3: Object.hasOwn(a, 's3') ? a.s3 : b.s3,
+    fsReadWrite: (a.fsReadWrite || []).concat(b.fsReadWrite || []),
+    fsReadOnly: (a.fsReadOnly || []).concat(b.fsReadOnly || []),
+    web: Object.hasOwn(a, 'web') ? a.web : b.web,
+    origin: Object.hasOwn(a, 'origin') ? a.origin : b.origin,
+    outlet: Object.hasOwn(a, 'outlet') ? a.outlet : b.outlet
+  }
+}
+/**
+ * @returns {TDBConfig}
+ */
+function getConfigFromOptions (overrideConfig = {}) {
   const options = program.opts()
-  const { username, password, s3EndPoint, s3Region, s3Bucket, s3AccessKeyId, s3SecretAccessKey, disableS3, fsName, fsObj, fsPublicKey, fsPublicKeyObj, webName, webKey, webPort, webFallback, originHost, originPort, outletPort, https, insecure, certpath, interactive } = options
-  const config = {
-    username,
-    password,
-    interactive: !!interactive,
-    s3: (!disableS3 && (s3EndPoint || s3Region || s3Bucket || s3AccessKeyId || s3SecretAccessKey)) ? {
+  const { username, password, s3EndPoint, s3Region, s3Bucket, s3AccessKeyId, s3SecretAccessKey, disableS3, fsName, fsObj, fsPublicKey, fsPublicKeyObj, webName, webKey, webPort, webFallback, originHost, originPort, outletPort, https, insecure, certpath, interactive, defaultConfig } = options
+  console.log(interactive)
+  /** @type {TDBConfig} */
+  const defaults = defaultConfig ? JSON.parse(readFileSync(defaultConfig, 'utf8')) : {}
+  /** @type {TDBConfig} */
+  const optionsConfig = {}
+  if (username) optionsConfig.username = username
+  if (password) optionsConfig.password = password
+  if (typeof interactive === 'boolean') optionsConfig.interactive = interactive
+  if (!disableS3 && (s3EndPoint || s3Region || s3Bucket || s3AccessKeyId || s3SecretAccessKey)) {
+    optionsConfig.s3 = {
       endpoint: s3EndPoint, 
       region: s3Region, 
       bucket: s3Bucket, 
       accessKeyId: s3AccessKeyId, 
       secretAccessKey: s3SecretAccessKey
-    } : null,
-    fsReadWrite: fsName?.length ? fsName.map((name, index) => ({name, obj: fsObj?.[index] ?? 'fs'})) : null,
-    fsReadOnly: fsPublicKey?.length ? fsPublicKey.map((key, index) => ({key, obj: fsPublicKeyObj?.[index] ?? 'fs'})) : null,
-    web: webPort ? {
+    }
+  }
+  if (fsName?.length) {
+    optionsConfig.fsReadWrite = fsName.map((name, index) => ({
+      name, 
+      obj: fsObj?.[index] ?? 'fs'
+    }))
+  }
+  if (fsPublicKey?.length) {
+    optionsConfig.fsReadOnly = fsPublicKey.map((key, index) => ({
+      key, 
+      obj: fsPublicKeyObj?.[index] ?? 'fs'
+    }))
+  }
+  if (webPort) {
+    optionsConfig.web = {
       name: webName,
       key: webKey,
       port: webPort,
@@ -92,14 +158,16 @@ function getConfigFromOptions () {
       https,
       insecure,
       certpath
-    } : null,
-    origin: originHost ? { host: originHost, port: originPort} : null,
-    outlet: outletPort ? { port: outletPort } : null
+    }
   }
+  if (originHost) optionsConfig.origin = { host: originHost, port: originPort}
+  if (outletPort) optionsConfig.outlet = { port: outletPort }
+  const defaultedOptionsConfig = combineConfigs(optionsConfig, defaults)
+  const config = combineConfigs(overrideConfig, defaultedOptionsConfig)
   if (config.s3 && !(config.s3.endpoint && config.s3.region && config.s3.bucket && config.s3.accessKeyId && config.s3.secretAccessKey)) {
     throw new Error('--s3-end-point, --s3-region, --s3-bucket, --s3-access-key-id, and --s3-secret-access-key must all be set to connect to s3')
   }
-  if (config.fsReadWrite?.length || config.web?.name) {
+  if (config.fsReadWrite?.length || (config.web?.name && !config.web?.key)) {
     config.username ??= question('username: ')
     config.password ??= question('password: ', { hideEchoBack: true })
   }
