@@ -48,21 +48,29 @@ program
   .action((fsName, username) => {
     console.log({fsName, username})
     getConfigFromOptions({
-      "interactive": true,
-      "fsReadOnly": [
+      username,
+      interactive: true,
+      fsReadWrite: [
         {
-          "key": "cv6t981m0a2ou7fil4f88ujf6kpj2lojceycv1gdcq23wlzqi2",
-          "obj": "fs"
+          name: fsName,
+          obj: 'fs'
         }
       ],
-      "web": {
-        "key": "cv6t981m0a2ou7fil4f88ujf6kpj2lojceycv1gdcq23wlzqi2",
-        "port": 8080,
-        "fallback": "cv6t981m0a2ou7fil4f88ujf6kpj2lojceycv1gdcq23wlzqi2",
-        "https": true,
-        "insecure": true,
-        "certpath": "dev/cert.json"
-      }
+      fsReadOnly: [
+        {
+          key: "cv6t981m0a2ou7fil4f88ujf6kpj2lojceycv1gdcq23wlzqi2",
+          obj: "fs"
+        }
+      ],
+      web: {
+        name: fsName,
+        port: 8080,
+        fallback: "cv6t981m0a2ou7fil4f88ujf6kpj2lojceycv1gdcq23wlzqi2",
+        https: true,
+        insecure: true,
+        certpath: "dev/cert.json"
+      },
+      s3: null
     })
   })
 program
