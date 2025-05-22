@@ -147,7 +147,7 @@ export function logUpdate (name, publicKey, uint8ArrayAddresses, isIncoming) {
   const type = isIncoming ? '\x1b[31m(incoming)\x1b[0m' : '\x1b[32m(outgoing)\x1b[0m'
   // let publicKey = tbMuxBranch.lookup('publicKey')
   const [r0, g0, b0, r1, g1, b1] = b36ToUint8Array(publicKey).slice(-6).map(v => Math.round(255 - v * v / 255).toString())
-  const colorBlock = `\x1b[48;2;${r0};${g0};${b0};38;2;${r1};${g1};${b1}m▛▞▖🐢▝▞▟\x1b[0m`
+  const colorBlock = `\x1b[48;2;${r0};${g0};${b0};38;2;${r1};${g1};${b1}m▛▞▖🐢 ▝▞▟\x1b[0m`
   let prettyAddresses = []
   publicKey = `<${publicKey.slice(0, 4)}...${publicKey.slice(-4)}>`
   const leftmost = uint8ArrayAddresses.findIndex(x => x !== undefined)

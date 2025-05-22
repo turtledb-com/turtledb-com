@@ -1,6 +1,6 @@
 {
   "name": "turtledb-com",
-  "version": "0.2.19",
+  "version": "0.2.20",
   "description": "A humanly achievable way to create humanly useful applications",
   "type": "module",
   "repository": "git@github.com:turtledb-com/turtledb-com.git",
@@ -26,10 +26,10 @@
   "scripts": {
     "start": "./bin/turtledb-com.js -i -p 8080 -t 1024",
     "dev": "./bin/turtledb-com.js -i --insecure --https --web-port 8080 --fs-name public --disable-s3",
-    "sync": "./bin/turtledb-com.js -i --insecure --https --web-port 8080 -o turtledb.com --turtle-port 1024 --fs-name public --disable-s3",
-    "syncs3": "./bin/turtledb-com.js -i --insecure --https --web-port 8080 --turtle-port 1024 --fs-name public",
-    "dev1": "./bin/turtledb-com.js -i --insecure --https --web-port 8081 --turtle-port 1025 --origin-port 1024 --origin-host localhost --disable-s3",
-    "dev2": "./bin/turtledb-com.js -i --insecure --https --web-port 8082 --origin-port 1025 --origin-host localhost --turtle-port 0 --disable-s3",
+    "sync": "./bin/turtledb-com.js -i --insecure --https --web-port 8080 -o turtledb.com --outlet-port 1024 --fs-name public --disable-s3",
+    "syncs3": "./bin/turtledb-com.js -i --insecure --https --web-port 8080 --outlet-port 1024 --fs-name public",
+    "dev1": "./bin/turtledb-com.js -i --insecure --https --web-port 8081 --outlet-port 1025 --origin-port 1024 --origin-host localhost --disable-s3",
+    "dev2": "./bin/turtledb-com.js -i --insecure --https --web-port 8082 --origin-port 1025 --origin-host localhost --outlet-port 0 --disable-s3",
     "fallback": "./bin/turtledb-com.js -i -o turtledb.com --insecure --https --web-port 9090 --disable-s3 --web-fallback juu2u25yqod1ticwiwnpujtaishju3msefvy79oiti00d8xir0",
     "canary": "open '/Applications/Google Chrome Canary.app' --args --auto-open-devtools-for-tabs --allow-insecure-localhost --ignore-certificate-errors --unsafely-treat-insecure-origin-as-secure=https://localhost:8080/ https://localhost:8080/",
     "test": "./bin/test.js",

@@ -42,6 +42,7 @@ export async function fsSync (name, turtleDB, signer, jspath = 'fs') {
     const nextActionsByPath = {}
     let isHandlingChokidar
     const getPathHandlerFor = action => async path => {
+      console.log('(fsSync)', action, path)
       const isFirst = !Object.keys(nextActionsByPath).length && !isHandlingChokidar
       isHandlingChokidar = true
       const relativePath = relative(root, path)
@@ -69,14 +70,14 @@ export async function fsSync (name, turtleDB, signer, jspath = 'fs') {
 
       setTimeout(async () => {
         if (!skipCommit) {
-          if (Object.keys(jsobj).length === Object.keys(lastJsobj).length && 
-            Object.keys(jsobj).every(key => jsobj[key] === lastJsobj[key])) return
-          console.log(Object.keys(jsobj).length, Object.keys(lastJsobj).length, 
-            Object.keys(jsobj).map(key => ({key, exactSame: jsobj[key] === lastJsobj[key]})))
-          const value = workspace.lookup('document', 'value', AS_REFS) || {}
-          value[jspath] = jsobj
-          lastJsobj = Object.assign({}, jsobj)
-          await workspace.commit(value, 'chokidar.watch')
+          if (Object.keys(jsobj).length !== Object.keys(lastJsobj).length || Object.keys(jsobj).some(key => jsobj[key] !== lastJsobj[key])) {
+            const value = workspace.lookup('document', 'value', AS_REFS) || {}
+            value[jspath] = jsobj
+            lastJsobj = Object.assign({}, jsobj)
+            await workspace.commit(value, 'chokidar.watch')
+          } else {
+            console.log('(fsSync) no change')
+          }
         }
         endTurn()
       }, 500) // delay should take longer than the commit
