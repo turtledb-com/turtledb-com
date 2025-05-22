@@ -32,7 +32,6 @@ export async function webSync (port, basePublicKey, turtleDB, https, insecure, c
   app.use(async (req, res, next) => {
     if (req.url === '/.well-known/appspecific/com.chrome.devtools.json') {
       res.type('application/json')
-      console.log(JSON.stringify({ workspace: { uuid, root } }))
       res.send(JSON.stringify({ workspace: { uuid, root } }))
       return
     }
@@ -43,7 +42,6 @@ export async function webSync (port, basePublicKey, turtleDB, https, insecure, c
       return
     }
     const matchGroups = pathname.match(/\/(?<urlPublicKey>[0-9A-Za-z]{41,51})(?<slash>\/?)(?<relativePath>.*)$/)?.groups
-    // console.log('service-worker fetch', url)
     try {
       const { urlPublicKey, slash, relativePath } = matchGroups ?? { urlPublicKey: fallback || basePublicKey, slash: '/', relativePath: pathname.slice(1) }
       const isDir = !relativePath || relativePath.endsWith('/')

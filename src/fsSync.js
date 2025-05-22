@@ -32,28 +32,25 @@ export async function fsSync (name, turtleDB, signer, jspath = 'fs') {
     return endTurn
   }
   let jsobj = {}
-
+  let lastJsobj = {}
   let turtleBranch
   let root
   if (signer) {
     const workspace = await turtleDB.makeWorkspace(signer, name)
     turtleBranch = workspace.committedBranch
     root = (await signer.makeKeysFor(name)).publicKey
-
     const nextActionsByPath = {}
     let isHandlingChokidar
     const getPathHandlerFor = action => async path => {
       const isFirst = !Object.keys(nextActionsByPath).length && !isHandlingChokidar
       isHandlingChokidar = true
       const relativePath = relative(root, path)
-      console.log(name, action, relativePath)
       nextActionsByPath[relativePath] ??= []
       const nextActions = nextActionsByPath[relativePath]
       nextActions.push(action)
       if (!isFirst) return
       await new Promise(resolve => setTimeout(resolve, 100)) // let chokidar cook
       const endTurn = await nextTurn()
-      // console.log('next actions', nextActionsByPath)
       while (Object.keys(nextActionsByPath).length) {
         const readFilePromises = []
         for (const relativePath in nextActionsByPath) {
@@ -72,15 +69,14 @@ export async function fsSync (name, turtleDB, signer, jspath = 'fs') {
 
       setTimeout(async () => {
         if (!skipCommit) {
-          const valueAsRefs = workspace.lookup('document', 'value', AS_REFS) || {}
-          const previousAddress = valueAsRefs[jspath]
-          // console.log('before upsert', Object.keys(jsobj).filter(key => key.match(/old/)))
-          valueAsRefs[jspath] = workspace.upsert(jsobj)
-          if (valueAsRefs[jspath] !== previousAddress) {
-            const valueAddress = workspace.upsert(valueAsRefs, undefined, AS_REFS)
-            console.log('fs commit from local changes commit', valueAddress)
-            await workspace.commit(valueAddress, 'chokidar.watch', true)
-          }
+          if (Object.keys(jsobj).length === Object.keys(lastJsobj).length && 
+            Object.keys(jsobj).every(key => jsobj[key] === lastJsobj[key])) return
+          console.log(Object.keys(jsobj).length, Object.keys(lastJsobj).length, 
+            Object.keys(jsobj).map(key => ({key, exactSame: jsobj[key] === lastJsobj[key]})))
+          const value = workspace.lookup('document', 'value', AS_REFS) || {}
+          value[jspath] = jsobj
+          lastJsobj = Object.assign({}, jsobj)
+          await workspace.commit(value, 'chokidar.watch')
         }
         endTurn()
       }, 500) // delay should take longer than the commit
@@ -119,6 +115,7 @@ export async function fsSync (name, turtleDB, signer, jspath = 'fs') {
       if (changes.length) console.log('fs update from turtleBranch, changes.length', changes.length)
       await Promise.all(changes)
       jsobj = newJsobj
+      lastJsobj = Object.assign({}, jsobj)
     }
     skipCommit = false
     endTurn()

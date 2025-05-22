@@ -158,7 +158,7 @@ export function logUpdate (name, publicKey, uint8ArrayAddresses, isIncoming) {
       prettyAddresses.push(`\x1b[2mempty × ${leftmost}\x1b[0m`)
     }
     if (uint8ArrayAddresses.length > leftmost + 4) {
-      prettyAddresses.push(`\x1b[34m${uint8ArrayAddresses[leftmost]}\x1b[m0`)
+      prettyAddresses.push(`\x1b[34m${uint8ArrayAddresses[leftmost]}\x1b[0m`)
       prettyAddresses.push(`\x1b[2mfilled × ${uint8ArrayAddresses.length - leftmost - 2}\x1b[0m`)
       prettyAddresses.push(`\x1b[34m${uint8ArrayAddresses[uint8ArrayAddresses.length - 1]}\x1b[0m`)
     } else {
