@@ -16,8 +16,9 @@ import { TurtleBranchUpdater } from '../cv6t981m0a2ou7fil4f88ujf6kpj2lojceycv1gd
 import { AS_REFS } from '../cv6t981m0a2ou7fil4f88ujf6kpj2lojceycv1gdcq23wlzqi2/js/turtle/codecs/CodecType.js'
 import { TurtleDB } from '../cv6t981m0a2ou7fil4f88ujf6kpj2lojceycv1gdcq23wlzqi2/js/turtle/connections/TurtleDB.js'
 import { TurtleBranchMultiplexer } from '../cv6t981m0a2ou7fil4f88ujf6kpj2lojceycv1gdcq23wlzqi2/js/turtle/connections/TurtleBranchMultiplexer.js'
-import { readFileSync } from 'fs'
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs'
 import mirror from '../configs/mirror.json' with { type: 'json' }
+import { join } from 'path'
 
 /**
  * @typedef {import('../cv6t981m0a2ou7fil4f88ujf6kpj2lojceycv1gdcq23wlzqi2/js/turtle/connections/TurtleDB.js').TurtleBranchStatus} TurtleBranchStatus
@@ -47,7 +48,7 @@ program
   .argument('[string]', 'username for Signer')
   .action((fsName, username) => {
     console.log({fsName, username})
-    getConfigFromOptions({
+    const config = getConfigFromOptions({
       username,
       interactive: true,
       fsReadWrite: [
@@ -72,6 +73,38 @@ program
       },
       s3: null
     })
+    console.log(config)
+  })
+program
+  .command('project')
+  .description('a basic local setup for developing a project')
+  .argument('<{string} projectname>', 'turtle branch name')
+  .argument('[{string} username]', 'username for branch signer')
+  .action((projectname, username) => {
+    const overrideConfig = {fsReadWrite: [{name: projectname, obj: 'fs'}]}
+    if (username) {
+      overrideConfig.username = username
+      overrideConfig.password = null
+    }
+    const config = getConfigFromOptions(overrideConfig)
+    console.log(config)
+    const projectPath = join(process.cwd(), projectname)
+    if (!existsSync(projectPath)) mkdirSync(projectPath)
+    writeFileSync(join(projectPath, '.gitignore'), [
+      '.env', 
+      'node_modules/',
+      'dev/',
+      ''
+    ].join('\n'))
+    writeFileSync(join(projectPath, '.env'), `TURTLEDB_USERNAME="${config.username}"\nTURTLEDB_PASSWORD="${config.password}"\n`)
+    writeFileSync(join(projectPath, 'package.json'), JSON.stringify({
+      name: projectname,
+      author: config.username,
+      license: 'GPL-3.0-or-later',
+      scripts: {
+        start: 'source .env && npx turtledb-com --config config.json'
+      }
+    }, null, 2))
   })
 program
   .command('default', {isDefault: true})
@@ -101,36 +134,40 @@ program
   .option('--insecure', '(local dev) allow unauthorized', false)
   .option('--certpath <string>', '(local dev) path to self-cert', 'dev/cert.json')
   .option('-i, --interactive', 'flag to start repl')
-  .option('-c, --default-config <string>', 'path to a .json TDBConfig file to use')
+  .option('-c, --config <string>', 'path to a .json TDBConfig file to use')
   .parse()
 
 /**
- * @param {TDBConfig} a 
- * @param {TDBConfig} b 
+ * 
+ * @param {Array.<any>} values 
+ * @returns {any}
+ */
+function combineValues (values) {
+  if (!Array.isArray(values[0])) return values[0]
+  if (values.some(value => !Array.isArray(value))) throw new Error('combine arrays with arrays only')
+  return values.flat()
+}
+/**
+ * @param {Array.<TDBConfig>} configs 
  * @returns {TDBConfig}
  */
-function combineConfigs (a, b) {
-  return {
-    username: Object.hasOwn(a, 'username') ? a.username : b.username,
-    password: Object.hasOwn(a, 'password') ? a.password : b.password,
-    interactive: Object.hasOwn(a, 'interactive') ? a.interactive : b.interactive,
-    s3: Object.hasOwn(a, 's3') ? a.s3 : b.s3,
-    fsReadWrite: (a.fsReadWrite || []).concat(b.fsReadWrite || []),
-    fsReadOnly: (a.fsReadOnly || []).concat(b.fsReadOnly || []),
-    web: Object.hasOwn(a, 'web') ? a.web : b.web,
-    origin: Object.hasOwn(a, 'origin') ? a.origin : b.origin,
-    outlet: Object.hasOwn(a, 'outlet') ? a.outlet : b.outlet
-  }
+function combineConfigs (configs) {
+  const keys = Array.from(configs.reduce((keysSet, config) => keysSet.union(new Set(Object.keys(config))), new Set()))
+  return keys.reduce((combinedConfigs, key) => {
+    const values = configs.filter(config => Object.hasOwn(config, key)).map(config => config[key])
+    if (values.length) combinedConfigs[key] = combineValues(values)
+    return combinedConfigs
+  }, {})
 }
 /**
  * @returns {TDBConfig}
  */
 function getConfigFromOptions (overrideConfig = {}) {
   const options = program.opts()
-  const { username, password, s3EndPoint, s3Region, s3Bucket, s3AccessKeyId, s3SecretAccessKey, disableS3, fsName, fsObj, fsPublicKey, fsPublicKeyObj, webName, webKey, webPort, webFallback, originHost, originPort, outletPort, https, insecure, certpath, interactive, defaultConfig } = options
+  const { username, password, s3EndPoint, s3Region, s3Bucket, s3AccessKeyId, s3SecretAccessKey, disableS3, fsName, fsObj, fsPublicKey, fsPublicKeyObj, webName, webKey, webPort, webFallback, originHost, originPort, outletPort, https, insecure, certpath, interactive, config: configFile } = options
   console.log(interactive)
   /** @type {TDBConfig} */
-  const defaults = defaultConfig ? JSON.parse(readFileSync(defaultConfig, 'utf8')) : {}
+  const defaultsConfig = configFile ? JSON.parse(readFileSync(configFile, 'utf8')) : {}
   /** @type {TDBConfig} */
   const optionsConfig = {}
   if (username) optionsConfig.username = username
@@ -170,8 +207,8 @@ function getConfigFromOptions (overrideConfig = {}) {
   }
   if (originHost) optionsConfig.origin = { host: originHost, port: originPort}
   if (outletPort) optionsConfig.outlet = { port: outletPort }
-  const defaultedOptionsConfig = combineConfigs(optionsConfig, defaults)
-  const config = combineConfigs(overrideConfig, defaultedOptionsConfig)
+  console.log({overrideConfig, optionsConfig, defaultsConfig})
+  const config = combineConfigs([overrideConfig, optionsConfig, defaultsConfig])
   if (config.s3 && !(config.s3.endpoint && config.s3.region && config.s3.bucket && config.s3.accessKeyId && config.s3.secretAccessKey)) {
     throw new Error('--s3-end-point, --s3-region, --s3-bucket, --s3-access-key-id, and --s3-secret-access-key must all be set to connect to s3')
   }
