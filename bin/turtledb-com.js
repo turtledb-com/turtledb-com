@@ -19,6 +19,7 @@ import { TurtleBranchMultiplexer } from '../cv6t981m0a2ou7fil4f88ujf6kpj2lojceyc
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs'
 import mirror from '../configs/mirror.json' with { type: 'json' }
 import { join } from 'path'
+import { execSync } from 'child_process'
 
 /**
  * @typedef {import('../cv6t981m0a2ou7fil4f88ujf6kpj2lojceycv1gdcq23wlzqi2/js/turtle/connections/TurtleDB.js').TurtleBranchStatus} TurtleBranchStatus
@@ -90,13 +91,16 @@ program
     console.log(config)
     const projectPath = join(process.cwd(), projectname)
     if (!existsSync(projectPath)) mkdirSync(projectPath)
+    console.log(`writing ${projectname}/.gitignore`)
     writeFileSync(join(projectPath, '.gitignore'), [
       '.env', 
       'node_modules/',
       'dev/',
       ''
     ].join('\n'))
+    console.log(`writing ${projectname}/.env`)
     writeFileSync(join(projectPath, '.env'), `TURTLEDB_USERNAME="${config.username}"\nTURTLEDB_PASSWORD="${config.password}"\n`)
+    console.log(`writing ${projectname}/package.json`)
     writeFileSync(join(projectPath, 'package.json'), JSON.stringify({
       name: projectname,
       author: config.username,
@@ -105,6 +109,23 @@ program
         start: 'source .env && npx turtledb-com --config config.json'
       }
     }, null, 2))
+    console.log(`writing ${projectname}/config.json`)
+    writeFileSync(join(projectPath, 'config.json'), JSON.stringify({
+      interactive: true,
+      fsReadOnly: [ { key: 'cv6t981m0a2ou7fil4f88ujf6kpj2lojceycv1gdcq23wlzqi2', obj: 'fs' } ],
+      fsReadWrite: [ { name: projectname, obj: 'fs' } ],
+      web: {
+        name: projectname,
+        port: 8080,
+        fallback: 'cv6t981m0a2ou7fil4f88ujf6kpj2lojceycv1gdcq23wlzqi2',
+        https: true,
+        insecure: true,
+        certpath: 'dev/cert.json'
+      },
+      origin: { host: 'turtledb.com', port: 1024 }
+    }, null, 2))
+    console.log(`exec 'npm start' from directory: ${projectPath}`)
+    execSync('npm start', {cwd: projectPath})
   })
 program
   .command('default', {isDefault: true})
