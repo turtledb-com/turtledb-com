@@ -23,6 +23,7 @@ export class AbstractUpdater extends TurtleTalker {
     recaller = new Recaller(`${name}.recaller`)
   ) {
     super(name, Xours, recaller)
+    if (!publicKey) throw new Error('Updaters need a publicKey')
     this.publicKey = publicKey
     this.outgoingDictionary = new TurtleDictionary(`${name}.outgoingDictionary`, recaller)
   }
@@ -110,6 +111,7 @@ export class AbstractUpdater extends TurtleTalker {
       this.outgoingDictionary.upsert(outgoingTurtleTalk)
       this.outgoingDictionary.squash(this.outgoingBranch.index + 1)
       this.outgoingBranch.u8aTurtle = this.outgoingDictionary.u8aTurtle
+      console.log(this.name, this.publicKey)
       logUpdate(this.name, this.publicKey, outgoingTurtleTalk.uint8ArrayAddresses, false)
     }
 
@@ -139,7 +141,7 @@ export class AbstractUpdater extends TurtleTalker {
 /**
  * @param {string} name
  * @param {string} publicKey
- * @param {Array.<number>} uint8ArrayAddresses 
+ * @param {Array.<number>} uint8ArrayAddresses
  * @param {boolean} isIncoming
  */
 export function logUpdate (name, publicKey, uint8ArrayAddresses, isIncoming) {

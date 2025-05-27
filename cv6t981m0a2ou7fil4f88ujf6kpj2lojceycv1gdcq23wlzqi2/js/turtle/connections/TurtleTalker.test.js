@@ -15,7 +15,7 @@ globalTestRunner.describe(urlToName(import.meta.url), suite => {
     const signer = new Signer('test-user', 'p@$$w0rd')
     const aWorkspace = new Workspace('test', signer)
     const keys = await signer.makeKeysFor(aWorkspace.name)
-    const aTalker = new TurtleBranchUpdater('aTalker', aWorkspace.committedBranch)
+    const aTalker = new TurtleBranchUpdater('aTalker', aWorkspace.committedBranch, keys.publicKey)
     const b = new TurtleBranch('b')
     const bTalker = new TurtleBranchUpdater('bTalker', b, keys.publicKey, true)
 
@@ -52,7 +52,7 @@ globalTestRunner.describe(urlToName(import.meta.url), suite => {
 
     const a2 = new TurtleBranch('a2', undefined, aWorkspace.committedBranch.u8aTurtle)
     const a2Workspace = new Workspace('test', signer, a2.recaller, a2)
-    const aTalker2 = new TurtleBranchUpdater('aTalker2', a2)
+    const aTalker2 = new TurtleBranchUpdater('aTalker2', a2, keys.publicKey)
     const b2 = new TurtleBranch('b2', undefined, b.u8aTurtle)
     const bTalker2 = new TurtleBranchUpdater('bTalker2', b2, keys.publicKey)
     aTalker2.connect(bTalker2)

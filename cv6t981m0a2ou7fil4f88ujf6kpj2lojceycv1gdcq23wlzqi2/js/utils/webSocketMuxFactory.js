@@ -86,7 +86,7 @@ export async function withoutServiceWorker (turtleDB, callback) {
       callback?.(tbMux)
       ws.binaryType = 'arraybuffer'
       ws.onopen = async () => {
-        console.log(' ^^^^^^^ onopen', { connectionIndex })
+        console.log(' ^^^^^^^ onopen, connectionIndex:', connectionIndex)
         ;(async () => {
           try {
             for await (const u8aTurtle of tbMux.outgoingBranch.u8aTurtleGenerator()) {
@@ -115,7 +115,7 @@ export async function withoutServiceWorker (turtleDB, callback) {
     turtleDB.unbind(tbMuxBinding)
     t = Math.min(t, 2 * 60 * 1000) // 2 minutes max (unjittered)
     t = t * (1 + Math.random()) // exponential backoff and some jitter
-    console.log(` ^^^^^^^ waiting ${(t / 1000).toFixed(2)} ms`)
+    console.log(` ^^^^^^^ waiting ${(t / 1000).toFixed(2)} s`)
     await new Promise(resolve => setTimeout(resolve, t))
   }
 }
