@@ -39,14 +39,14 @@ function combineConfigs (configs) {
  * @returns {TDBConfig}
  */
 export function getConfigFromOptions (options, overrideConfig = {}) {
-  const { username, password, s3EndPoint, s3Region, s3Bucket, s3AccessKeyId, s3SecretAccessKey, disableS3, fsName, fsObj, fsPublicKey, fsPublicKeyObj, webName, webKey, webPort, webFallback, originHost, originPort, outletPort, https, insecure, certpath, interactive, config: configFile, remoteConfig } = options
-  console.log(interactive)
+  const { username, password, s3EndPoint, s3Region, s3Bucket, s3AccessKeyId, s3SecretAccessKey, disableS3, fsName, fsObj, fsPublicKey, fsPublicKeyObj, webName, webKey, webPort, webFallback, originHost, originPort, outletPort, https, insecure, certpath, interactive, config: configFile, remoteConfig, archive, archivePath } = options
   /** @type {TDBConfig} */
   const defaultsConfig = configFile ? JSON.parse(readFileSync(configFile, 'utf8')) : {}
   /** @type {TDBConfig} */
   const optionsConfig = {}
   if (username) optionsConfig.username = username
   if (password) optionsConfig.password = password
+  if (archive) optionsConfig.archive = { path: archivePath }
   if (typeof interactive === 'boolean') optionsConfig.interactive = interactive
   if (!disableS3 && (s3EndPoint || s3Region || s3Bucket || s3AccessKeyId || s3SecretAccessKey)) {
     optionsConfig.s3 = {

@@ -1,6 +1,7 @@
 import { GetObjectCommand, ListObjectsV2Command, PutObjectCommand } from '@aws-sdk/client-s3'
 import { AbstractUpdater } from '../cv6t981m0a2ou7fil4f88ujf6kpj2lojceycv1gdcq23wlzqi2/js/turtle/connections/AbstractUpdater.js'
 import { verifyCommitU8a } from '../cv6t981m0a2ou7fil4f88ujf6kpj2lojceycv1gdcq23wlzqi2/js/turtle/Signer.js'
+import { getExistenceLength } from './getExistenceLength.js'
 
 /**
  * @typedef {import('@aws-sdk/client-s3').S3Client} S3Client
@@ -39,6 +40,9 @@ export class S3Updater extends AbstractUpdater {
       return !!listObjectsV2Response.KeyCount
     }
     if (this.#lengthPromise === undefined) {
+      this.#lengthPromise = getExistenceLength(getExists)
+      this.#lengthPromise.then(length => { this.#length = length })
+      /*
       let resolve, reject
       this.#lengthPromise = new Promise((...args) => { [resolve, reject] = args })
       let lengthGuess = 0
@@ -61,6 +65,7 @@ export class S3Updater extends AbstractUpdater {
         this.#length = lengthGuess
         resolve(this.#length)
       } catch (error) { reject(error) }
+       */
     }
     return this.#lengthPromise
   }

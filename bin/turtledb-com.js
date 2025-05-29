@@ -10,12 +10,12 @@ import { Workspace } from '../cv6t981m0a2ou7fil4f88ujf6kpj2lojceycv1gdcq23wlzqi2
 import { Recaller } from '../cv6t981m0a2ou7fil4f88ujf6kpj2lojceycv1gdcq23wlzqi2/js/utils/Recaller.js'
 import { AS_REFS } from '../cv6t981m0a2ou7fil4f88ujf6kpj2lojceycv1gdcq23wlzqi2/js/turtle/codecs/CodecType.js'
 import { TurtleDB } from '../cv6t981m0a2ou7fil4f88ujf6kpj2lojceycv1gdcq23wlzqi2/js/turtle/connections/TurtleDB.js'
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs'
-import { join } from 'path'
+import { existsSync, mkdirSync, readFileSync } from 'fs'
 import { s3Sync } from '../src/s3Sync.js'
 import { originSync } from '../src/originSync.js'
 import { outletSync } from '../src/outletSync.js'
 import { getConfigFromOptions } from '../src/getConfigFromOptions.js'
+import { projectAction } from '../src/projectAction.js'
 
 /**
  * @typedef {import('../cv6t981m0a2ou7fil4f88ujf6kpj2lojceycv1gdcq23wlzqi2/js/turtle/connections/TurtleDB.js').TurtleBranchStatus} TurtleBranchStatus
@@ -69,53 +69,7 @@ program
   .argument('<{string} projectname>', 'turtle branch name')
   .argument('[{string} username]', 'username for branch signer')
   .action((projectname, username) => {
-    const overrideConfig = { fsReadWrite: [{ name: projectname, obj: 'fs' }] }
-    if (username) {
-      overrideConfig.username = username
-      overrideConfig.password = null
-    }
-    const config = getConfigFromOptions(program.opts(), overrideConfig)
-    console.log(config)
-    const projectPath = join(process.cwd(), projectname)
-    if (!existsSync(projectPath)) mkdirSync(projectPath)
-    console.log(`writing ${projectname}/.gitignore`)
-    writeFileSync(join(projectPath, '.gitignore'), [
-      '.env',
-      'node_modules/',
-      'dev/',
-      ''
-    ].join('\n'))
-    console.log(`writing ${projectname}/.env`)
-    writeFileSync(join(projectPath, '.env'), [
-      `TURTLEDB_USERNAME="${config.username}"`,
-      `TURTLEDB_PASSWORD="${config.password}"`
-    ].join('\n') + '\n')
-    console.log(`writing ${projectname}/package.json`)
-    writeFileSync(join(projectPath, 'package.json'), JSON.stringify({
-      name: projectname,
-      author: config.username,
-      license: 'GPL-3.0-or-later',
-      scripts: {
-        start: 'source .env && npx turtledb-com --config config.json'
-      }
-    }, null, 2) + '\n')
-    console.log(`writing ${projectname}/config.json`)
-    writeFileSync(join(projectPath, 'config.json'), JSON.stringify({
-      interactive: true,
-      fsReadOnly: [{ key: defaultCpk, obj: 'fs' }],
-      fsReadWrite: [{ name: projectname, obj: 'fs' }],
-      web: {
-        name: projectname,
-        port: 8080,
-        fallback: defaultCpk,
-        https: true,
-        insecure: true,
-        certpath: 'dev/cert.json'
-      },
-      origin: { host: 'turtledb.com', port: 1024 }
-    }, null, 2) + '\n')
-    console.log(`project directory initialized: ${projectPath}`)
-    console.log(`running 'npm start' from ${projectPath} `)
+    projectAction(projectname, username, program.opts(), defaultCpk)
   })
 program
   .command('default', { isDefault: true })
@@ -147,9 +101,33 @@ program
   .option('-i, --interactive', 'flag to start repl')
   .option('-c, --config <string>', 'path to a .json TDBConfig file to use')
   .option('-r, --remote-config <string>', 'name of TDBConfig turtle to use')
+  .option('-a, --archive', 'download all turtle layers', false)
+  .option('--archive-path', 'folder to archive to', 'archive')
   .parse()
 
 async function startServer (config = getConfigFromOptions(program.opts())) {
+  console.log(config)
+  if (config.archive) {
+    const { path } = config.archive
+    console.log(path)
+    if (!existsSync(path)) mkdirSync(path)
+    const tbMuxBinding = async (/** @type {TurtleBranchStatus} */ status) => {
+      const turtleBranch = status.turtleBranch
+      const name = turtleBranch.name
+      const publicKey = status.publicKey
+      const archiveUpdater = new ArchiveUpdater(`to_archive_#${name}`, publicKey, recaller, path)
+      const tbUpdater = new TurtleBranchUpdater(`from_archive_#${name}`, turtleBranch, publicKey, false, recaller)
+      archiveUpdater.connect(tbUpdater)
+      archiveUpdater.start()
+      tbUpdater.start()
+      console.log('tbUpdater about to await settle', tbUpdater.name)
+      if (!status.bindings.has(tbMuxBinding)) await tbUpdater.settle
+      console.log('tbUpdater settled')
+    }
+    turtleDB.bind(tbMuxBinding)
+    return
+  }
+
   if (config.origin) {
     const { origin } = config
     originSync(turtleDB, origin.host, origin.port)
