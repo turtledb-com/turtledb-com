@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 
+import { existsSync, mkdirSync, readFileSync } from 'fs'
 import { start } from 'repl'
 import { Option, program } from 'commander'
 import { fsSync } from '../src/fsSync.js'
@@ -10,7 +11,6 @@ import { Workspace } from '../cv6t981m0a2ou7fil4f88ujf6kpj2lojceycv1gdcq23wlzqi2
 import { Recaller } from '../cv6t981m0a2ou7fil4f88ujf6kpj2lojceycv1gdcq23wlzqi2/js/utils/Recaller.js'
 import { AS_REFS } from '../cv6t981m0a2ou7fil4f88ujf6kpj2lojceycv1gdcq23wlzqi2/js/turtle/codecs/CodecType.js'
 import { TurtleDB } from '../cv6t981m0a2ou7fil4f88ujf6kpj2lojceycv1gdcq23wlzqi2/js/turtle/connections/TurtleDB.js'
-import { existsSync, mkdirSync, readFileSync } from 'fs'
 import { s3Sync } from '../src/s3Sync.js'
 import { originSync } from '../src/originSync.js'
 import { outletSync } from '../src/outletSync.js'

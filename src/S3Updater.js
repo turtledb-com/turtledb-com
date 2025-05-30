@@ -125,5 +125,5 @@ export class S3Updater extends AbstractUpdater {
    * @param {number} index
    * @returns {string}
    */
-  static indexToKey = (publicKey, index) => `${publicKey}/${`000000${index.toString(32)}`.slice(-6)}`
+  static indexToKey = (publicKey, index) => `${publicKey}/${index.toString(32).padStart(6, '0')}`
 }
