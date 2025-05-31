@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { existsSync, mkdirSync, readFileSync } from 'fs'
+import { readFileSync } from 'fs'
 import { start } from 'repl'
 import { Option, program } from 'commander'
 import { fsSync } from '../src/fsSync.js'
@@ -16,6 +16,7 @@ import { originSync } from '../src/originSync.js'
 import { outletSync } from '../src/outletSync.js'
 import { getConfigFromOptions } from '../src/getConfigFromOptions.js'
 import { projectAction } from '../src/projectAction.js'
+import { archiveSync } from '../src/archiveSync.js'
 
 /**
  * @typedef {import('../cv6t981m0a2ou7fil4f88ujf6kpj2lojceycv1gdcq23wlzqi2/js/turtle/connections/TurtleDB.js').TurtleBranchStatus} TurtleBranchStatus
@@ -109,23 +110,7 @@ async function startServer (config = getConfigFromOptions(program.opts())) {
   console.log(config)
   if (config.archive) {
     const { path } = config.archive
-    console.log(path)
-    if (!existsSync(path)) mkdirSync(path)
-    const tbMuxBinding = async (/** @type {TurtleBranchStatus} */ status) => {
-      const turtleBranch = status.turtleBranch
-      const name = turtleBranch.name
-      const publicKey = status.publicKey
-      const archiveUpdater = new ArchiveUpdater(`to_archive_#${name}`, publicKey, recaller, path)
-      const tbUpdater = new TurtleBranchUpdater(`from_archive_#${name}`, turtleBranch, publicKey, false, recaller)
-      archiveUpdater.connect(tbUpdater)
-      archiveUpdater.start()
-      tbUpdater.start()
-      console.log('tbUpdater about to await settle', tbUpdater.name)
-      if (!status.bindings.has(tbMuxBinding)) await tbUpdater.settle
-      console.log('tbUpdater settled')
-    }
-    turtleDB.bind(tbMuxBinding)
-    return
+    archiveSync(turtleDB, recaller, path)
   }
 
   if (config.origin) {

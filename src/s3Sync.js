@@ -5,6 +5,7 @@ import { TurtleBranchUpdater } from '../cv6t981m0a2ou7fil4f88ujf6kpj2lojceycv1gd
 export async function s3Sync (turtleDB, recaller, endpoint, region, accessKeyId, secretAccessKey, bucket) {
   /** @type {import('@aws-sdk/client-s3').S3ClientConfig} */
   const s3Client = new S3Client({
+    requestHandler: { httpsAgent: { maxSockets: 500 } },
     endpoint,
     forcePathStyle: false,
     region,

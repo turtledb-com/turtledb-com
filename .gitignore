@@ -10,6 +10,9 @@ node_modules/
 # self signed certs for dev go here
 dev/
 
+# maybe we'll want to add this later
+archive/
+
 # for running server with --interactive
 .node_repl_history
 

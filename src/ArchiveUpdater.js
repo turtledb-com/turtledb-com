@@ -1,7 +1,7 @@
 import { join } from 'path'
 import { AbstractUpdater } from '../cv6t981m0a2ou7fil4f88ujf6kpj2lojceycv1gdcq23wlzqi2/js/turtle/connections/AbstractUpdater.js'
 import { getExistenceLength } from './getExistenceLength.js'
-import { access, readFile, writeFile } from 'fs/promises'
+import { access, mkdir, readFile, writeFile } from 'fs/promises'
 import { verifyCommitU8a } from '../cv6t981m0a2ou7fil4f88ujf6kpj2lojceycv1gdcq23wlzqi2/js/turtle/Signer.js'
 
 /**
@@ -26,6 +26,7 @@ export class ArchiveUpdater extends AbstractUpdater {
   }
 
   indexToPath (index) {
+    if (index === undefined) return join(this.path, this.publicKey)
     return join(this.path, this.publicKey, index.toString(32).padStart(6, '0'))
   }
 
@@ -42,9 +43,15 @@ export class ArchiveUpdater extends AbstractUpdater {
         return false
       }
     }
-    if (this.#lengthPromise === undefined) {
-      this.#lengthPromise = getExistenceLength(getExists)
-      this.#lengthPromise.then(length => { this.#length = length })
+    if (!this.#lengthPromise) {
+      const path = join(this.path, this.publicKey)
+      this.#lengthPromise = (async () => {
+        if (!(await getExists())) {
+          await mkdir(path, { recursive: true })
+        }
+        this.#length = await getExistenceLength(getExists)
+        return this.#length
+      })()
     }
     return this.#lengthPromise
   }
@@ -77,29 +84,10 @@ export class ArchiveUpdater extends AbstractUpdater {
         }
         const verified = await verifyCommitU8a(this.publicKey, uint8Array, previousUint8Array)
         if (!verified) throw new Error('bad signature')
-        await writeFile(this.indexToPath(this.#length), uint8Array)
+        await writeFile(this.indexToPath(this.#length), uint8Array, 'binary')
         ++this.#length
         return uint8Array
       })()
-      /*
-      let resolve, reject
-      this.#getPromises[this.#length] = new Promise((...args) => { [resolve, reject] = args })
-      let previousUint8Array
-      if (this.#length > 0) {
-        previousUint8Array = await this.getUint8Array(this.#length - 1)
-      }
-      const verified = await verifyCommitU8a(this.publicKey, uint8Array, previousUint8Array)
-      if (!verified) throw new Error('bad signature')
-      try {
-        await this.s3Client.send(new PutObjectCommand({
-          Bucket: this.bucket,
-          Body: uint8Array,
-          Key: S3Updater.indexToKey(this.publicKey, this.#length)
-        }))
-        ++this.#length
-        resolve(uint8Array)
-      } catch (error) { reject(error) }
-       */
     }
     return this.#getPromises[this.#length]
   }
