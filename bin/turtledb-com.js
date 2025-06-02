@@ -5,12 +5,12 @@ import { start } from 'repl'
 import { Option, program } from 'commander'
 import { fsSync } from '../src/fsSync.js'
 import { webSync } from '../src/webSync.js'
-import { Signer } from '../cv6t981m0a2ou7fil4f88ujf6kpj2lojceycv1gdcq23wlzqi2/js/turtle/Signer.js'
-import { TurtleDictionary } from '../cv6t981m0a2ou7fil4f88ujf6kpj2lojceycv1gdcq23wlzqi2/js/turtle/TurtleDictionary.js'
-import { Workspace } from '../cv6t981m0a2ou7fil4f88ujf6kpj2lojceycv1gdcq23wlzqi2/js/turtle/Workspace.js'
-import { Recaller } from '../cv6t981m0a2ou7fil4f88ujf6kpj2lojceycv1gdcq23wlzqi2/js/utils/Recaller.js'
-import { AS_REFS } from '../cv6t981m0a2ou7fil4f88ujf6kpj2lojceycv1gdcq23wlzqi2/js/turtle/codecs/CodecType.js'
-import { TurtleDB } from '../cv6t981m0a2ou7fil4f88ujf6kpj2lojceycv1gdcq23wlzqi2/js/turtle/connections/TurtleDB.js'
+import { Signer } from '../branches/cv6t981m0a2ou7fil4f88ujf6kpj2lojceycv1gdcq23wlzqi2/js/turtle/Signer.js'
+import { TurtleDictionary } from '../branches/cv6t981m0a2ou7fil4f88ujf6kpj2lojceycv1gdcq23wlzqi2/js/turtle/TurtleDictionary.js'
+import { Workspace } from '../branches/cv6t981m0a2ou7fil4f88ujf6kpj2lojceycv1gdcq23wlzqi2/js/turtle/Workspace.js'
+import { Recaller } from '../branches/cv6t981m0a2ou7fil4f88ujf6kpj2lojceycv1gdcq23wlzqi2/js/utils/Recaller.js'
+import { AS_REFS } from '../branches/cv6t981m0a2ou7fil4f88ujf6kpj2lojceycv1gdcq23wlzqi2/js/turtle/codecs/CodecType.js'
+import { TurtleDB } from '../branches/cv6t981m0a2ou7fil4f88ujf6kpj2lojceycv1gdcq23wlzqi2/js/turtle/connections/TurtleDB.js'
 import { s3Sync } from '../src/s3Sync.js'
 import { originSync } from '../src/originSync.js'
 import { outletSync } from '../src/outletSync.js'
@@ -19,7 +19,7 @@ import { projectAction } from '../src/projectAction.js'
 import { archiveSync } from '../src/archiveSync.js'
 
 /**
- * @typedef {import('../cv6t981m0a2ou7fil4f88ujf6kpj2lojceycv1gdcq23wlzqi2/js/turtle/connections/TurtleDB.js').TurtleBranchStatus} TurtleBranchStatus
+ * @typedef {import('../branches/cv6t981m0a2ou7fil4f88ujf6kpj2lojceycv1gdcq23wlzqi2/js/turtle/connections/TurtleDB.js').TurtleBranchStatus} TurtleBranchStatus
  */
 
 const { version } = JSON.parse(readFileSync(new URL('../package.json', import.meta.url)))
@@ -85,10 +85,9 @@ program
   .addOption(new Option('--s3-access-key-id <string>', 'accessKeyId for s3').env('TURTLEDB_S3_ACCESS_KEY_ID'))
   .addOption(new Option('--s3-secret-access-key <string>', 'secretAccessKey for s3').env('TURTLEDB_S3_SECRET_ACCESS_KEY'))
   .option('--disable-s3', 'disable S3', false)
-  .option('-n, --fs-name <name...>', 'names of turtles to sync files with', [])
-  .option('-j, --fs-obj <name...>', 'name of objects in turtles to store files in (default: fs)', [])
-  .option('-k, --fs-public-key <string...>', 'public key of turtles to sync files with', [])
-  .option('--fs-public-key-obj <name...>', 'name of objects in readonly turtles to store files in (default: fs)', [])
+  .option('-n, --fs-name <name...>', 'names of branches to sync files with', [])
+  .option('-k, --fs-key <string...>', 'public keys of branches to sync files with', [])
+  .option('-b, --fs-folder <string>', 'folder to sync branches into', 'branches')
   .option('-w, --web-name <name>', 'name of turtle to use for web assets', 'public')
   .option('-x, --web-key <string>', 'public key of turtle to use for web assets', defaultCpk)
   .option('-p, --web-port <number>', 'web server port number', x => +x, 0)
@@ -108,11 +107,6 @@ program
 
 async function startServer (config = getConfigFromOptions(program.opts())) {
   console.log(config)
-  if (config.archive) {
-    const { path } = config.archive
-    archiveSync(turtleDB, recaller, path)
-  }
-
   if (config.origin) {
     const { origin } = config
     originSync(turtleDB, origin.host, origin.port)
@@ -123,22 +117,27 @@ async function startServer (config = getConfigFromOptions(program.opts())) {
     s3Sync(turtleDB, recaller, s3.endpoint, s3.region, s3.accessKeyId, s3.secretAccessKey, s3.bucket)
   }
 
+  if (config.archive) {
+    const { path } = config.archive
+    archiveSync(turtleDB, recaller, path)
+  }
+
   if (config.outlet) {
     const { outlet } = config
     outletSync(turtleDB, outlet.port)
   }
 
   if (config.fsReadWrite) {
-    const { fsReadWrite } = config
+    const { fsReadWrite, fsFolder } = config
     for (let i = 0; i < fsReadWrite.length; ++i) {
-      fsSync(fsReadWrite[i].name, turtleDB, config.signer, fsReadWrite[i].obj)
+      fsSync(fsReadWrite[i].name, turtleDB, config.signer, fsFolder)
     }
   }
 
   if (config.fsReadOnly) {
-    const { fsReadOnly } = config
+    const { fsReadOnly, fsFolder } = config
     for (let i = 0; i < fsReadOnly.length; ++i) {
-      fsSync(fsReadOnly[i].key, turtleDB, undefined, fsReadOnly[i].obj)
+      fsSync(fsReadOnly[i].key, turtleDB, undefined, fsFolder)
     }
   }
 

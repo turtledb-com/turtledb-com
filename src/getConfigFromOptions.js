@@ -1,15 +1,27 @@
 import { readFileSync } from 'fs'
 import { question } from 'readline-sync'
-import { Signer } from '../cv6t981m0a2ou7fil4f88ujf6kpj2lojceycv1gdcq23wlzqi2/js/turtle/Signer.js'
+import { Signer } from '../branches/cv6t981m0a2ou7fil4f88ujf6kpj2lojceycv1gdcq23wlzqi2/js/turtle/Signer.js'
 
 /**
  * @typedef {{endpoint: string, region: string, bucket: string, accessKeyId: string, secretAccessKey: string}} TDBConfigS3
- * @typedef {Array.<{name: string, obj: string}>} TDBConfigFsReadWrite
- * @typedef {Array.<{key: string, obj: string}>} TDBConfigFsReadOnly
+ * @typedef {Array.<{name: string }>} TDBConfigFsReadWrite
+ * @typedef {Array.<{key: string }>} TDBConfigFsReadOnly
  * @typedef {{name: string, key: string, port: number, fallback: string, https: boolean, insecure: boolean, certpath: string}} TDBConfigWeb
  * @typedef {{host: string, port: number}} TDBConfigOrigin
  * @typedef {{port: number}} TDBConfigOutlet
- * @typedef {{username: string, password: string, interactive: boolean, s3: TDBConfigS3, fsReadWrite: TDBConfigFsReadWrite, fsReadOnly: TDBConfigFsReadOnly, web: TDBConfigWeb, origin: TDBConfigOrigin, outlet: TDBConfigOutlet}} TDBConfig
+ * @typedef {{
+ *            username: string,
+ *            password: string,
+ *            archive: {path: string},
+ *            interactive: boolean,
+ *            s3: TDBConfigS3,
+ *            fsReadWrite: TDBConfigFsReadWrite,
+ *            fsReadOnly: TDBConfigFsReadOnly,
+ *            fsFolder: string,
+ *            web: TDBConfigWeb,
+ *            origin: TDBConfigOrigin,
+ *            outlet: TDBConfigOutlet
+ *          }} TDBConfig
  */
 
 /**
@@ -39,14 +51,14 @@ function combineConfigs (configs) {
  * @returns {TDBConfig}
  */
 export function getConfigFromOptions (options, overrideConfig = {}) {
-  const { username, password, s3EndPoint, s3Region, s3Bucket, s3AccessKeyId, s3SecretAccessKey, disableS3, fsName, fsObj, fsPublicKey, fsPublicKeyObj, webName, webKey, webPort, webFallback, originHost, originPort, outletPort, https, insecure, certpath, interactive, config: configFile, remoteConfig, archive, archivePath } = options
+  const { username, password, s3EndPoint, s3Region, s3Bucket, s3AccessKeyId, s3SecretAccessKey, disableS3, fsName, fsKey, fsFolder, webName, webKey, webPort, webFallback, originHost, originPort, outletPort, https, insecure, certpath, interactive, config: configFile, remoteConfig, archive, archivePath } = options
   /** @type {TDBConfig} */
   const defaultsConfig = configFile ? JSON.parse(readFileSync(configFile, 'utf8')) : {}
   /** @type {TDBConfig} */
   const optionsConfig = {}
   if (username) optionsConfig.username = username
   if (password) optionsConfig.password = password
-  if (archive) optionsConfig.archive = { path: archivePath }
+  if (archive && archivePath) optionsConfig.archive = { path: archivePath }
   if (typeof interactive === 'boolean') optionsConfig.interactive = interactive
   if (!disableS3 && (s3EndPoint || s3Region || s3Bucket || s3AccessKeyId || s3SecretAccessKey)) {
     optionsConfig.s3 = {
@@ -58,16 +70,13 @@ export function getConfigFromOptions (options, overrideConfig = {}) {
     }
   }
   if (fsName?.length) {
-    optionsConfig.fsReadWrite = fsName.map((name, index) => ({
-      name,
-      obj: fsObj?.[index] ?? 'fs'
-    }))
+    optionsConfig.fsReadWrite = fsName.map(name => ({ name }))
   }
-  if (fsPublicKey?.length) {
-    optionsConfig.fsReadOnly = fsPublicKey.map((key, index) => ({
-      key,
-      obj: fsPublicKeyObj?.[index] ?? 'fs'
-    }))
+  if (fsKey?.length) {
+    optionsConfig.fsReadOnly = fsKey.map(key => ({ key }))
+  }
+  if (fsFolder) {
+    optionsConfig.fsFolder = fsFolder
   }
   if (webPort) {
     optionsConfig.web = {
