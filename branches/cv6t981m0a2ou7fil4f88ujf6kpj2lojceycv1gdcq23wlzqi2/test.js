@@ -63,13 +63,13 @@ webSocketMuxFactory(turtleDB, async tbMux => {
 
     connectedCallback () {
       const summary = h`
-      <summary>
-        <span class="type">${() => this.runner.type}</span>
-        <span class="run-state">${() => this.runner.runState}</span>
-        <span class="name">${() => this.runner.name}</span>
-        ${showIfElse(() => this.runner._only, h`<${elementName} runner=${() => this.runner._only} key="only"/>`)}
-      </summary>
-    `
+        <summary>
+          <span class="type">${() => this.runner.type}</span>
+          <span class="run-state">${() => this.runner.runState}</span>
+          <span class="name">${() => this.runner.name}</span>
+          ${showIfElse(() => this.runner._only, h`<${elementName} runner=${() => this.runner._only} key="only"/>`)}
+        </summary>
+      `
       const getRunnerCardClass = () => ['runner-card', this.runner.type, this.runner.runState].join(' ')
       const getDetailsAttributes = () => {
         const detailsAttributes = { class: getRunnerCardClass() }

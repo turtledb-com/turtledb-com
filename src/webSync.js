@@ -71,7 +71,7 @@ export async function webSync (port, basePublicKey, turtleDB, https, insecure, c
       console.error(error)
     }
   })
-  app.use(express.static(root))
+  // app.use(express.static(root))
 
   let server
   if (https || insecure) {
