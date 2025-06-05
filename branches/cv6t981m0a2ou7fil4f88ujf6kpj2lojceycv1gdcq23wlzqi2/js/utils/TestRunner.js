@@ -4,10 +4,13 @@ import { Recaller } from './Recaller.js'
 import { ERROR, FAIL, ONLY, PASS, RUNNER, RUNNING, SUITE, TEST, WAIT } from './TestRunnerConstants.js'
 
 export function urlToName (url) {
-  console.log(url)
-  const { pathname } = new URL(url)
-  const path = pathname.split(/\//).slice(2)
-  return path.join('/')
+  if (typeof window !== 'undefined' && window?.location?.origin && url.startsWith(window.location.origin)) {
+    url = url.slice(window.location.origin.length)
+  }
+  url = /(?<=\/public\/).*/.exec(url)?.[0] ?? url
+  const parsed = /(?<path>[^?]*)\.test\.js?.*address=(?<address>[^&]*)/.exec(url)
+  if (parsed) url = `${parsed.groups.path} [&${parsed.groups.address}]`
+  return url
 }
 
 export const testRunnerRecaller = new Recaller('TestRunner')

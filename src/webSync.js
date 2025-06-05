@@ -64,6 +64,28 @@ export async function webSync (port, basePublicKey, turtleDB, https, insecure, c
           res.type(type)
           res.send(body)
         } else {
+          try {
+            const configJson = JSON.parse(turtleBranch?.lookup?.('document', 'value', 'config.json'))
+            console.log({ configJson })
+            const branchGroups = ['fsReadWrite', 'fsReadOnly']
+            for (const branchGroup of branchGroups) {
+              const branches = configJson[branchGroup]
+              if (branches) {
+                console.log(branches)
+                for (const { name, key } of branches) {
+                  if (name && key) {
+                    const nickname = `/${urlPublicKey}/${name}/`
+                    if (pathname.startsWith(nickname)) {
+                      url.pathname = `/${key}/${pathname.slice(nickname.length)}`
+                      return res.redirect(301, url.toString())
+                    }
+                  }
+                }
+              }
+            }
+          } catch {
+            console.log('not found, no config', pathname)
+          }
           next()
         }
       }

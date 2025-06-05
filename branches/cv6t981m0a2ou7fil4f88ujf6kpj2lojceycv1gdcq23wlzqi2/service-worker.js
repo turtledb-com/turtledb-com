@@ -77,7 +77,6 @@ serviceWorkerGlobalScope.addEventListener('fetch', fetchEvent => {
   const url = new URL(fetchEvent.request.url)
   const { pathname, searchParams } = url
   const matchGroups = pathname.match(/\/(?<urlPublicKey>[0-9A-Za-z]{41,51})(?<slash>\/?)(?<relativePath>.*)$/)?.groups
-  // console.log('service-worker fetch', url)
   try {
     if (matchGroups?.urlPublicKey) {
       const { urlPublicKey, slash, relativePath } = matchGroups
@@ -99,6 +98,28 @@ serviceWorkerGlobalScope.addEventListener('fetch', fetchEvent => {
             const contentType = contentTypeByExtension[type]
             const response = new Response(new Blob([body], { headers: { type: contentType } }), { headers: { 'Content-Type': contentType } })
             return response
+          } else {
+            try {
+              const configJson = JSON.parse(turtleBranch?.lookup?.('document', 'value', 'config.json'))
+              const branchGroups = ['fsReadWrite', 'fsReadOnly']
+              for (const branchGroup of branchGroups) {
+                const branches = configJson[branchGroup]
+                if (branches) {
+                  for (const { name, key } of branches) {
+                    if (name && key) {
+                      const nickname = `/${urlPublicKey}/${name}/`
+                      if (pathname.startsWith(nickname)) {
+                        const pathFromKey = pathname.slice(nickname.length)
+                        url.pathname = `/${key}/${pathFromKey}`
+                        return Response.redirect(url.toString(), 301)
+                      }
+                    }
+                  }
+                }
+              }
+            } catch {
+              console.log('not found, no config', pathname)
+            }
           }
         }))
       }
