@@ -36,7 +36,7 @@ export async function webSync (port, basePublicKey, turtleDB, https, insecure, c
       res.send(JSON.stringify({ workspace: { uuid, root } }))
       return
     }
-    const url = new URL(req.url, 'https://turtledb.com')
+    const url = new URL(req.url, `${req.protocol}://${req.host}`)
     const { pathname, searchParams } = url
     if (pathname === '/') {
       res.redirect(301, `/${basePublicKey}/index.html`)
