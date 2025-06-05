@@ -129,7 +129,7 @@ export class U8aTurtle {
       u8aTurtle = u8aTurtle.getAncestorByAddress(address)
       const codecVersion = codec.getCodecTypeVersion(u8aTurtle.getByte(address))
       const ref = codecVersion.decode(u8aTurtle, address, AS_REFS)
-      if (!Object.hasOwn(ref, path[0])) return
+      if (!ref || !Object.hasOwn(ref, path[0])) return
       address = ref[path.shift()]
     }
     if (address instanceof Uint8Array) return address

@@ -27,7 +27,7 @@ export async function webSync (port, basePublicKey, turtleDB, https, insecure, c
   const root = join(process.cwd(), basePublicKey)
   const app = express()
   app.use((req, _res, next) => {
-    console.log(req.method, req.url)
+    console.log(req.method, req.url, req.originalUrl)
     next()
   })
   app.use(async (req, res, next) => {

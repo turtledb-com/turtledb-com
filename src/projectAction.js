@@ -3,28 +3,29 @@ import { getConfigFromOptions } from './getConfigFromOptions.js'
 import { join } from 'path'
 
 export function projectAction (projectname, username, options, defaultCpk) {
-  const overrideConfig = { fsReadWrite: [{ name: projectname, obj: 'fs' }] }
+  const overrideConfig = { fsReadWrite: [{ name: projectname }] }
   if (username) {
     overrideConfig.username = username
     overrideConfig.password = null
   }
   const config = getConfigFromOptions(options, overrideConfig)
-  console.log(config)
-  const projectPath = join(process.cwd(), projectname)
+  // console.log(config)
+  const projectPath = process.cwd()
   if (!existsSync(projectPath)) mkdirSync(projectPath)
-  console.log(`writing ${projectname}/.gitignore`)
+  console.log(`writing ${projectPath}/.gitignore`)
   writeFileSync(join(projectPath, '.gitignore'), [
     '.env',
     'node_modules/',
     'dev/',
+    'node_repl_history',
     ''
   ].join('\n'))
-  console.log(`writing ${projectname}/.env`)
+  console.log(`writing ${projectPath}/.env`)
   writeFileSync(join(projectPath, '.env'), [
     `TURTLEDB_USERNAME="${config.username}"`,
     `TURTLEDB_PASSWORD="${config.password}"`
   ].join('\n') + '\n')
-  console.log(`writing ${projectname}/package.json`)
+  console.log(`writing ${projectPath}/package.json`)
   writeFileSync(join(projectPath, 'package.json'), JSON.stringify({
     name: projectname,
     author: config.username,
@@ -33,11 +34,12 @@ export function projectAction (projectname, username, options, defaultCpk) {
       start: 'source .env && npx turtledb-com --config config.json'
     }
   }, null, 2) + '\n')
-  console.log(`writing ${projectname}/config.json`)
+  console.log(`writing ${projectPath}/config.json`)
   writeFileSync(join(projectPath, 'config.json'), JSON.stringify({
     interactive: true,
-    fsReadOnly: [{ key: defaultCpk, obj: 'fs' }],
-    fsReadWrite: [{ name: projectname, obj: 'fs' }],
+    archive: { path: 'archive' },
+    fsReadOnly: [{ key: defaultCpk }],
+    fsReadWrite: [{ name: projectname }],
     web: {
       name: projectname,
       port: 8080,

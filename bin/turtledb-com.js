@@ -18,10 +18,6 @@ import { getConfigFromOptions } from '../src/getConfigFromOptions.js'
 import { projectAction } from '../src/projectAction.js'
 import { archiveSync } from '../src/archiveSync.js'
 
-/**
- * @typedef {import('../branches/cv6t981m0a2ou7fil4f88ujf6kpj2lojceycv1gdcq23wlzqi2/js/turtle/connections/TurtleDB.js').TurtleBranchStatus} TurtleBranchStatus
- */
-
 const { version } = JSON.parse(readFileSync(new URL('../package.json', import.meta.url)))
 const recaller = new Recaller('turtledb-com')
 const turtleDB = new TurtleDB('turtledb-com', recaller)
@@ -31,39 +27,6 @@ const defaultCpk = 'cv6t981m0a2ou7fil4f88ujf6kpj2lojceycv1gdcq23wlzqi2'
 program
   .name('turtledb-com')
   .version(version)
-program
-  .command('dev')
-  .description('start a local dev server and syncing to local file-system')
-  .argument('<string>', 'turtle branch name')
-  .argument('[string]', 'username for Signer')
-  .action((fsName, username) => {
-    const config = getConfigFromOptions(program.opts(), {
-      username,
-      interactive: true,
-      fsReadWrite: [
-        {
-          name: fsName,
-          obj: 'fs'
-        }
-      ],
-      fsReadOnly: [
-        {
-          key: defaultCpk,
-          obj: 'fs'
-        }
-      ],
-      web: {
-        name: fsName,
-        port: 8080,
-        fallback: defaultCpk,
-        https: true,
-        insecure: true,
-        certpath: 'dev/cert.json'
-      },
-      s3: null
-    })
-    console.log(config)
-  })
 program
   .command('project')
   .description('a basic local setup for developing a project')
@@ -84,7 +47,7 @@ program
   .addOption(new Option('--s3-bucket <string>', 'bucket for s3').env('TURTLEDB_S3_BUCKET'))
   .addOption(new Option('--s3-access-key-id <string>', 'accessKeyId for s3').env('TURTLEDB_S3_ACCESS_KEY_ID'))
   .addOption(new Option('--s3-secret-access-key <string>', 'secretAccessKey for s3').env('TURTLEDB_S3_SECRET_ACCESS_KEY'))
-  .option('--disable-s3', 'disable S3', false)
+  .option('--no-s3', 'disable S3', false)
   .option('-n, --fs-name <name...>', 'names of branches to sync files with', [])
   .option('-k, --fs-key <string...>', 'public keys of branches to sync files with', [])
   .option('-b, --fs-folder <string>', 'folder to sync branches into', 'branches')

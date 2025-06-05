@@ -51,7 +51,7 @@ function combineConfigs (configs) {
  * @returns {TDBConfig}
  */
 export function getConfigFromOptions (options, overrideConfig = {}) {
-  const { username, password, s3EndPoint, s3Region, s3Bucket, s3AccessKeyId, s3SecretAccessKey, disableS3, fsName, fsKey, fsFolder, webName, webKey, webPort, webFallback, originHost, originPort, outletPort, https, insecure, certpath, interactive, config: configFile, remoteConfig, archive, archivePath } = options
+  const { username, password, s3EndPoint, s3Region, s3Bucket, s3AccessKeyId, s3SecretAccessKey, s3, fsName, fsKey, fsFolder, webName, webKey, webPort, webFallback, originHost, originPort, outletPort, https, insecure, certpath, interactive, config: configFile, remoteConfig, archive, archivePath } = options
   /** @type {TDBConfig} */
   const defaultsConfig = configFile ? JSON.parse(readFileSync(configFile, 'utf8')) : {}
   /** @type {TDBConfig} */
@@ -60,7 +60,9 @@ export function getConfigFromOptions (options, overrideConfig = {}) {
   if (password) optionsConfig.password = password
   if (archive && archivePath) optionsConfig.archive = { path: archivePath }
   if (typeof interactive === 'boolean') optionsConfig.interactive = interactive
-  if (!disableS3 && (s3EndPoint || s3Region || s3Bucket || s3AccessKeyId || s3SecretAccessKey)) {
+  if (s3 === false) {
+    optionsConfig.s3 = null
+  } else if (s3EndPoint || s3Region || s3Bucket || s3AccessKeyId || s3SecretAccessKey) {
     optionsConfig.s3 = {
       endpoint: s3EndPoint,
       region: s3Region,

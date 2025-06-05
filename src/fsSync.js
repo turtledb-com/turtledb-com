@@ -1,5 +1,5 @@
 import { watch } from 'chokidar'
-import { mkdir, readFile, unlink, writeFile } from 'fs/promises'
+import { lstat, mkdir, readFile, unlink, writeFile } from 'fs/promises'
 import { dirname, join, relative } from 'path'
 import { existsSync, mkdirSync } from 'fs'
 
@@ -44,6 +44,7 @@ export async function fsSync (name, turtleDB, signer, folder) {
     let isHandlingChokidar
     const getPathHandlerFor = action => async path => {
       console.log('(fsSync)', action, path)
+      if ((await lstat(path)).isSymbolicLink()) return
       const isFirst = !Object.keys(nextActionsByPath).length && !isHandlingChokidar
       isHandlingChokidar = true
       const relativePath = relative(publicKeyFolder, path)
@@ -81,7 +82,7 @@ export async function fsSync (name, turtleDB, signer, folder) {
         endTurn()
       }, 500) // delay should take longer than the commit
     }
-    watch(publicKeyFolder, { ignored })
+    watch(publicKeyFolder, { ignored, followSymlinks: false })
       .on('add', getPathHandlerFor(UPDATED_FILE))
       .on('change', getPathHandlerFor(UPDATED_FILE))
       .on('unlink', getPathHandlerFor(REMOVED_FILE))
