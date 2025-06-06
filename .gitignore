@@ -10,6 +10,9 @@ node_modules/
 # self signed certs for dev go here
 dev/
 
+# quick tests
+temp/
+
 # maybe we'll want to add this later
 archive/
 

@@ -69,7 +69,10 @@ program
   .parse()
 
 async function startServer (config = getConfigFromOptions(program.opts())) {
-  console.log(config)
+  const configCopy = JSON.parse(JSON.stringify(config))
+  if (configCopy.password) configCopy.password = '****'
+  if (configCopy.s3) configCopy.s3.secretAccessKey = '****'
+  console.log(configCopy)
   if (config.origin) {
     const { origin } = config
     originSync(turtleDB, origin.host, origin.port)
