@@ -3,7 +3,6 @@ import { TurtleDictionary } from '../TurtleDictionary.js'
 import { TurtleBranchUpdater } from './TurtleBranchUpdater.js'
 import { TurtleDB } from './TurtleDB.js'
 import { TurtleTalker } from './TurtleTalker.js'
-import { b36ToUint8Array } from '../utils.js'
 
 /**
  * @typedef {import('../U8aTurtle.js').U8aTurtle} U8aTurtle
@@ -34,14 +33,16 @@ export class TurtleBranchMultiplexer extends TurtleTalker {
   async appendGeneratedIncomingForever () {
     try {
       for await (const u8aTurtle of this.incomingBranch.u8aTurtleGenerator()) {
-        const { address, name, publicKey } = u8aTurtle.lookup()
+        const incoming = u8aTurtle.lookup()
+        if (!incoming) continue
+        const { address, /* name, */ publicKey } = incoming
         if (!(address || publicKey)) {
           throw new Error('address or publicKey required')
         }
         const uint8Array = u8aTurtle.lookup(address)
         const turtleBranchUpdater = await this.getTurtleBranchUpdater(this.name, publicKey)
         turtleBranchUpdater.incomingBranch.append(uint8Array)
-        const uint8ArrayAddresses = turtleBranchUpdater.incomingBranch.lookup('uint8ArrayAddresses')
+        // const uint8ArrayAddresses = turtleBranchUpdater.incomingBranch.lookup('uint8ArrayAddresses')
       }
     } catch (error) {
       console.error(error)
@@ -61,7 +62,7 @@ export class TurtleBranchMultiplexer extends TurtleTalker {
     this.outgoingDictionary.upsert(update)
     this.outgoingDictionary.squash(this.outgoingBranch.index + 1)
     this.outgoingBranch.u8aTurtle = this.outgoingDictionary.u8aTurtle
-    const uint8ArrayAddresses = turtleBranchUpdater.outgoingBranch.lookup('uint8ArrayAddresses')
+    // const uint8ArrayAddresses = turtleBranchUpdater.outgoingBranch.lookup('uint8ArrayAddresses')
   }
 
   /**
