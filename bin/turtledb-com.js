@@ -47,7 +47,7 @@ program
   .addOption(new Option('--s3-bucket <string>', 'bucket for s3').env('TURTLEDB_S3_BUCKET'))
   .addOption(new Option('--s3-access-key-id <string>', 'accessKeyId for s3').env('TURTLEDB_S3_ACCESS_KEY_ID'))
   .addOption(new Option('--s3-secret-access-key <string>', 'secretAccessKey for s3').env('TURTLEDB_S3_SECRET_ACCESS_KEY'))
-  .option('--no-s3', 'disable S3', false)
+  .option('--no-s3', 'disable S3')
   .option('-n, --fs-name <name...>', 'names of branches to sync files with', [])
   .option('-k, --fs-key <string...>', 'public keys of branches to sync files with', [])
   .option('-b, --fs-folder <string>', 'folder to sync branches into', 'branches')
