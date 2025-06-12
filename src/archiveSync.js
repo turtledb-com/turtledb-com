@@ -18,7 +18,7 @@ export async function archiveSync (turtleDB, recaller, path) {
     const name = turtleBranch.name
     const publicKey = status.publicKey
     const archiveUpdater = new ArchiveUpdater(`to_archive_#${name}`, publicKey, recaller, path)
-    const tbUpdater = new TurtleBranchUpdater(`from_archive_#${name}`, turtleBranch, publicKey, false, recaller)
+    const tbUpdater = new TurtleBranchUpdater(`from_archive_#${name}`, turtleBranch, publicKey, true, recaller)
     archiveUpdater.connect(tbUpdater)
     archiveUpdater.start()
     tbUpdater.start()

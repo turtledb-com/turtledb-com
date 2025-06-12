@@ -1,26 +1,12 @@
 #!/usr/bin/env node
 
 import { readFileSync } from 'fs'
-import { start } from 'repl'
 import { Option, program } from 'commander'
-import { fsSync } from '../src/fsSync.js'
-import { webSync } from '../src/webSync.js'
-import { Signer } from '../branches/cv6t981m0a2ou7fil4f88ujf6kpj2lojceycv1gdcq23wlzqi2/js/turtle/Signer.js'
-import { TurtleDictionary } from '../branches/cv6t981m0a2ou7fil4f88ujf6kpj2lojceycv1gdcq23wlzqi2/js/turtle/TurtleDictionary.js'
-import { Workspace } from '../branches/cv6t981m0a2ou7fil4f88ujf6kpj2lojceycv1gdcq23wlzqi2/js/turtle/Workspace.js'
-import { Recaller } from '../branches/cv6t981m0a2ou7fil4f88ujf6kpj2lojceycv1gdcq23wlzqi2/js/utils/Recaller.js'
-import { AS_REFS } from '../branches/cv6t981m0a2ou7fil4f88ujf6kpj2lojceycv1gdcq23wlzqi2/js/turtle/codecs/CodecType.js'
-import { TurtleDB } from '../branches/cv6t981m0a2ou7fil4f88ujf6kpj2lojceycv1gdcq23wlzqi2/js/turtle/connections/TurtleDB.js'
-import { s3Sync } from '../src/s3Sync.js'
-import { originSync } from '../src/originSync.js'
-import { outletSync } from '../src/outletSync.js'
-import { getConfigFromOptions } from '../src/getConfigFromOptions.js'
 import { projectAction } from '../src/projectAction.js'
-import { archiveSync } from '../src/archiveSync.js'
+import { getConfigFromOptions } from '../src/getConfigFromOptions.js'
+import { startServer } from '../src/startServer.js'
 
 const { version } = JSON.parse(readFileSync(new URL('../package.json', import.meta.url)))
-const recaller = new Recaller('turtledb-com')
-const turtleDB = new TurtleDB('turtledb-com', recaller)
 
 const defaultCpk = 'cv6t981m0a2ou7fil4f88ujf6kpj2lojceycv1gdcq23wlzqi2'
 
@@ -38,7 +24,7 @@ program
 program
   .command('default', { isDefault: true })
   .description('start services based on command-line only')
-  .action(() => startServer())
+  .action(() => startServer(getConfigFromOptions(program.opts())))
 program
   .addOption(new Option('--username <string>', 'username to use for Signer').env('TURTLEDB_USERNAME'))
   .addOption(new Option('--password <string>', 'password to use for Signer').env('TURTLEDB_PASSWORD'))
@@ -67,63 +53,3 @@ program
   .option('-a, --archive', 'download all turtle layers', false)
   .option('--archive-path', 'folder to archive to', 'archive')
   .parse()
-
-async function startServer (config = getConfigFromOptions(program.opts())) {
-  const configCopy = JSON.parse(JSON.stringify(config))
-  if (configCopy.password) configCopy.password = '****'
-  if (configCopy.s3) configCopy.s3.secretAccessKey = '****'
-  console.log(configCopy)
-  if (config.origin) {
-    const { origin } = config
-    originSync(turtleDB, origin.host, origin.port)
-  }
-
-  if (config.s3) {
-    const { s3 } = config
-    s3Sync(turtleDB, recaller, s3.endpoint, s3.region, s3.accessKeyId, s3.secretAccessKey, s3.bucket)
-  }
-
-  if (config.archive) {
-    const { path } = config.archive
-    archiveSync(turtleDB, recaller, path)
-  }
-
-  if (config.outlet) {
-    const { outlet } = config
-    outletSync(turtleDB, outlet.port)
-  }
-
-  if (config.fsReadWrite) {
-    const { fsReadWrite, fsFolder } = config
-    for (let i = 0; i < fsReadWrite.length; ++i) {
-      fsSync(fsReadWrite[i].name, turtleDB, config.signer, fsFolder)
-    }
-  }
-
-  if (config.fsReadOnly) {
-    const { fsReadOnly, fsFolder } = config
-    for (let i = 0; i < fsReadOnly.length; ++i) {
-      fsSync(fsReadOnly[i].key, turtleDB, undefined, fsFolder)
-    }
-  }
-
-  if (config.web) {
-    const { web } = config
-    const key = web.key ?? (await config.signer.makeKeysFor(web.name)).publicKey
-    webSync(web.port, key, turtleDB, web.https, web.insecure, web.certpath, web.fallback)
-  }
-
-  if (config.interactive) {
-    global.signer = config.signer
-    global.turtleDB = turtleDB
-    global.TurtleDictionary = TurtleDictionary
-    global.Signer = Signer
-    global.Workspace = Workspace
-    global.AS_REFS = AS_REFS
-    const replServer = start({ breakEvalOnSigint: true })
-    replServer.setupHistory('.node_repl_history', err => {
-      if (err) console.error(err)
-    })
-    replServer.on('exit', process.exit)
-  }
-}

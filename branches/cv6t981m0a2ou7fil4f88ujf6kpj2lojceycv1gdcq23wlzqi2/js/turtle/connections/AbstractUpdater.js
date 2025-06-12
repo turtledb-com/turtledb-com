@@ -38,7 +38,7 @@ export class AbstractUpdater extends TurtleTalker {
   }
 
   async getUint8ArraysLength () { throw new Error('class extending AbstractTurtleTalker must implement getUint8ArraysLength') }
-  async setUint8ArraysLength (length) { throw new Error('class extending AbstractTurtleTalker must implement getUint8ArraysLength') }
+  async setUint8ArraysLength (length) { throw new Error('class extending AbstractTurtleTalker must implement setUint8ArraysLength') }
   async getUint8Array (index) { throw new Error('class extending AsyncTurtleBranchInterface must implement getUint8Array') }
   async pushUint8Array (uint8Array) { throw new Error('class extending AsyncTurtleBranchInterface must implement pushUint8Array') }
   async popUint8Array () { throw new Error('class extending AsyncTurtleBranchInterface must implement popUint8Array') }
