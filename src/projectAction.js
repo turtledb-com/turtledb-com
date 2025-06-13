@@ -1,9 +1,24 @@
 import { existsSync, mkdirSync, writeFileSync } from 'fs'
 import { getConfigFromOptions } from './getConfigFromOptions.js'
 import { join } from 'path'
+import { startServer } from './startServer.js'
 
 export function projectAction (projectname, username, options, defaultCpk) {
-  const overrideConfig = { fsReadWrite: [{ name: projectname }] }
+  const overrideConfig = {
+    interactive: true,
+    archive: { path: 'archive' },
+    fsReadOnly: [{ key: defaultCpk }],
+    fsReadWrite: [{ name: projectname }],
+    web: {
+      name: projectname,
+      port: 8080,
+      fallback: defaultCpk,
+      https: true,
+      insecure: true,
+      certpath: 'dev/cert.json'
+    },
+    origin: { host: 'turtledb.com', port: 1024 }
+  }
   if (username) {
     overrideConfig.username = username
     overrideConfig.password = null
@@ -35,21 +50,8 @@ export function projectAction (projectname, username, options, defaultCpk) {
     }
   }, null, 2) + '\n')
   console.log(`writing ${projectPath}/config.json`)
-  writeFileSync(join(projectPath, 'config.json'), JSON.stringify({
-    interactive: true,
-    archive: { path: 'archive' },
-    fsReadOnly: [{ key: defaultCpk }],
-    fsReadWrite: [{ name: projectname }],
-    web: {
-      name: projectname,
-      port: 8080,
-      fallback: defaultCpk,
-      https: true,
-      insecure: true,
-      certpath: 'dev/cert.json'
-    },
-    origin: { host: 'turtledb.com', port: 1024 }
-  }, null, 2) + '\n')
+  writeFileSync(join(projectPath, 'config.json'), JSON.stringify(overrideConfig, null, 2) + '\n')
   console.log(`project directory initialized: ${projectPath}`)
   console.log(`running 'npm start' from ${projectPath} `)
+  startServer(config)
 }

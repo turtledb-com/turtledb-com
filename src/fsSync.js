@@ -76,7 +76,7 @@ export async function fsSync (name, turtleDB, signer, folder) {
             lastJsobj = Object.assign({}, jsobj)
             await workspace.commit(jsobj, 'chokidar.watch')
           } else {
-            console.log('(fsSync) no change')
+            console.log(`(fsSync) no changed files in ${publicKeyFolder} ("${name}")`)
           }
         }
         endTurn()
