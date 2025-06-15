@@ -1,6 +1,6 @@
 {
   "name": "turtledb-com",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "description": "A humanly achievable way to create humanly useful applications",
   "type": "module",
   "repository": "git@github.com:turtledb-com/turtledb-com.git",
