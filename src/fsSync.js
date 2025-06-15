@@ -1,5 +1,5 @@
 import { watch } from 'chokidar'
-import { lstat, mkdir, readFile, unlink, writeFile } from 'fs/promises'
+import { lstat, mkdir, readFile, symlink, unlink, writeFile } from 'fs/promises'
 import { dirname, join, relative } from 'path'
 import { existsSync, mkdirSync } from 'fs'
 
@@ -9,7 +9,7 @@ import { existsSync, mkdirSync } from 'fs'
  * @typedef {import('../branches/cv6t981m0a2ou7fil4f88ujf6kpj2lojceycv1gdcq23wlzqi2/js/turtle/Workspace.js').Workspace} Workspace
  */
 
-export const ignored = /(?:\/node_modules\b|\/\..*|.*\.ico$|\.lock$|~$)/i
+export const ignored = /(?:\/node_modules\b|.*\.ico$|\.lock$|~$)/i
 
 const UPDATED_FILE = 'updated file'
 const REMOVED_FILE = 'removed file'
@@ -35,15 +35,19 @@ export async function fsSync (name, turtleDB, signer, folder) {
   let turtleBranch
   let publicKey
   let publicKeyFolder
+  const log = (action, path) => {
+    const relativePath = relative(publicKeyFolder, path)
+    console.log(`(fsSync) ${action} ${publicKeyFolder} ("${name}") / ${relativePath}`)
+  }
   if (signer) {
     const workspace = await turtleDB.makeWorkspace(signer, name)
     turtleBranch = workspace.committedBranch
     publicKey = (await signer.makeKeysFor(name)).publicKey
-    publicKeyFolder = join(folder, publicKey)
+    publicKeyFolder = join(folder, `.${publicKey}`)
     const nextActionsByPath = {}
     let isHandlingChokidar
     const getPathHandlerFor = action => async path => {
-      console.log('(fsSync)', action, path)
+      log(action, path)
       if ((await lstat(path)).isSymbolicLink()) return
       const isFirst = !Object.keys(nextActionsByPath).length && !isHandlingChokidar
       isHandlingChokidar = true
@@ -76,7 +80,7 @@ export async function fsSync (name, turtleDB, signer, folder) {
             lastJsobj = Object.assign({}, jsobj)
             await workspace.commit(jsobj, 'chokidar.watch')
           } else {
-            console.log(`(fsSync) no changed files in ${publicKeyFolder} ("${name}")`)
+            log('no changed files', publicKeyFolder)
           }
         }
         endTurn()
@@ -89,7 +93,7 @@ export async function fsSync (name, turtleDB, signer, folder) {
   } else {
     turtleBranch = await turtleDB.summonBoundTurtleBranch(name)
     publicKey = name
-    publicKeyFolder = join(folder, publicKey)
+    publicKeyFolder = join(folder, `.${publicKey}`)
   }
   if (!existsSync(folder)) mkdirSync(folder)
   if (!existsSync(publicKeyFolder)) mkdirSync(publicKeyFolder)
@@ -104,18 +108,42 @@ export async function fsSync (name, turtleDB, signer, folder) {
       for (const relativePath in jsobj) {
         const path = join(publicKeyFolder, relativePath)
         if (newJsobj[relativePath] === undefined) {
-          console.log('removing from committedBranch changes', relativePath)
+          log('change: file removed', path)
           changes.push(unlink(path))
         }
       }
       for (const relativePath in newJsobj) {
         const path = join(publicKeyFolder, relativePath)
         if (newJsobj[relativePath] !== jsobj[relativePath]) {
-          console.log('adding from committedBranch changes', relativePath)
-          changes.push(mkdir(dirname(path), { recursive: true }).then(() => writeFile(path, newJsobj[relativePath])))
+          log('change: file added', path)
+          changes.push(mkdir(dirname(path), { recursive: true }).then(async () => {
+            writeFile(path, newJsobj[relativePath])
+            if (relativePath === 'config.json') {
+              try {
+                const config = JSON.parse(newJsobj[relativePath])
+                for (const fsType of ['fsReadWrite', 'fsReadOnly']) {
+                  for (const { name, key } of config[fsType] || []) {
+                    if (name && key && key !== publicKey) {
+                      const keyPath = join('..', `.${key}`)
+                      const namePath = join(publicKeyFolder, name)
+                      try {
+                        await unlink(namePath)
+                      } catch {
+                      // don't worry about not deleting what isn't there
+                      }
+                      await symlink(keyPath, namePath)
+                    }
+                  }
+                }
+              } catch (err) {
+                console.log('unable to create symlinks')
+                console.error(err)
+              }
+            }
+          }))
         }
       }
-      if (changes.length) console.log('fs update from turtleBranch, changes.length', changes.length)
+      if (changes.length) log(`${changes.length} changes`, publicKeyFolder)
       await Promise.all(changes)
       jsobj = newJsobj
       lastJsobj = Object.assign({}, jsobj)

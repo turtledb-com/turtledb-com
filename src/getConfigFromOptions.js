@@ -20,7 +20,8 @@ import { Signer } from '../branches/cv6t981m0a2ou7fil4f88ujf6kpj2lojceycv1gdcq23
  *            fsFolder: string,
  *            web: TDBConfigWeb,
  *            origin: TDBConfigOrigin,
- *            outlet: TDBConfigOutlet
+ *            outlet: TDBConfigOutlet,
+ *            signer: Signer
  *          }} TDBConfig
  */
 

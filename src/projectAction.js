@@ -1,9 +1,9 @@
-import { existsSync, mkdirSync, writeFileSync } from 'fs'
 import { getConfigFromOptions } from './getConfigFromOptions.js'
 import { join } from 'path'
 import { startServer } from './startServer.js'
+import { lstat, mkdir, symlink, unlink, writeFile } from 'fs/promises'
 
-export function projectAction (projectname, username, options, defaultCpk) {
+export async function projectAction (projectname, username, options, defaultCpk) {
   const overrideConfig = {
     interactive: true,
     archive: { path: 'archive' },
@@ -24,11 +24,15 @@ export function projectAction (projectname, username, options, defaultCpk) {
     overrideConfig.password = null
   }
   const config = getConfigFromOptions(options, overrideConfig)
+  console.log(overrideConfig)
+  const { publicKey } = await config.signer.makeKeysFor(projectname)
+  console.log(projectname)
+  console.log({ publicKey, projectname })
   // console.log(config)
   const projectPath = process.cwd()
-  if (!existsSync(projectPath)) mkdirSync(projectPath)
+  if (!(await lstat(projectPath))) await mkdir(projectPath)
   console.log(`writing ${projectPath}/.gitignore`)
-  writeFileSync(join(projectPath, '.gitignore'), [
+  await writeFile(join(projectPath, '.gitignore'), [
     '.env',
     'node_modules/',
     'dev/',
@@ -36,12 +40,12 @@ export function projectAction (projectname, username, options, defaultCpk) {
     ''
   ].join('\n'))
   console.log(`writing ${projectPath}/.env`)
-  writeFileSync(join(projectPath, '.env'), [
+  await writeFile(join(projectPath, '.env'), [
     `TURTLEDB_USERNAME="${config.username}"`,
     `TURTLEDB_PASSWORD="${config.password}"`
   ].join('\n') + '\n')
   console.log(`writing ${projectPath}/package.json`)
-  writeFileSync(join(projectPath, 'package.json'), JSON.stringify({
+  await writeFile(join(projectPath, 'package.json'), JSON.stringify({
     name: projectname,
     author: config.username,
     license: 'GPL-3.0-or-later',
@@ -50,8 +54,19 @@ export function projectAction (projectname, username, options, defaultCpk) {
     }
   }, null, 2) + '\n')
   console.log(`writing ${projectPath}/config.json`)
-  writeFileSync(join(projectPath, 'config.json'), JSON.stringify(overrideConfig, null, 2) + '\n')
+  console.log(overrideConfig)
+  await writeFile(join(projectPath, 'config.json'), JSON.stringify(overrideConfig, null, 2) + '\n')
+  await mkdir(join(projectPath, 'branches'), { recursive: true })
+  const keyPath = join(projectPath, 'branches', `.${publicKey}`)
+  const namePath = join(projectPath, 'branches', projectname)
+  try {
+    await unlink(namePath)
+  } catch {
+    // don't worry about not deleting what isn't there
+  }
+  await symlink(keyPath, namePath)
   console.log(`project directory initialized: ${projectPath}`)
+  console.log(`https://www.turtledb.com/${publicKey}`)
   console.log(`running 'npm start' from ${projectPath} `)
   startServer(config)
 }
