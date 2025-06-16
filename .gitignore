@@ -11,7 +11,7 @@ node_modules/
 dev/
 
 # quick tests
-temp/
+temp*
 
 # maybe we'll want to add this later
 archive/

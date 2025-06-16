@@ -50,6 +50,7 @@ program
   .option('-i, --interactive', 'flag to start repl')
   .option('-c, --config <string>', 'path to a .json TDBConfig file to use')
   .option('-r, --remote-config <string>', 'name of TDBConfig turtle to use')
-  .option('-a, --archive', 'download all turtle layers', false)
+  .option('-a, --archive', 'save all turtles to files by public key', false)
   .option('--archive-path', 'folder to archive to', 'archive')
+  .option('-v, --verbose', 'log data flows', false)
   .parse()

@@ -1,6 +1,6 @@
 import { readFileSync } from 'fs'
 import { question } from 'readline-sync'
-import { Signer } from '../branches/cv6t981m0a2ou7fil4f88ujf6kpj2lojceycv1gdcq23wlzqi2/js/turtle/Signer.js'
+import { Signer } from '../branches/public/js/turtle/Signer.js'
 
 /**
  * @typedef {{endpoint: string, region: string, bucket: string, accessKeyId: string, secretAccessKey: string}} TDBConfigS3
@@ -14,6 +14,7 @@ import { Signer } from '../branches/cv6t981m0a2ou7fil4f88ujf6kpj2lojceycv1gdcq23
  *            password: string,
  *            archive: {path: string},
  *            interactive: boolean,
+ *            verbose: boolean,
  *            s3: TDBConfigS3,
  *            fsReadWrite: TDBConfigFsReadWrite,
  *            fsReadOnly: TDBConfigFsReadOnly,
@@ -52,7 +53,7 @@ function combineConfigs (configs) {
  * @returns {TDBConfig}
  */
 export function getConfigFromOptions (options, overrideConfig = {}) {
-  const { username, password, s3EndPoint, s3Region, s3Bucket, s3AccessKeyId, s3SecretAccessKey, s3, fsName, fsKey, fsFolder, webName, webKey, webPort, webFallback, originHost, originPort, outletPort, https, insecure, certpath, interactive, config: configFile, remoteConfig, archive, archivePath } = options
+  const { username, password, s3EndPoint, s3Region, s3Bucket, s3AccessKeyId, s3SecretAccessKey, s3, fsName, fsKey, fsFolder, webName, webKey, webPort, webFallback, originHost, originPort, outletPort, https, insecure, certpath, interactive, verbose, config: configFile, remoteConfig, archive, archivePath } = options
   /** @type {TDBConfig} */
   const defaultsConfig = configFile ? JSON.parse(readFileSync(configFile, 'utf8')) : {}
   /** @type {TDBConfig} */
@@ -61,6 +62,7 @@ export function getConfigFromOptions (options, overrideConfig = {}) {
   if (password) optionsConfig.password = password
   if (archive && archivePath) optionsConfig.archive = { path: archivePath }
   if (typeof interactive === 'boolean') optionsConfig.interactive = interactive
+  if (typeof verbose === 'boolean') optionsConfig.verbose = verbose
   if (s3 === false) {
     optionsConfig.s3 = null
   } else if (s3EndPoint || s3Region || s3Bucket || s3AccessKeyId || s3SecretAccessKey) {
