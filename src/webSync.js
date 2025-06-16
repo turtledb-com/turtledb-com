@@ -6,6 +6,7 @@ import { createServer as createHttpServer } from 'http'
 import { WebSocketServer } from 'ws'
 import { TurtleBranchMultiplexer } from '../branches/public/js/turtle/connections/TurtleBranchMultiplexer.js'
 import { randomUUID } from 'crypto'
+import { logDebug, logInfo } from '../branches/public/js/utils/logger.js'
 
 /**
  * @typedef {import('../branches/public/js/turtle/connections/TurtleDB.js').TurtleDB} TurtleDB
@@ -23,11 +24,10 @@ const uuid = randomUUID()
  * @param {string} fallback
  */
 export async function webSync (port, basePublicKey, turtleDB, https, insecure, certpath, fallback) {
-  console.log('webSync')
   const root = join(process.cwd(), basePublicKey)
   const app = express()
   app.use((req, _res, next) => {
-    console.log(req.method, req.url, req.originalUrl)
+    logDebug(req.method, req.url, req.originalUrl)
     next()
   })
   app.use(async (req, res, next) => {
@@ -66,7 +66,7 @@ export async function webSync (port, basePublicKey, turtleDB, https, insecure, c
         } else {
           try {
             const configJson = JSON.parse(turtleBranch?.lookup?.('document', 'value', 'config.json'))
-            console.log({ configJson })
+            logInfo({ configJson })
             const branchGroups = ['fsReadWrite', 'fsReadOnly']
             for (const branchGroup of branchGroups) {
               const branches = configJson[branchGroup]
@@ -111,7 +111,7 @@ export async function webSync (port, basePublicKey, turtleDB, https, insecure, c
   wss.on('connection', async ws => {
     ++connectionCount
     const _connectionCount = connectionCount
-    console.log('new connection', _connectionCount)
+    logDebug('new connection', _connectionCount)
     // keep alive
     const intervalId = setInterval(() => {
       if (_connectionCount !== connectionCount) clearInterval(intervalId)
@@ -125,7 +125,7 @@ export async function webSync (port, basePublicKey, turtleDB, https, insecure, c
       }
     })()
     ws.on('message', buffer => tbMux.incomingBranch.append(new Uint8Array(buffer)))
-    ws.on('close', (code, reason) => console.log('connection closed', _connectionCount))
+    ws.on('close', (code, reason) => logDebug('connection closed', _connectionCount))
     ws.on('error', error => console.error('connection error', { name: error.name, message: error.message }))
     await new Promise((resolve, reject) => {
       ws.onclose = resolve
@@ -136,6 +136,6 @@ export async function webSync (port, basePublicKey, turtleDB, https, insecure, c
   })
 
   server.listen(port, () => {
-    console.log(`webserver started: ${(https || insecure) ? 'https' : 'http'}://localhost:${port}`)
+    logInfo(`webserver started: ${(https || insecure) ? 'https' : 'http'}://localhost:${port}`)
   })
 }

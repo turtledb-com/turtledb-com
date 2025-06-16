@@ -1,3 +1,4 @@
+import { logDebug } from '../../utils/logger.js'
 import { Recaller } from '../../utils/Recaller.js'
 import { OPAQUE_UINT8ARRAY } from '../codecs/codec.js'
 import { verifyCommitU8a } from '../Signer.js'
@@ -111,7 +112,7 @@ export class AbstractUpdater extends TurtleTalker {
       this.outgoingDictionary.upsert(outgoingTurtleTalk)
       this.outgoingDictionary.squash(this.outgoingBranch.index + 1)
       this.outgoingBranch.u8aTurtle = this.outgoingDictionary.u8aTurtle
-      console.log(this.name, this.publicKey)
+      logDebug(this.name, this.publicKey)
       logUpdate(this.name, this.publicKey, outgoingTurtleTalk.uint8ArrayAddresses, false)
     }
 
@@ -127,7 +128,7 @@ export class AbstractUpdater extends TurtleTalker {
     const settlePromise = new Promise((...args) => { [resolve] = args })
     const checkSettle = () => {
       const incoming = this.incomingBranch.lookup()
-      console.log('checkSettle', this.turtleBranch.index + 1, '>=', incoming?.uint8ArrayAddresses?.length)
+      logDebug('checkSettle', this.turtleBranch.index + 1, '>=', incoming?.uint8ArrayAddresses?.length)
       if (this.turtleBranch.index + 1 >= incoming?.uint8ArrayAddresses?.length) {
         this.incomingBranch.recaller.unwatch(checkSettle)
         resolve()
@@ -170,5 +171,5 @@ export function logUpdate (name, publicKey, uint8ArrayAddresses, isIncoming) {
     }
   }
   prettyAddresses = `(${uint8ArrayAddresses.length}) [${prettyAddresses.join(', ')}]`
-  console.log(`${colorBlock} ${[publicKey, type, `\x1b[31m${JSON.stringify(name)}\x1b[0m`, prettyAddresses].join(separator)}`)
+  logDebug(`${colorBlock} ${[publicKey, type, `\x1b[31m${JSON.stringify(name)}\x1b[0m`, prettyAddresses].join(separator)}`)
 }

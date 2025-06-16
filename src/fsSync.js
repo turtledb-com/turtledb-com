@@ -2,6 +2,7 @@ import { watch } from 'chokidar'
 import { lstat, mkdir, readFile, symlink, unlink, writeFile } from 'fs/promises'
 import { dirname, join, relative } from 'path'
 import { existsSync, mkdirSync } from 'fs'
+import { logDebug } from '../branches/public/js/utils/logger.js'
 
 /**
  * @typedef {import('../branches/public/js/turtle/connections/TurtleDB.js').TurtleDB} TurtleDB
@@ -37,7 +38,7 @@ export async function fsSync (name, turtleDB, signer, folder) {
   let publicKeyFolder
   const log = (action, path) => {
     const relativePath = relative(publicKeyFolder, path)
-    console.log(`(fsSync) ${action} ${publicKeyFolder} ("${name}") / ${relativePath}`)
+    logDebug(`(fsSync) ${action} ${publicKeyFolder} ("${name}") / ${relativePath}`)
   }
   if (signer) {
     const workspace = await turtleDB.makeWorkspace(signer, name)

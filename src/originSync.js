@@ -1,5 +1,6 @@
 import { createConnection } from 'net'
 import { TurtleBranchMultiplexer } from '../branches/public/js/turtle/connections/TurtleBranchMultiplexer.js'
+import { logDebug } from '../branches/public/js/utils/logger.js'
 
 export async function originSync (turtleDB, host, port) {
   let t = 100
@@ -15,9 +16,9 @@ export async function originSync (turtleDB, host, port) {
       try {
         // console.log('tbMuxBinding about to get next', status.publicKey)
         const updater = await tbMux.getTurtleBranchUpdater(tbMux.name, status.publicKey, status.turtleBranch)
-        console.log('updater about to await settle', updater.name, updater.turtleBranch.length)
+        logDebug('updater about to await settle', updater.name, updater.turtleBranch.length)
         await updater.settle
-        console.log('updater settled', updater.turtleBranch.length)
+        logDebug('updater settled', updater.turtleBranch.length)
       } catch (error) {
         console.error(error)
       }
@@ -44,7 +45,7 @@ export async function originSync (turtleDB, host, port) {
         })()
         t = 100
         _connectionCount = ++connectionCount
-        console.log('-- onopen', { _connectionCount })
+        logDebug('-- onopen', { _connectionCount })
       })
       const streamWriter = tbMux.makeWritableStream().getWriter()
       socket.on('data', buffer => {

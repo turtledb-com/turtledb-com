@@ -1,5 +1,6 @@
 import { createServer } from 'net'
 import { TurtleBranchMultiplexer } from '../branches/public/js/turtle/connections/TurtleBranchMultiplexer.js'
+import { logInfo } from '../branches/public/js/utils/logger.js'
 
 export async function outletSync (turtleDB, port) {
   let connectionCount = 0
@@ -45,6 +46,6 @@ export async function outletSync (turtleDB, port) {
     tbMux?.stop?.()
   })
   server.listen(port, () => {
-    console.log('opened outlet.port:', port)
+    logInfo('opened outlet.port:', port)
   })
 }

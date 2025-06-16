@@ -1,3 +1,4 @@
+import { logDebug } from '../../utils/logger.js'
 import { Recaller } from '../../utils/Recaller.js'
 import { findCommonAncestor } from '../U8aTurtle.js'
 import { AbstractUpdater } from './AbstractUpdater.js'
@@ -31,7 +32,7 @@ export class TurtleBranchUpdater extends AbstractUpdater {
             incomingUint8ArrayAddresses.length = 0
           }
         }
-        console.log(`TurtleBranchUpdater(#${allUpdaters.size}): ${name}`)
+        logDebug(`TurtleBranchUpdater(#${allUpdaters.size}): ${name}`)
         this.update(incomingUint8ArrayAddresses)
         lastU8aTurtle = this.turtleBranch.u8aTurtle
       }
