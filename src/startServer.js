@@ -11,9 +11,10 @@ import { Signer } from '../branches/.cv6t981m0a2ou7fil4f88ujf6kpj2lojceycv1gdcq2
 import { TurtleDictionary } from '../branches/.cv6t981m0a2ou7fil4f88ujf6kpj2lojceycv1gdcq23wlzqi2/js/turtle/TurtleDictionary.js'
 import { Workspace } from '../branches/.cv6t981m0a2ou7fil4f88ujf6kpj2lojceycv1gdcq23wlzqi2/js/turtle/Workspace.js'
 import { AS_REFS } from '../branches/.cv6t981m0a2ou7fil4f88ujf6kpj2lojceycv1gdcq23wlzqi2/js/turtle/codecs/CodecType.js'
-import { DEBUG, logInfo, setLogLevel, logError } from '../branches/.cv6t981m0a2ou7fil4f88ujf6kpj2lojceycv1gdcq23wlzqi2/js/utils/logger.js'
+import { logInfo, setLogLevel, logError } from '../branches/.cv6t981m0a2ou7fil4f88ujf6kpj2lojceycv1gdcq23wlzqi2/js/utils/logger.js'
 
 export async function startServer (config = {}) {
+  setLogLevel(config.verbose)
   const recaller = new Recaller('turtledb-com')
   const turtleDB = new TurtleDB('turtledb-com', recaller)
   const configCopy = JSON.parse(JSON.stringify(config))
@@ -23,10 +24,6 @@ export async function startServer (config = {}) {
   if (config.origin) {
     const { origin } = config
     originSync(turtleDB, origin.host, origin.port)
-  }
-
-  if (config.verbose) {
-    setLogLevel(DEBUG)
   }
 
   if (config.s3) {

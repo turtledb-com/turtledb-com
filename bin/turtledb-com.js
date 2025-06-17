@@ -5,6 +5,8 @@ import { Option, program } from 'commander'
 import { projectAction } from '../src/projectAction.js'
 import { getConfigFromOptions } from '../src/getConfigFromOptions.js'
 import { startServer } from '../src/startServer.js'
+import { logSilly } from '../branches/.cv6t981m0a2ou7fil4f88ujf6kpj2lojceycv1gdcq23wlzqi2/js/utils/logger.js'
+import { codec } from '../branches/.cv6t981m0a2ou7fil4f88ujf6kpj2lojceycv1gdcq23wlzqi2/js/turtle/codecs/codec.js'
 
 const { version } = JSON.parse(readFileSync(new URL('../package.json', import.meta.url)))
 
@@ -52,5 +54,7 @@ program
   .option('-r, --remote-config <string>', 'name of TDBConfig turtle to use')
   .option('-a, --archive', 'save all turtles to files by public key', false)
   .option('--archive-path', 'folder to archive to', 'archive')
-  .option('-v, --verbose', 'log data flows', false)
+  .option('-v, --verbose [level]', 'log data flows', x => +x, false) // +false === 0 === INFO, +true === 1 === DEBUG
   .parse()
+
+logSilly(() => console.log('codec codes:', codec.codecTypeVersionsByFooter.map((codecVersion, index) => `\n${index.toString().padStart(5, ' ')}: { name: "${codecVersion.codecType.name}", versionArrays: ${JSON.stringify(codecVersion.versionArrays)} }`).join('')))

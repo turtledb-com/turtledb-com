@@ -7,10 +7,10 @@ export const DEBUG = 1
 export const TRACE = 2
 export const SILLY = 3
 export const ALL = Number.POSITIVE_INFINITY
-export let logLevel = INFO
+export let logLevel
 export const setLogLevel = level => { logLevel = level }
 export const log = (level, ...args) => {
-  if (level > logLevel) return
+  if (level > +logLevel) return
   if (args.length === 1 && typeof args[0] === 'function') args[0]()
   else console.log(...args)
 }
