@@ -1,7 +1,6 @@
 import { createServer } from 'net'
-import { TurtleBranchMultiplexer } from '../branches/public/js/turtle/connections/TurtleBranchMultiplexer.js'
-import { logInfo } from '../branches/public/js/utils/logger.js'
-import { logError, logWarn } from '../branches/.cv6t981m0a2ou7fil4f88ujf6kpj2lojceycv1gdcq23wlzqi2/js/utils/logger.js'
+import { TurtleBranchMultiplexer } from '../branches/.cv6t981m0a2ou7fil4f88ujf6kpj2lojceycv1gdcq23wlzqi2/js/turtle/connections/TurtleBranchMultiplexer.js'
+import { logError, logWarn, logInfo } from '../branches/.cv6t981m0a2ou7fil4f88ujf6kpj2lojceycv1gdcq23wlzqi2/js/utils/logger.js'
 
 export async function outletSync (turtleDB, port) {
   let connectionCount = 0

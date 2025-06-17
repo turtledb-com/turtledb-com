@@ -1,6 +1,6 @@
 import { GetObjectCommand, ListObjectsV2Command, PutObjectCommand } from '@aws-sdk/client-s3'
-import { AbstractUpdater } from '../branches/public/js/turtle/connections/AbstractUpdater.js'
-import { verifyCommitU8a } from '../branches/public/js/turtle/Signer.js'
+import { AbstractUpdater } from '../branches/.cv6t981m0a2ou7fil4f88ujf6kpj2lojceycv1gdcq23wlzqi2/js/turtle/connections/AbstractUpdater.js'
+import { verifyCommitU8a } from '../branches/.cv6t981m0a2ou7fil4f88ujf6kpj2lojceycv1gdcq23wlzqi2/js/turtle/Signer.js'
 import { getExistenceLength } from './getExistenceLength.js'
 
 /**

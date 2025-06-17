@@ -1,7 +1,6 @@
 import { createConnection } from 'net'
-import { TurtleBranchMultiplexer } from '../branches/public/js/turtle/connections/TurtleBranchMultiplexer.js'
-import { logDebug } from '../branches/public/js/utils/logger.js'
-import { logError, logInfo, logWarn } from '../branches/.cv6t981m0a2ou7fil4f88ujf6kpj2lojceycv1gdcq23wlzqi2/js/utils/logger.js'
+import { TurtleBranchMultiplexer } from '../branches/.cv6t981m0a2ou7fil4f88ujf6kpj2lojceycv1gdcq23wlzqi2/js/turtle/connections/TurtleBranchMultiplexer.js'
+import { logError, logInfo, logWarn, logDebug } from '../branches/.cv6t981m0a2ou7fil4f88ujf6kpj2lojceycv1gdcq23wlzqi2/js/utils/logger.js'
 
 export async function originSync (turtleDB, host, port) {
   let t = 100

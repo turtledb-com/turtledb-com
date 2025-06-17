@@ -2,7 +2,7 @@ import { getConfigFromOptions } from './getConfigFromOptions.js'
 import { join } from 'path'
 import { startServer } from './startServer.js'
 import { lstat, mkdir, symlink, unlink, writeFile } from 'fs/promises'
-import { logInfo } from '../branches/public/js/utils/logger.js'
+import { logInfo } from '../branches/.cv6t981m0a2ou7fil4f88ujf6kpj2lojceycv1gdcq23wlzqi2/js/utils/logger.js'
 
 export async function projectAction (projectname, username, options, defaultCpk) {
   const overrideConfig = {
