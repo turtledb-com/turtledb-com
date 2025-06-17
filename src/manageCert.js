@@ -1,6 +1,7 @@
 import { dirname } from 'path'
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs'
 import { createCA, createCert } from 'mkcert'
+import { logError } from '../branches/public/js/utils/logger.js'
 
 export async function manageCert (fullcertpath) {
   try {
@@ -13,7 +14,7 @@ export async function manageCert (fullcertpath) {
       )
     }
   } catch (error) {
-    console.error(error)
+    logError(() => console.error(error))
   }
   const ca = await createCA({
     organization: 'TURTLES, Turtles, turtles, etc.',

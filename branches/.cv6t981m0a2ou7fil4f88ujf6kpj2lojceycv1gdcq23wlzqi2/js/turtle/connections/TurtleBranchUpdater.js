@@ -32,7 +32,7 @@ export class TurtleBranchUpdater extends AbstractUpdater {
             incomingUint8ArrayAddresses.length = 0
           }
         }
-        logDebug(`TurtleBranchUpdater(#${allUpdaters.size}): ${name}`)
+        logDebug(() => console.log(`TurtleBranchUpdater(#${allUpdaters.size}): ${name}`))
         this.update(incomingUint8ArrayAddresses)
         lastU8aTurtle = this.turtleBranch.u8aTurtle
       }

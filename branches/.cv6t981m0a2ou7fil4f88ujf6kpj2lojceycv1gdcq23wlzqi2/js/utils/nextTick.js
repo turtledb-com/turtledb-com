@@ -1,3 +1,5 @@
+import { logError, logInfo } from './logger.js'
+
 let _tickCount = 0
 let _nextTick
 if (typeof setTimeout !== 'undefined') {
@@ -19,27 +21,27 @@ export const nextTick = f => {
 
 export const handleNextTick = (decorate = false) => {
   ++_tickCount
-  if (decorate) console.log(`👇👇👇👇👇👇👇👇👇👇 --- _tickCount: ${_tickCount} ---\n\n`)
+  if (decorate) logInfo(() => console.log(`👇👇👇👇👇👇👇👇👇👇 --- _tickCount: ${_tickCount} ---\n\n`))
   for (let i = 0; i < 10; ++i) {
     _handlingTriggered = false
     const __functions = _functions
     _functions = []
     __functions.forEach(f => f())
     if (!_functions.length) {
-      if (decorate)console.log('\n\n👆👆👆👆👆👆👆👆👆👆 ---')
+      if (decorate) logInfo(() => console.log('\n\n👆👆👆👆👆👆👆👆👆👆 ---'))
       return
     }
-    if (decorate) console.log(`\n\n🤔🤔🤔🤔🤔🤔🤔🤔🤔🤔 --- _tickCount: ${_tickCount} loop: ${i} ---\n\n`)
+    if (decorate) logInfo(() => console.log(`\n\n🤔🤔🤔🤔🤔🤔🤔🤔🤔🤔 --- _tickCount: ${_tickCount} loop: ${i} ---\n\n`))
   }
   _tickCount = Math.ceil(_tickCount)
-  console.error('handleNextTick adding nextTick handler too many times')
+  logError(() => console.error('handleNextTick adding nextTick handler too many times'))
 }
 
 export const getTickCount = () => _tickCount
 
 export const tics = async (count = 1, ticLabel = '') => {
   for (let i = 0; i < count; ++i) {
-    if (ticLabel) console.log(`${ticLabel}, tic: ${i}`)
+    if (ticLabel) logInfo(() => console.log(`${ticLabel}, tic: ${i}`))
     await new Promise(resolve => setTimeout(resolve))
   }
 }

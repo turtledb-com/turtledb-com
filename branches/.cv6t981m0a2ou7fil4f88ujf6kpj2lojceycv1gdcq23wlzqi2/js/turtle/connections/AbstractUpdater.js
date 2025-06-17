@@ -112,7 +112,7 @@ export class AbstractUpdater extends TurtleTalker {
       this.outgoingDictionary.upsert(outgoingTurtleTalk)
       this.outgoingDictionary.squash(this.outgoingBranch.index + 1)
       this.outgoingBranch.u8aTurtle = this.outgoingDictionary.u8aTurtle
-      logDebug(this.name, this.publicKey)
+      logDebug(() => console.log(this.name, this.publicKey))
       logUpdate(this.name, this.publicKey, outgoingTurtleTalk.uint8ArrayAddresses, false)
     }
 
@@ -128,7 +128,7 @@ export class AbstractUpdater extends TurtleTalker {
     const settlePromise = new Promise((...args) => { [resolve] = args })
     const checkSettle = () => {
       const incoming = this.incomingBranch.lookup()
-      logDebug('checkSettle', this.turtleBranch.index + 1, '>=', incoming?.uint8ArrayAddresses?.length)
+      logDebug(() => console.log('checkSettle', this.turtleBranch.index + 1, '>=', incoming?.uint8ArrayAddresses?.length))
       if (this.turtleBranch.index + 1 >= incoming?.uint8ArrayAddresses?.length) {
         this.incomingBranch.recaller.unwatch(checkSettle)
         resolve()
@@ -171,5 +171,5 @@ export function logUpdate (name, publicKey, uint8ArrayAddresses, isIncoming) {
     }
   }
   prettyAddresses = `(${uint8ArrayAddresses.length}) [${prettyAddresses.join(', ')}]`
-  logDebug(`${colorBlock} ${[publicKey, type, `\x1b[31m${JSON.stringify(name)}\x1b[0m`, prettyAddresses].join(separator)}`)
+  logDebug(() => console.log(`${colorBlock} ${[publicKey, type, `\x1b[31m${JSON.stringify(name)}\x1b[0m`, prettyAddresses].join(separator)}`))
 }

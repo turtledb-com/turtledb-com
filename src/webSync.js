@@ -6,7 +6,7 @@ import { createServer as createHttpServer } from 'http'
 import { WebSocketServer } from 'ws'
 import { TurtleBranchMultiplexer } from '../branches/public/js/turtle/connections/TurtleBranchMultiplexer.js'
 import { randomUUID } from 'crypto'
-import { logDebug, logInfo } from '../branches/public/js/utils/logger.js'
+import { logDebug, logInfo, logError } from '../branches/public/js/utils/logger.js'
 
 /**
  * @typedef {import('../branches/public/js/turtle/connections/TurtleDB.js').TurtleDB} TurtleDB
@@ -27,7 +27,7 @@ export async function webSync (port, basePublicKey, turtleDB, https, insecure, c
   const root = join(process.cwd(), basePublicKey)
   const app = express()
   app.use((req, _res, next) => {
-    logDebug(req.method, req.url, req.originalUrl)
+    logDebug(() => console.log(req.method, req.url, req.originalUrl))
     next()
   })
   app.use(async (req, res, next) => {
@@ -66,12 +66,11 @@ export async function webSync (port, basePublicKey, turtleDB, https, insecure, c
         } else {
           try {
             const configJson = JSON.parse(turtleBranch?.lookup?.('document', 'value', 'config.json'))
-            logInfo({ configJson })
+            logInfo(() => console.log({ configJson }))
             const branchGroups = ['fsReadWrite', 'fsReadOnly']
             for (const branchGroup of branchGroups) {
               const branches = configJson[branchGroup]
               if (branches) {
-                console.log(branches)
                 for (const { name, key } of branches) {
                   if (name && key) {
                     const nickname = `/${urlPublicKey}/${name}/`
@@ -84,13 +83,13 @@ export async function webSync (port, basePublicKey, turtleDB, https, insecure, c
               }
             }
           } catch {
-            console.log('not found, no config', pathname)
+            logDebug(() => console.log('not found, no config', pathname))
           }
           next()
         }
       }
     } catch (error) {
-      console.error(error)
+      logError(() => console.error(error))
     }
   })
   // app.use(express.static(root))
@@ -111,7 +110,7 @@ export async function webSync (port, basePublicKey, turtleDB, https, insecure, c
   wss.on('connection', async ws => {
     ++connectionCount
     const _connectionCount = connectionCount
-    logDebug('new connection', _connectionCount)
+    logDebug(() => console.log('new connection', _connectionCount))
     // keep alive
     const intervalId = setInterval(() => {
       if (_connectionCount !== connectionCount) clearInterval(intervalId)
@@ -125,8 +124,8 @@ export async function webSync (port, basePublicKey, turtleDB, https, insecure, c
       }
     })()
     ws.on('message', buffer => tbMux.incomingBranch.append(new Uint8Array(buffer)))
-    ws.on('close', (code, reason) => logDebug('connection closed', _connectionCount))
-    ws.on('error', error => console.error('connection error', { name: error.name, message: error.message }))
+    ws.on('close', (code, reason) => logDebug(() => console.log('connection closed', _connectionCount)))
+    ws.on('error', error => logError(() => console.error('connection error', { name: error.name, message: error.message })))
     await new Promise((resolve, reject) => {
       ws.onclose = resolve
       ws.onerror = reject
@@ -136,6 +135,13 @@ export async function webSync (port, basePublicKey, turtleDB, https, insecure, c
   })
 
   server.listen(port, () => {
-    logInfo(`webserver started: ${(https || insecure) ? 'https' : 'http'}://localhost:${port}`)
+    logInfo(() => console.log(`local webserver started: ${(https || insecure) ? 'https' : 'http'}://localhost:${port}
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!! FUN-FACT: Self-signed certificates break service-workers !!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    (HINT): On MacOS, in a browser started with this command, a service-worker can use a self-signed cert ──╮
+╭───────────────────────────────────────────────────────────────────────────────────────────────────────────╯                                  
+╰─▶ open '/Applications/Google Chrome Canary.app' --args --ignore-certificate-errors https://localhost:8080/`))
   })
 }

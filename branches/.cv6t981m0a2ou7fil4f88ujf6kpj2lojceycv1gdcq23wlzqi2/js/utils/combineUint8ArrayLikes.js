@@ -1,4 +1,5 @@
 import { combineUint8Arrays } from './combineUint8Arrays.js'
+import { logError } from './logger.js'
 
 /**
  * @param {Array.<any>} uint8ArrayLikes
@@ -10,7 +11,7 @@ export function combineUint8ArrayLikes (uint8ArrayLikes) {
     if (uint8ArrayLike instanceof Uint8Array) return uint8ArrayLike
     if (uint8ArrayLike instanceof Object.getPrototypeOf(Uint8Array)) return new Uint8Array(uint8ArrayLike.buffer)
     if (Number.isInteger(uint8ArrayLike) && uint8ArrayLike <= 0xff) return new Uint8Array([uint8ArrayLike])
-    console.error(uint8ArrayLikes)
+    logError(() => console.error(uint8ArrayLikes))
     throw new Error('can\'t convert to Uint8Array')
   })
   return combineUint8Arrays(uint8Arrays)

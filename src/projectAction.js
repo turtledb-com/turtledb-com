@@ -2,12 +2,13 @@ import { getConfigFromOptions } from './getConfigFromOptions.js'
 import { join } from 'path'
 import { startServer } from './startServer.js'
 import { lstat, mkdir, symlink, unlink, writeFile } from 'fs/promises'
+import { logInfo } from '../branches/public/js/utils/logger.js'
 
 export async function projectAction (projectname, username, options, defaultCpk) {
   const overrideConfig = {
     interactive: true,
     archive: { path: 'archive' },
-    fsReadOnly: [{ key: defaultCpk }],
+    fsReadOnly: [{ key: defaultCpk, name: 'turtledb-com' }],
     fsReadWrite: [{ name: projectname }],
     web: {
       name: projectname,
@@ -27,7 +28,7 @@ export async function projectAction (projectname, username, options, defaultCpk)
   const { publicKey } = await config.signer.makeKeysFor(projectname)
   const projectPath = process.cwd()
   if (!(await lstat(projectPath))) await mkdir(projectPath)
-  console.log(`writing ${projectPath}/.gitignore`)
+  logInfo(() => console.log(`writing ${projectPath}/.gitignore`))
   await writeFile(join(projectPath, '.gitignore'), [
     '.env',
     'node_modules/',
@@ -35,12 +36,12 @@ export async function projectAction (projectname, username, options, defaultCpk)
     'node_repl_history',
     ''
   ].join('\n'))
-  console.log(`writing ${projectPath}/.env`)
+  logInfo(() => console.log(`writing ${projectPath}/.env`))
   await writeFile(join(projectPath, '.env'), [
     `TURTLEDB_USERNAME="${config.username}"`,
     `TURTLEDB_PASSWORD="${config.password}"`
   ].join('\n') + '\n')
-  console.log(`writing ${projectPath}/package.json`)
+  logInfo(() => console.log(`writing ${projectPath}/package.json`))
   await writeFile(join(projectPath, 'package.json'), JSON.stringify({
     name: projectname,
     author: config.username,
@@ -49,7 +50,7 @@ export async function projectAction (projectname, username, options, defaultCpk)
       start: 'source .env && npx turtledb-com --config config.json'
     }
   }, null, 2) + '\n')
-  console.log(`writing ${projectPath}/config.json`)
+  logInfo(() => console.log(`writing ${projectPath}/config.json`))
   await writeFile(join(projectPath, 'config.json'), JSON.stringify(overrideConfig, null, 2) + '\n')
   await mkdir(join(projectPath, 'branches'), { recursive: true })
   const keyPath = join(projectPath, 'branches', `.${publicKey}`)
@@ -60,8 +61,18 @@ export async function projectAction (projectname, username, options, defaultCpk)
     // don't worry about not deleting what isn't there
   }
   await symlink(keyPath, namePath)
-  console.log(`project directory initialized: ${projectPath}`)
-  console.log(`starting server. run 'npm start' from ${projectPath} to start manually`)
-  console.log(`files in ${namePath} will be mirrored to https://www.turtledb.com/${publicKey}`)
-  startServer(config)
+  logInfo(() => console.log(`project directory initialized: ${projectPath}`))
+  logInfo(() => console.log(`starting server. run 'npm start' from ${projectPath} to start manually`))
+  await startServer(config)
+  logInfo(() => console.log(`
+╭──────────────────────────────────────────────────────────────────────────────────────────╮
+│                                                                                          │
+│  ╭─▶ \x1b[32;3m${namePath}\x1b[0m${' '.repeat(Math.max(0, 84 - namePath.length))}│
+│  ╰──────────────────╮                                                                    │
+│    this directory ──╯  will be mirrored at this url ──╮                                  │
+│      ╭────────────────────────────────────────────────╯                                  │
+│      ╰─▶ \x1b[34;4mhttps://www.turtledb.com/${publicKey}\x1b[0m${' '.repeat(Math.max(0, 55 - publicKey.length))}│
+│                                                                                          │
+╰──────────────────────────────────────────────────────────────────────────────────────────╯
+`))
 }

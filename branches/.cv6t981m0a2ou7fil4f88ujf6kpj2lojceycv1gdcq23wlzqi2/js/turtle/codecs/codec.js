@@ -5,6 +5,7 @@ import { CodecType } from './CodecType.js'
 import { Commit } from './Commit.js'
 import { CompositeCodec } from './CompositeCodec.js'
 import { TreeNode } from './TreeNode.js'
+import { logSilly } from '../../utils/logger.js'
 
 /**
  * @typedef {import('../U8aTurtle.js').U8aTurtle} U8aTurtle
@@ -429,4 +430,4 @@ export const OPAQUE_UINT8ARRAY = new CodecType({
 })
 codec.addCodecType(OPAQUE_UINT8ARRAY)
 
-// console.log(codec.codecTypeVersionsByFooter.map((codecVersion, index) => `${index}: { name: "${codecVersion.codecType.name}", versionArrays: ${JSON.stringify(codecVersion.versionArrays)} }`).join('\n'))
+logSilly(() => console.log(codec.codecTypeVersionsByFooter.map((codecVersion, index) => `${index}: { name: "${codecVersion.codecType.name}", versionArrays: ${JSON.stringify(codecVersion.versionArrays)} }`).join('\n')))

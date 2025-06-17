@@ -1,3 +1,4 @@
+import { logError } from '../../utils/logger.js'
 import { toCombinedVersion } from '../../utils/toCombinedVersion.js'
 import { toVersionCount } from '../../utils/toVersionCount.js'
 import { DEREFERENCE } from './CodecType.js'
@@ -21,7 +22,7 @@ export class CompositeCodec {
   encodeValue (value, codecsArray = this.codecTypes, dictionary, options = DEREFERENCE) {
     const codecType = codecsArray.find(codecType => codecType.test(value)) // first match wins
     if (!codecType) {
-      console.error('no match', value)
+      logError(() => console.error('no match', value))
       throw new Error('no encoder for value')
     }
     const uint8Array = codecType.encode(value, dictionary, options)
@@ -50,7 +51,7 @@ export class CompositeCodec {
   extractEncodedValue (u8aTurtle, address = u8aTurtle.length - 1) {
     const codecVersion = this.extractCodecTypeVersion(u8aTurtle, address)
     if (!codecVersion) {
-      console.error({ address, footer: u8aTurtle.getByte(address) })
+      logError(() => console.error({ address, footer: u8aTurtle.getByte(address) }))
       throw new Error('no decoder for footer')
     }
     const width = codecVersion.getWidth(u8aTurtle, address)

@@ -1,3 +1,5 @@
+import { logError } from './logger.js'
+
 /**
  * @param {Array.<Uint8Array>} uint8Arrays
  * @returns {Uint8Array}
@@ -9,7 +11,7 @@ export function combineUint8Arrays (uint8Arrays) {
   let address = 0
   for (const uint8Array of uint8Arrays) {
     if (!(uint8Array instanceof Uint8Array)) {
-      console.error('not Uint8Array', uint8Array)
+      logError(() => console.error('not Uint8Array', uint8Array))
       throw new Error('combineUint8Arrays can only combine Uint8Arrays')
     }
     if (uint8Array?.length) {

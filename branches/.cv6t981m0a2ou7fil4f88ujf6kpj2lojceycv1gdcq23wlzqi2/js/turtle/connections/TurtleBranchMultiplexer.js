@@ -1,3 +1,4 @@
+import { logError } from '../../utils/logger.js'
 import { OPAQUE_UINT8ARRAY } from '../codecs/codec.js'
 import { TurtleDictionary } from '../TurtleDictionary.js'
 import { TurtleBranchUpdater } from './TurtleBranchUpdater.js'
@@ -45,7 +46,7 @@ export class TurtleBranchMultiplexer extends TurtleTalker {
         // const uint8ArrayAddresses = turtleBranchUpdater.incomingBranch.lookup('uint8ArrayAddresses')
       }
     } catch (error) {
-      console.error(error)
+      logError(() => console.error(error))
       throw error
     }
   }
@@ -76,7 +77,7 @@ export class TurtleBranchMultiplexer extends TurtleTalker {
     name ||= publicKey
     if (!this.#updatersByCpk[publicKey]) {
       this.#updatersByCpk[publicKey] = (async () => {
-        // console.log({ publicKey })
+        // logTrace(() => console.log({ publicKey }))
         turtleBranch ??= await this.turtleDB.summonBoundTurtleBranch(publicKey, name)
         const updater = new TurtleBranchUpdater(name, turtleBranch, publicKey, this.Xours)
         ;(async () => {

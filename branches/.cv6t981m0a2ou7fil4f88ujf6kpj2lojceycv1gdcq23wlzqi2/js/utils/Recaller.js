@@ -1,3 +1,4 @@
+import { logError, logInfo, logWarn } from './logger.js'
 import { NestedSet } from './NestedSet.js'
 import { nextTick, getTickCount } from './nextTick.js'
 
@@ -53,15 +54,15 @@ export class Recaller {
     this.#disassociateF(f)
     if (!name) throw new Error('must name function watchers')
     this.#nameFunction(f, name)
-    if (this.debug) console.group(`watching --- ${JSON.stringify(name)}`)
+    if (this.debug) logInfo(() => console.group(`watching --- ${JSON.stringify(name)}`))
     this.#stack.unshift(f)
     try {
       f(this)
     } catch (error) {
-      console.error(error)
+      logError(() => console.error(error))
     }
     this.#stack.shift()
-    if (this.debug) console.groupEnd()
+    if (this.debug) logInfo(() => console.groupEnd())
   }
 
   unwatch (f) {
@@ -83,14 +84,14 @@ export class Recaller {
     name = `${name}['${key.toString()}']`
     if (this.debug) {
       const triggering = this.#getFunctionName(f)
-      console.debug(
+      logInfo(() => console.debug(
         '<--  access:', {
           recaller: this.name,
           method,
           name,
           triggering: JSON.stringify(triggering)
         }
-      )
+      ))
     }
     this.#associate(f, target, key)
   }
@@ -102,14 +103,14 @@ export class Recaller {
     name = `${name}['${key.toString()}']`
     if (this.debug) {
       const triggering = newTriggered.map(f => this.#getFunctionName(f))
-      console.debug(
+      logInfo(() => console.debug(
         '-->  mutation:', {
           recaller: this.name,
           method,
           name,
           triggering: JSON.stringify(triggering)
         }
-      )
+      ))
     }
     if (name.match(/\['name'\]\['name'\]/)) throw new Error('double name')
     this.#triggered = new Set([...this.#triggered, ...newTriggered])
@@ -148,23 +149,23 @@ export class Recaller {
     let loopCounter = 0
     while ((this.#triggered.size || this.#afterTriggered.length)) {
       if (loopCounter >= this.loopLimit) {
-        console.error(`!! Recaller limit check ERROR; loop count: ${loopCounter}, loop limit: ${this.loopLimit}`)
+        logError(() => console.error(`!! Recaller limit check ERROR; loop count: ${loopCounter}, loop limit: ${this.loopLimit}`))
         break
       }
       if (loopCounter >= this.loopWarn) {
-        console.warn(`!! Recaller loop count: ${loopCounter}`)
+        logWarn(() => console.warn(`!! Recaller loop count: ${loopCounter}`))
       }
       const triggered = this.#triggered
       this.#triggered = new Set()
       if (this.debug) {
         const triggering = [...triggered].map(f => this.#getFunctionName(f))
-        console.time('handling triggered group')
-        console.groupCollapsed('triggering:', {
+        logInfo(() => console.time('handling triggered group'))
+        logInfo(() => console.groupCollapsed('triggering:', {
           recaller: this.name,
           tickCount: getTickCount(),
           loopCounter,
           triggering: JSON.stringify(triggering)
-        })
+        }))
       }
       triggered.forEach(f => {
         const name = this.#getFunctionName(f)
@@ -176,8 +177,8 @@ export class Recaller {
       }
       ++loopCounter
       if (this.debug) {
-        console.groupEnd()
-        console.timeEnd('handling triggered group')
+        logInfo(() => console.groupEnd())
+        logInfo(() => console.timeEnd('handling triggered group'))
       }
     }
     this.#handlingTriggered = false

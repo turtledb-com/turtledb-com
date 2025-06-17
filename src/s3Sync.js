@@ -1,6 +1,7 @@
 import { S3Client } from '@aws-sdk/client-s3'
 import { S3Updater } from './S3Updater.js'
 import { TurtleBranchUpdater } from '../branches/public/js/turtle/connections/TurtleBranchUpdater.js'
+import { logDebug } from '../branches/public/js/utils/logger.js'
 
 export async function s3Sync (turtleDB, recaller, endpoint, region, accessKeyId, secretAccessKey, bucket) {
   /** @type {import('@aws-sdk/client-s3').S3ClientConfig} */
@@ -23,9 +24,9 @@ export async function s3Sync (turtleDB, recaller, endpoint, region, accessKeyId,
     s3Updater.connect(tbUpdater)
     s3Updater.start()
     tbUpdater.start()
-    console.log('tbUpdater about to await settle', tbUpdater.name)
+    logDebug(() => console.log('tbUpdater about to await settle', tbUpdater.name))
     if (!status.bindings.has(tbMuxBinding)) await tbUpdater.settle
-    console.log('tbUpdater settled')
+    logDebug(() => console.log('tbUpdater settled'))
   }
   turtleDB.bind(tbMuxBinding)
 }

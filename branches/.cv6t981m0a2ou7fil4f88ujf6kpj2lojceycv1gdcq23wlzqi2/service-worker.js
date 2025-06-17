@@ -6,6 +6,7 @@
 import { TurtleBranchMultiplexer } from './js/turtle/connections/TurtleBranchMultiplexer.js'
 import { TurtleDB } from './js/turtle/connections/TurtleDB.js'
 import { Signer } from './js/turtle/Signer.js'
+import { logError, logInfo, logWarn } from './js/utils/logger.js'
 import { withoutServiceWorker } from './js/utils/webSocketMuxFactory.js'
 
 /**
@@ -13,8 +14,7 @@ import { withoutServiceWorker } from './js/utils/webSocketMuxFactory.js'
  */
 
 const turtleDB = new TurtleDB('service-worker')
-
-console.log('-- service-worker started')
+logInfo(() => console.log('-- service-worker started'))
 /** @type {ServiceWorkerGlobalScope} */
 const serviceWorkerGlobalScope = self
 serviceWorkerGlobalScope.turtleDB = turtleDB
@@ -35,7 +35,7 @@ const getTBMuxForClient = client => {
         // if (ws.readyState !== ws.OPEN) break
         // ws.send(u8aTurtle.uint8Array)
           const allClients = await serviceWorkerGlobalScope.clients.matchAll()
-          console.log(`allClients.includes(client): ${allClients.includes(client)}`)
+          logInfo(() => console.log(`allClients.includes(client): ${allClients.includes(client)}`))
           client.postMessage(u8aTurtle.uint8Array.buffer)
         }
       })()
@@ -43,23 +43,23 @@ const getTBMuxForClient = client => {
     }
     return tbMuxAndClientById[client.id].tbMux
   } catch (error) {
-    console.error(error)
+    logError(() => console.error(error))
     throw error
   }
 }
 
 serviceWorkerGlobalScope.addEventListener('install', async () => {
-  console.log('-- service-worker install')
+  logInfo(() => console.log('-- service-worker install'))
 })
 
 serviceWorkerGlobalScope.addEventListener('activate', async event => {
-  console.log('-- service-worker activate')
+  logInfo(() => console.log('-- service-worker activate'))
   event.waitUntil(serviceWorkerGlobalScope.clients.claim())
-  console.log('-- service-worker activate clients claimed')
+  logInfo(() => console.log('-- service-worker activate clients claimed'))
 })
 
 serviceWorkerGlobalScope.addEventListener('message', async messageEvent => {
-  // console.log('-- service-worker message')
+  // logInfo(() => console.log('-- service-worker message'))
   const tbMux = getTBMuxForClient(messageEvent.source)
   tbMux.incomingBranch.append(new Uint8Array(messageEvent.data))
 })
@@ -118,14 +118,14 @@ serviceWorkerGlobalScope.addEventListener('fetch', fetchEvent => {
                 }
               }
             } catch {
-              console.log('not found, no config', pathname)
+              logWarn(() => console.warn('not found, no config', pathname))
             }
           }
         }))
       }
     }
   } catch (error) {
-    console.error(error)
+    logError(() => console.error(error))
   }
 })
 

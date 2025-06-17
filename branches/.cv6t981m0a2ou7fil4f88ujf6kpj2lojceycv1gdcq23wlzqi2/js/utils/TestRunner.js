@@ -1,5 +1,6 @@
 import { TurtleDictionary } from '../turtle/TurtleDictionary.js'
 import { Assert } from './Assert.js'
+import { logError } from './logger.js'
 import { Recaller } from './Recaller.js'
 import { ERROR, FAIL, ONLY, PASS, RUNNER, RUNNING, SUITE, TEST, WAIT } from './TestRunnerConstants.js'
 
@@ -64,22 +65,22 @@ export class TestRunner {
 
   async run () {
     this.#runPromise ??= (async () => {
-      // console.group('vvv run', this.name, this.type)
+      // logTrace(() => console.group('vvv run', this.name, this.type))
       this.runState = RUNNING
       try {
         if (this.#f) await this.#f(this)
         await this.runChildren()
       } catch (error) {
         this.error = error
-        if (this.verbose) console.error(error)
+        if (this.verbose) logError(() => console.error(error))
         if (!(error instanceof TestRunnerError)) {
-          console.error(error)
+          logError(() => console.error(error))
           this.caught(`caught error: ${error.message}`, () => { throw new TestRunnerError(`${this.name}.run`, { cause: error }) })
         }
         this.runState = FAIL
       }
-      // console.groupEnd()
-      // console.log('^^^ ran', this.name, this.type)
+      // logTrace(() => console.groupEnd())
+      // logTrace(() => console.log('^^^ ran', this.name, this.type))
     })()
     return this.#runPromise
   }
@@ -97,7 +98,7 @@ export class TestRunner {
   async runChildren () {
     this.#runChildrenPromise ??= (async () => {
       ++this.runIndex
-      // console.group('vvv runChildren', this.name, this.type)
+      // logTrace(() => console.group('vvv runChildren', this.name, this.type))
       const errors = []
       if (this._only) {
         await this._only.run()
@@ -108,8 +109,8 @@ export class TestRunner {
           if (child.runState === FAIL) errors.push(child.error)
         }
       }
-      // console.groupEnd()
-      // console.log('^^^ ranChildren', this.name, this.type)
+      // logTrace(() => console.groupEnd())
+      // logTrace(() => console.log('^^^ ranChildren', this.name, this.type))
       if (errors.length) {
         throw new TestRunnerError(`${this.name}.runChildren`, { cause: errors })
       }

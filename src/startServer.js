@@ -12,6 +12,7 @@ import { TurtleDictionary } from '../branches/public/js/turtle/TurtleDictionary.
 import { Workspace } from '../branches/public/js/turtle/Workspace.js'
 import { AS_REFS } from '../branches/public/js/turtle/codecs/CodecType.js'
 import { DEBUG, logInfo, setLogLevel } from '../branches/public/js/utils/logger.js'
+import { logError } from '../branches/.cv6t981m0a2ou7fil4f88ujf6kpj2lojceycv1gdcq23wlzqi2/js/utils/logger.js'
 
 export async function startServer (config = {}) {
   const recaller = new Recaller('turtledb-com')
@@ -19,7 +20,7 @@ export async function startServer (config = {}) {
   const configCopy = JSON.parse(JSON.stringify(config))
   if (configCopy.password) configCopy.password = '****'
   if (configCopy.s3) configCopy.s3.secretAccessKey = '****'
-  logInfo(configCopy)
+  logInfo(() => console.log('starting server with config:', configCopy))
   if (config.origin) {
     const { origin } = config
     originSync(turtleDB, origin.host, origin.port)
@@ -73,7 +74,7 @@ export async function startServer (config = {}) {
     global.AS_REFS = AS_REFS
     const replServer = start({ breakEvalOnSigint: true })
     replServer.setupHistory('.node_repl_history', err => {
-      if (err) console.error(err)
+      if (err) logError(() => console.error(err))
     })
     replServer.on('exit', process.exit)
   }

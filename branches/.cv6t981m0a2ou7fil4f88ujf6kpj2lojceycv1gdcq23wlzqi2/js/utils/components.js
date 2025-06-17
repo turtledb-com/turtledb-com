@@ -16,7 +16,7 @@ export const componentAtPath = (relativePath, cpk, baseElement) => {
   return (attributes = {}, children = []) => {
     if (typeof cpk === 'function') cpk = cpk()
     const elementName = componentNameAtPath(relativePath, cpk)
-    // console.log('componentAtPath', { relativePath, cpk, elementName })
+    // logTrace(() => console.log('componentAtPath', { relativePath, cpk, elementName }))
     if (elementName) {
       const { key } = attributes
       if (key && componentsByKey[key]) return componentsByKey[key]

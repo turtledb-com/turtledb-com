@@ -2,6 +2,7 @@ import { Recaller } from '../utils/Recaller.js'
 import { squashTurtle, U8aTurtle } from './U8aTurtle.js'
 import { combineUint8Arrays } from '../utils/combineUint8Arrays.js'
 import { combineUint8ArrayLikes } from '../utils/combineUint8ArrayLikes.js'
+import { logInfo, logWarn } from '../utils/logger.js'
 
 /**
  * @typedef {import('./codecs/CodecType.js').CodecOptions} CodecOptions
@@ -50,7 +51,7 @@ export class TurtleBranch {
           this.#setNextUint8Array(uint8Array)
         })
       } else {
-        console.warn(`TurtleBranch, ${this.name}.u8aTurtle set to non-descendant (generators are broken now)`)
+        logWarn(() => console.warn(`TurtleBranch, ${this.name}.u8aTurtle set to non-descendant (generators are broken now)`))
       }
     }
     this.recaller.reportKeyMutation(this, 'u8aTurtle', 'set', this.name)
@@ -90,7 +91,7 @@ export class TurtleBranch {
         }
       },
       cancel (reason) {
-        console.log('stream cancelled', { reason })
+        logInfo(() => console.log('stream cancelled', { reason }))
       },
       type: 'bytes'
     })

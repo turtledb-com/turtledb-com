@@ -1,3 +1,4 @@
+import { logDebug, logError, logWarn } from '../../utils/logger.js'
 import { Recaller } from '../../utils/Recaller.js'
 import { TurtleBranch } from '../TurtleBranch.js'
 import { Workspace } from '../Workspace.js'
@@ -39,11 +40,11 @@ export class TurtleDB {
   async makeWorkspace (signer, name) {
     try {
       const { publicKey } = await signer.makeKeysFor(name)
-      console.log({ publicKey })
+      logDebug(() => console.log({ publicKey }))
       const turtleBranch = await this.summonBoundTurtleBranch(publicKey, name)
       return new Workspace(name, signer, this.recaller, turtleBranch)
     } catch (error) {
-      console.error(error)
+      logError(() => console.error(error))
     }
   }
 
@@ -66,7 +67,7 @@ export class TurtleDB {
    */
   bind (binding) {
     if (this.#bindings.includes(binding)) {
-      console.warn('binding already added')
+      logWarn(() => console.warn('binding already added'))
       return false
     }
     this.#bindings.push(binding)
@@ -79,7 +80,7 @@ export class TurtleDB {
    */
   unbind (binding) {
     if (!this.#bindings.includes(binding)) {
-      console.warn('binding already removed')
+      logWarn(() => console.warn('binding already removed'))
       return false
     }
     this.#bindings = this.#bindings.filter(_binding => _binding !== binding)
@@ -141,7 +142,7 @@ export class TurtleDB {
           }
           return turtleBranch
         } catch (error) {
-          console.error(error)
+          logError(() => console.error(error))
         }
       })()
     }

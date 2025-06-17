@@ -3,6 +3,7 @@ import { codec } from './codecs/codec.js'
 import { TurtleBranch } from './TurtleBranch.js'
 import { ValueByUint8Array } from './utils.js'
 import { findCommonAncestor } from './U8aTurtle.js'
+import { logError, logInfo } from '../utils/logger.js'
 
 /**
  * @typedef {import('./U8aTurtle.js').U8aTurtle} U8aTurtle
@@ -56,9 +57,9 @@ export class TurtleDictionary extends TurtleBranch {
           let string = u8aTurtle.lookup(address, AS_REFS)
           if (string instanceof Uint8Array) string = [`Uint8Array( ${string.length} )`, [...string]]
           else string = [string]
-          console.log(' -', address, ':', ...string)
+          logInfo(() => console.log(' -', address, ':', ...string))
         } else if (this.#valueByUint8Array?.get?.(uint8Array) !== undefined) {
-          console.error({ name: this.name, address, footer: u8aTurtle.getByte(address), uint8Array, value: u8aTurtle.lookup(address) })
+          logError(() => console.error({ name: this.name, address, footer: u8aTurtle.getByte(address), uint8Array, value: u8aTurtle.lookup(address) }))
           throw new Error('uint8Array already stored')
         }
         this.#cache(uint8Array, address, codecVersion.codecType)

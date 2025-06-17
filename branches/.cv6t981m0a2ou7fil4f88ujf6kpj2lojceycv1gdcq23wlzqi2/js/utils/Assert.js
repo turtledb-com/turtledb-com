@@ -1,4 +1,5 @@
 import { AS_REFS } from '../turtle/codecs/CodecType.js'
+import { logInfo } from './logger.js'
 import { TestRunnerError } from './TestRunner.js'
 import { ASSERTION, FAIL } from './TestRunnerConstants.js'
 
@@ -91,9 +92,9 @@ export class Assert {
 export function printDiff (turtleBranch, a, b, indent = '') {
   if (a === undefined || b === undefined) {
     if (a) {
-      console.log(`${indent}${JSON.stringify(turtleBranch.lookup(a))} !== undefined`)
+      logInfo(() => console.log(`${indent}${JSON.stringify(turtleBranch.lookup(a))} !== undefined`))
     } else {
-      console.log(`${indent}undefined !== ${JSON.stringify(turtleBranch.lookup(b))}`)
+      logInfo(() => console.log(`${indent}undefined !== ${JSON.stringify(turtleBranch.lookup(b))}`))
     }
     return
   }
@@ -104,11 +105,11 @@ export function printDiff (turtleBranch, a, b, indent = '') {
     const attributes = new Set([...Object.keys(aRefs), ...Object.keys(bRefs)])
     for (const attribute of attributes) {
       if (aRefs[attribute] !== bRefs[attribute]) {
-        console.log(`${indent}${attribute} - a:${a}, b:${b}`)
+        logInfo(() => console.log(`${indent}${attribute} - a:${a}, b:${b}`))
         printDiff(turtleBranch, aRefs[attribute], bRefs[attribute], `${indent}  `)
       }
     }
   } else {
-    console.log(`${indent}${JSON.stringify(turtleBranch.lookup(a))} !== ${JSON.stringify(turtleBranch.lookup(b))}`)
+    logInfo(() => console.log(`${indent}${JSON.stringify(turtleBranch.lookup(a))} !== ${JSON.stringify(turtleBranch.lookup(b))}`))
   }
 }

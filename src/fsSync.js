@@ -3,6 +3,7 @@ import { lstat, mkdir, readFile, symlink, unlink, writeFile } from 'fs/promises'
 import { dirname, join, relative } from 'path'
 import { existsSync, mkdirSync } from 'fs'
 import { logDebug } from '../branches/public/js/utils/logger.js'
+import { logError } from '../branches/.cv6t981m0a2ou7fil4f88ujf6kpj2lojceycv1gdcq23wlzqi2/js/utils/logger.js'
 
 /**
  * @typedef {import('../branches/public/js/turtle/connections/TurtleDB.js').TurtleDB} TurtleDB
@@ -38,7 +39,7 @@ export async function fsSync (name, turtleDB, signer, folder) {
   let publicKeyFolder
   const log = (action, path) => {
     const relativePath = relative(publicKeyFolder, path)
-    logDebug(`(fsSync) ${action} ${publicKeyFolder} ("${name}") / ${relativePath}`)
+    logDebug(() => console.log(`(fsSync) ${action} ${publicKeyFolder} ("${name}") / ${relativePath}`))
   }
   if (signer) {
     const workspace = await turtleDB.makeWorkspace(signer, name)
@@ -137,8 +138,10 @@ export async function fsSync (name, turtleDB, signer, folder) {
                   }
                 }
               } catch (err) {
-                console.log('unable to create symlinks')
-                console.error(err)
+                logError(() => {
+                  console.log('unable to create symlinks')
+                  console.error(err)
+                })
               }
             }
           }))
