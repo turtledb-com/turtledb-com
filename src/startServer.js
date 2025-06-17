@@ -74,4 +74,6 @@ export async function startServer (config = {}) {
     })
     replServer.on('exit', process.exit)
   }
+
+  return turtleDB
 }

@@ -25,7 +25,15 @@ export async function projectAction (projectname, username, options, defaultCpk)
     overrideConfig.password = null
   }
   const config = getConfigFromOptions(options, overrideConfig)
-  const { publicKey } = await config.signer.makeKeysFor(projectname)
+  const turtleDB = await startServer(config)
+  const turtleBranch = await turtleDB.makeWorkspace(config.signer, projectname)
+  let value = (await turtleBranch).lookup('document', 'value') || {}
+  if (typeof value !== 'object') value = {}
+  if (JSON.stringify(value?.['config.json']) !== JSON.stringify(overrideConfig)) {
+    logInfo(() => console.log(`committing new ${projectname}/document/value/config.json`))
+    value['config.json'] = JSON.stringify(overrideConfig, null, 2)
+    await turtleBranch.commit(value, 'upsert config.json')
+  }
   const projectPath = process.cwd()
   if (!(await lstat(projectPath))) await mkdir(projectPath)
   logInfo(() => console.log(`writing ${projectPath}/.gitignore`))
@@ -47,23 +55,21 @@ export async function projectAction (projectname, username, options, defaultCpk)
     author: config.username,
     license: 'GPL-3.0-or-later',
     scripts: {
-      start: 'source .env && npx turtledb-com --config config.json'
+      start: `source .env && npx turtledb-com --config branches/${projectname}/config.json`
     }
   }, null, 2) + '\n')
-  logInfo(() => console.log(`writing ${projectPath}/config.json`))
-  await writeFile(join(projectPath, 'config.json'), JSON.stringify(overrideConfig, null, 2) + '\n')
   await mkdir(join(projectPath, 'branches'), { recursive: true })
+  const { publicKey } = await config.signer.makeKeysFor(projectname)
   const keyPath = join(projectPath, 'branches', `.${publicKey}`)
   const namePath = join(projectPath, 'branches', projectname)
   try {
     await unlink(namePath)
   } catch {
-    // don't worry about not deleting what isn't there
+    // don't worry about not being able to delete what isn't there
   }
   await symlink(keyPath, namePath)
   logInfo(() => console.log(`project directory initialized: ${projectPath}`))
   logInfo(() => console.log(`starting server. run 'npm start' from ${projectPath} to start manually`))
-  await startServer(config)
   logInfo(() => console.log(`
 ╭──────────────────────────────────────────────────────────────────────────────────────────╮
 │                                                                                          │

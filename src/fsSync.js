@@ -101,7 +101,7 @@ export async function fsSync (name, turtleDB, signer, folder) {
 
   turtleBranch.recaller.watch(`fsSync"${publicKey}"`, async () => {
     skipCommit = true
-    turtleBranch.lookup() // trigger recaller
+    turtleBranch.lookup() // tell recaller to watch turtleBranch changes
     const endTurn = await nextTurn()
     const newJsobj = turtleBranch.lookup('document', 'value')
     if (newJsobj) {
@@ -118,10 +118,16 @@ export async function fsSync (name, turtleDB, signer, folder) {
         if (newJsobj[relativePath] !== jsobj[relativePath]) {
           log('change: file added', path)
           changes.push(mkdir(dirname(path), { recursive: true }).then(async () => {
-            writeFile(path, newJsobj[relativePath])
+            // make sure it's a string
+            const data = newJsobj[relativePath]
+            if (typeof data !== 'string') {
+              logError(() => console.error(`files must be strings, ${publicKey} / ${relativePath} has type: ${typeof value}`))
+              return
+            }
+            writeFile(path, data)
             if (relativePath === 'config.json') {
               try {
-                const config = JSON.parse(newJsobj[relativePath])
+                const config = JSON.parse(data)
                 for (const fsType of ['fsReadWrite', 'fsReadOnly']) {
                   for (const { name, key } of config[fsType] || []) {
                     if (name && key && key !== publicKey) {
