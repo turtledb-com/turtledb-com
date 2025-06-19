@@ -55,7 +55,7 @@ export async function projectAction (projectname, username, options, defaultCpk)
     author: config.username,
     license: 'GPL-3.0-or-later',
     scripts: {
-      start: `source .env && npx turtledb-com --config branches/${projectname}/config.json`
+      start: `(export $(grep -v '^#' .env | xargs) && npx turtledb-com --config branches/${projectname}/config.json)`
     }
   }, null, 2) + '\n')
   await mkdir(join(projectPath, 'branches'), { recursive: true })

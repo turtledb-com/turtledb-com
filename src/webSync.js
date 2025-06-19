@@ -140,8 +140,9 @@ export async function webSync (port, basePublicKey, turtleDB, https, insecure, c
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!! FUN-FACT: Self-signed certificates break service-workers !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    (HINT): On MacOS, in a browser started with this command, a service-worker can use a self-signed cert ──╮
-╭───────────────────────────────────────────────────────────────────────────────────────────────────────────╯                                  
+    (HINT): On MacOS and in a browser started with this command ──╮
+               a service-worker can use a self-signed cert.       │
+╭─────────────────────────────────────────────────────────────────╯
 ╰─▶ open '/Applications/Google Chrome Canary.app' --args --ignore-certificate-errors https://localhost:8080/`))
   })
 }

@@ -16,18 +16,6 @@ program
   .name('turtledb-com')
   .version(version)
 program
-  .command('project')
-  .description('a basic local setup for developing a project')
-  .argument('<{string} projectname>', 'turtle branch name')
-  .argument('[{string} username]', 'username for branch signer')
-  .action((projectname, username) => {
-    projectAction(projectname, username, program.opts(), defaultCpk)
-  })
-program
-  .command('default', { isDefault: true })
-  .description('start services based on command-line only')
-  .action(() => startServer(getConfigFromOptions(program.opts())))
-program
   .addOption(new Option('--username <string>', 'username to use for Signer').env('TURTLEDB_USERNAME'))
   .addOption(new Option('--password <string>', 'password to use for Signer').env('TURTLEDB_PASSWORD'))
   .addOption(new Option('--s3-end-point <string>', 'endpoint for s3 (like "https://sfo3.digitaloceanspaces.com")').env('TURTLEDB_S3_END_POINT'))
@@ -55,6 +43,19 @@ program
   .option('-a, --archive', 'save all turtles to files by public key', false)
   .option('--archive-path', 'folder to archive to', 'archive')
   .option('-v, --verbose [level]', 'log data flows', x => +x, false) // +false === 0 === INFO, +true === 1 === DEBUG
+program
+  .command('default', { isDefault: true })
+  .description('start services based on command-line only')
+  .action(() => startServer(getConfigFromOptions(program.opts())))
+program
+  .command('project')
+  .description('a basic local setup for developing a project')
+  .argument('<{string} projectname>', 'turtle branch name')
+  .argument('[{string} username]', 'username for branch signer')
+  .action((projectname, username) => {
+    projectAction(projectname, username, program.opts(), defaultCpk)
+  })
+program
   .parse()
 
 logSilly(() => console.log('codec codes:', codec.codecTypeVersionsByFooter.map((codecVersion, index) => `\n${index.toString().padStart(5, ' ')}: { name: "${codecVersion.codecType.name}", versionArrays: ${JSON.stringify(codecVersion.versionArrays)} }`).join('')))

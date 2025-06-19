@@ -104,7 +104,7 @@ export function getConfigFromOptions (options, overrideConfig = {}) {
     config.username ??= question('username: ')
     config.password ??= question('password: ', { hideEchoBack: true })
   }
-  if (config.username && config.password) config.signer = new Signer(username, password)
+  if (config.username && config.password) config.signer = new Signer(config.username, config.password)
   if (remoteConfig) {
     if (!config.signer) throw new Error('username and password must be provided to use remote-config')
     if (!config.origin && !config.s3) throw new Error('origin or s3 must be provided to use remote-config')

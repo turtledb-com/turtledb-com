@@ -1,6 +1,9 @@
 # the true price of a pretty laptop
 .DS_Store
 
+# don't commit passwords
+.env
+
 # coverage reports
 coverage/
 
