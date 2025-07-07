@@ -1,7 +1,7 @@
 import { handleNextTick } from '../utils/nextTick.js'
 import { proxyWithRecaller } from '../utils/proxyWithRecaller.js'
 import { Recaller } from '../utils/Recaller.js'
-import { b36ToBigInt, b36ToUint8Array, bigIntToUint8Array, cpkBaleHostToPath, decodeNumberFromU8a, encodeNumberToU8a, pathToCpkBaleHost, softSet, uint8ArrayToB36, uint8ArrayToBigInt, ValueByUint8Array } from './utils.js'
+import { b36ToBigInt, b36ToUint8Array, bigIntToUint8Array, cpkBaleHostToPath, decodeNumberFromU8a, encodeNumberToU8a, pathToCpkBaleHost, softAssign, uint8ArrayToB36, uint8ArrayToBigInt, ValueByUint8Array } from './utils.js'
 import { combineUint8Arrays } from '../utils/combineUint8Arrays.js'
 import { combineUint8ArrayLikes } from '../utils/combineUint8ArrayLikes.js'
 import { toCombinedVersion } from '../utils/toCombinedVersion.js'
@@ -24,14 +24,14 @@ globalTestRunner.describe(urlToName(import.meta.url), suite => {
       assert.equal(cpkBaleHostToPath(...cpkBaleHost), repath)
     })
   })
-  suite.it('softsets completely', ({ assert }) => {
+  suite.it('softAssigns completely', ({ assert }) => {
     const obj = { a: 1, b: 2 }
     ;[
       { b: 3, c: [1, 2, 3] },
       { c: [1, 2, 3,,,] }, // eslint-disable-line no-sparse-arrays
       { c: [, 2] } // eslint-disable-line no-sparse-arrays
     ].forEach(vector => {
-      softSet(obj, vector)
+      softAssign(obj, vector)
       assert.equal(obj, vector)
     })
   })

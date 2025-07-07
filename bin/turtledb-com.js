@@ -2,7 +2,7 @@
 
 import { readFileSync } from 'fs'
 import { Option, program } from 'commander'
-import { projectAction } from '../src/projectAction.js'
+import { packageAction } from '../src/packageAction.js'
 import { getConfigFromOptions } from '../src/getConfigFromOptions.js'
 import { startServer } from '../src/startServer.js'
 import { logSilly } from '../branches/.cv6t981m0a2ou7fil4f88ujf6kpj2lojceycv1gdcq23wlzqi2/js/utils/logger.js'
@@ -48,12 +48,12 @@ program
   .description('start services based on command-line only')
   .action(() => startServer(getConfigFromOptions(program.opts())))
 program
-  .command('project')
-  .description('a basic local setup for developing a project')
-  .argument('<{string} projectname>', 'turtle branch name')
+  .command('package')
+  .description('a basic local setup for developing a package')
+  .argument('<{string} packagename>', 'name of package\'s top level turtle branch')
   .argument('[{string} username]', 'username for branch signer')
   .action((projectname, username) => {
-    projectAction(projectname, username, program.opts(), defaultCpk)
+    packageAction(projectname, username, program.opts(), defaultCpk)
   })
 program
   .parse()

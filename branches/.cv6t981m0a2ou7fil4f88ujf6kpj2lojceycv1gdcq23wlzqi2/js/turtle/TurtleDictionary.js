@@ -33,8 +33,7 @@ export class TurtleDictionary extends TurtleBranch {
     return this.length - 1
   }
 
-  #cache = (uint8Array, address, codecType) => {
-    if (codecType.isOpaque) return
+  #cache = (uint8Array, address) => {
     this.#valueByUint8Array.set(uint8Array, address)
   }
 
@@ -50,7 +49,6 @@ export class TurtleDictionary extends TurtleBranch {
     let address = u8aTurtle.length - 1
     while (u8aTurtle !== this.#lastLexicographedTurtle) {
       while (address >= u8aTurtle.offset) {
-        const codecVersion = codec.extractCodecTypeVersion(u8aTurtle, address)
         const uint8Array = codec.extractEncodedValue(u8aTurtle, address)
         if (!uint8Array.length) throw new Error('empty uint8Array')
         if (logall) {
@@ -62,7 +60,7 @@ export class TurtleDictionary extends TurtleBranch {
           logError(() => console.error({ name: this.name, address, footer: u8aTurtle.getByte(address), uint8Array, value: u8aTurtle.lookup(address) }))
           throw new Error('uint8Array already stored')
         }
-        this.#cache(uint8Array, address, codecVersion.codecType)
+        this.#cache(uint8Array, address)
         address -= uint8Array.length
       }
       u8aTurtle = u8aTurtle.parent

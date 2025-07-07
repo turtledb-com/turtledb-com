@@ -14,6 +14,7 @@
     "@noble/secp256k1": "^2.2.3",
     "chokidar": "^4.0.3",
     "commander": "^13.1.0",
+    "dotenv": "^16.5.0",
     "express": "^5.1.0",
     "mkcert": "^3.2.0",
     "readline-sync": "^1.4.10",
@@ -25,7 +26,8 @@
   "scripts": {
     "start": "./bin/turtledb-com.js -i -p 8080 -t 1024",
     "d": "./bin/turtledb-com.js",
-    "dev": "./bin/turtledb-com.js -i --insecure --https --web-port 8080 --fs-name public --no-s3",
+    "_old_dev": "./bin/turtledb-com.js -i --insecure --https --web-port 8080 --fs-name public --no-s3",
+    "dev": "node --env-file .env ./bin/turtledb-com.js -i --insecure --https --web-port 8080 --fs-name public --no-s3",
     "sync": "./bin/turtledb-com.js -i --insecure --https --web-port 8080 -o turtledb.com --outlet-port 1024 --fs-name public --no-s3",
     "syncs3": "./bin/turtledb-com.js -i --insecure --https --web-port 8080 --outlet-port 1024 --fs-name public",
     "dev1": "./bin/turtledb-com.js -i --insecure --https --web-port 8081 --outlet-port 1025 --origin-port 1024 --origin-host localhost --no-s3",

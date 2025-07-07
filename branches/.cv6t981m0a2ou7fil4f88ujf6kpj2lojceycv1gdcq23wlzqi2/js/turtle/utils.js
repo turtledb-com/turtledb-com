@@ -22,18 +22,22 @@ export const decodeNumberFromU8a = uint8Array => {
 }
 
 export class ValueByUint8Array {
-  #root = {}
+  /** @type {number} */
+  value
+  /** @type {Uint8Array} */
+  #appendix
+  /** @type {Object.<string, ValueByUint8Array>} */
+  #childrenByBit = {}
   /**
    * @param {Uint8Array} uint8Array
    * @returns any
    */
   get (uint8Array) {
-    let branch = this.#root
-    for (const byte of uint8Array) {
-      branch = branch[byte]
-      if (branch === undefined) return undefined
+    if (!uint8Array.length) return this.value
+    else if (this.#appendix) {
+      const { bytes, bits } = ValueByUint8Array.commonPrefix(this.#appendix, uint8Array)
+      return this.#childrenByBit[bits]?.get?.(uint8Array.slice(bytes))
     }
-    return branch.value
   }
 
   /**
@@ -41,12 +45,42 @@ export class ValueByUint8Array {
    * @param {any} value
    */
   set (uint8Array, value) {
-    let branch = this.#root
-    for (const byte of uint8Array) {
-      branch[byte] ??= {}
-      branch = branch[byte]
+    if (!uint8Array.length) {
+      if (this.value !== undefined) throw new Error('Existing value')
+      this.value = value
+      return
     }
-    branch.value = value
+    this.#appendix ??= uint8Array
+    if (!this.#appendix) this.#appendix = uint8Array
+    const { bytes, bits } = ValueByUint8Array.commonPrefix(this.#appendix, uint8Array)
+    this.#childrenByBit[bits] ??= new ValueByUint8Array()
+    this.#childrenByBit[bits].set(uint8Array.slice(bytes), value)
+  }
+
+  toObj () {
+    if (!this.#appendix) return { value: this.value }
+    return {
+      value: this.value,
+      u8a: [...this.#appendix].map(v => `0000000${v.toString(2)}`.slice(-8)).join('.'),
+      byBit: Object.fromEntries(Object.entries(this.#childrenByBit).map(([key, value]) => [key, value.toObj()]))
+    }
+  }
+
+  toString () {
+    return JSON.stringify(this.toObj(), null, 2)
+  }
+
+  /**
+   * @param {Uint8Array} a
+   * @param {Uint8Array} b
+   * @returns {number}
+   */
+  static commonPrefix (a, b) {
+    let bytes = 0
+    while (bytes < a.length && bytes < b.length && a[bytes] === b[bytes]) ++bytes
+    if (bytes === a.length || bytes === b.length) return { bytes, bits: bytes * 8 }
+    const bits = 8 * bytes + Math.clz32(a[bytes] ^ b[bytes]) - 24
+    return { bytes, bits }
   }
 }
 
@@ -99,11 +133,11 @@ export function uint8ArrayToB36 (uint8Array) {
  * @param {Object} a
  * @param {Object} b
  */
-export function softSet (a, b) {
+export function softAssign (a, b) {
   let changed = false
   const aKeys = Object.keys(a)
   for (const i of aKeys) {
-    if (Object.hasOwn(b, i)) { // softSet any overlapping attributes
+    if (Object.hasOwn(b, i)) { // softAssign any overlapping attributes
       if (a[i] !== b[i]) {
         if (!a[i] || !b[i]) {
           a[i] = b[i]
@@ -114,7 +148,7 @@ export function softSet (a, b) {
           typeof a[i] === 'object' && typeof b[i] === 'object' &&
           Array.isArray(a[i]) === Array.isArray(b[i])
         ) {
-          changed = softSet(a[i], b[i]) && changed
+          changed = softAssign(a[i], b[i]) && changed
         } else {
           a[i] = b[i]
           changed = true

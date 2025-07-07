@@ -13,14 +13,20 @@ import { Workspace } from '../branches/.cv6t981m0a2ou7fil4f88ujf6kpj2lojceycv1gd
 import { AS_REFS } from '../branches/.cv6t981m0a2ou7fil4f88ujf6kpj2lojceycv1gdcq23wlzqi2/js/turtle/codecs/CodecType.js'
 import { logInfo, setLogLevel, logError } from '../branches/.cv6t981m0a2ou7fil4f88ujf6kpj2lojceycv1gdcq23wlzqi2/js/utils/logger.js'
 
-export async function startServer (config = {}) {
-  setLogLevel(config.verbose)
-  const recaller = new Recaller('turtledb-com')
-  const turtleDB = new TurtleDB('turtledb-com', recaller)
+function logConfig (config) {
   const configCopy = JSON.parse(JSON.stringify(config))
+  delete configCopy['turtledb-com']
   if (configCopy.password) configCopy.password = '****'
   if (configCopy.s3) configCopy.s3.secretAccessKey = '****'
   logInfo(() => console.log('starting server with config:', configCopy))
+}
+
+export async function startServer (config) {
+  config = Object.assign({}, config, config?.['turtledb-com'])
+  setLogLevel(config.verbose)
+  logConfig(config)
+  const recaller = new Recaller('turtledb-com')
+  const turtleDB = new TurtleDB('turtledb-com', recaller)
   if (config.origin) {
     const { origin } = config
     originSync(turtleDB, origin.host, origin.port)
