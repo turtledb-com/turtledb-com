@@ -99,6 +99,7 @@ export class U8aTurtle {
   }
 
   #remapAddress (address, isLengthOkay = false) {
+    if (!this.length) return -1
     if (address < 0) address += this.length
     if (address < this.offset) throw new Error('address out of range')
     if (address > this.length) throw new Error('address out of range')
