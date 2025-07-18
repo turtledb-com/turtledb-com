@@ -6,6 +6,7 @@ import { Commit } from './codecs/Commit.js'
 import { b36ToUint8Array, uint8ArrayToB36 } from './utils.js'
 import { combineUint8Arrays } from '../utils/combineUint8Arrays.js'
 import { U8aTurtle } from './U8aTurtle.js'
+import { logError } from '../utils/logger.js'
 
 /**
  * @typedef {import('./U8aTurtle.js').U8aTurtle} U8aTurtle
@@ -77,20 +78,25 @@ export class Signer {
  * @param {string} publicKey
  */
 export async function verifyTurtleCommit (u8aTurtle, publicKey) {
-  const footer = u8aTurtle.getByte()
-  const codecVersion = codec.getCodecTypeVersion(footer)
-  if (codecVersion.codecType !== COMMIT) {
-    throw new Error('last value must be Commit')
+  try {
+    const footer = u8aTurtle.getByte()
+    const codecVersion = codec.getCodecTypeVersion(footer)
+    if (codecVersion.codecType !== COMMIT) {
+      throw new Error('last value must be Commit')
+    }
+    /** @type {Commit} */
+    const commit = codecVersion.decode(u8aTurtle, undefined, AS_REFS)
+    let uint8Array = u8aTurtle.slice(undefined, -codecVersion.getWidth(u8aTurtle) - 1)
+    if (u8aTurtle.parent) {
+      const previousEncodedCommit = splitEncodedCommit(u8aTurtle.parent)[1]
+      uint8Array = combineUint8Arrays([previousEncodedCommit, uint8Array])
+    }
+    const hash = await digestData(uint8Array)
+    return verify(commit.signature, hash, b36ToUint8Array(publicKey))
+  } catch (error) {
+    logError(() => console.error(error))
+    return false
   }
-  /** @type {Commit} */
-  const commit = codecVersion.decode(u8aTurtle, undefined, AS_REFS)
-  let uint8Array = u8aTurtle.slice(undefined, -codecVersion.getWidth(u8aTurtle) - 1)
-  if (u8aTurtle.parent) {
-    const previousEncodedCommit = splitEncodedCommit(u8aTurtle.parent)[1]
-    uint8Array = combineUint8Arrays([previousEncodedCommit, uint8Array])
-  }
-  const hash = await digestData(uint8Array)
-  return verify(commit.signature, hash, b36ToUint8Array(publicKey))
 }
 
 /**

@@ -23,6 +23,8 @@ const REMOVED_FILE = 'removed file'
  * @param {string} folder
  */
 export async function mirrorSync (name, turtleDB, signer, folder = '.') {
+  const workspace = signer && await turtleDB.makeWorkspace(signer, name)
+  console.log('settled?')
   const skipCommit = false
   let nextTurnPromise
   const nextTurn = async () => {
@@ -80,25 +82,30 @@ export async function mirrorSync (name, turtleDB, signer, folder = '.') {
         // }
       }
       endTurn()
-    }, 500) // delay should take longer than the commit
+    }, 5000) // delay should take longer than the commit
   }
   watch(folder, { ignored, followSymlinks: false })
     .on('add', getPathHandlerFor(UPDATED_FILE))
     .on('change', getPathHandlerFor(UPDATED_FILE))
     .on('unlink', getPathHandlerFor(REMOVED_FILE))
 
-  const workspace = signer && await turtleDB.makeWorkspace(signer, name)
   workspace.recaller.watch(`mirrorSync"${name}"`, async () => {
     workspace.recaller.reportKeyAccess(this, UPDATED_FILE, 'workspace.recaller.watch', name)
-    const documentValue = workspace.lookup()
-    if (!documentValue) {
-      await workspace?.commit?.(jsobj, 'chokidar.watch')
-      return
-    }
+    const documentValue = workspace.lookup('document', 'value')
     const gitignore = compile(documentValue?.['.gitignore'] || jsobj['.gitignore'] || '')
     const jsobjKeys = Object.keys(jsobj).filter(key => gitignore.accepts(key))
-    const valueKeys = Object.keys(documentValue).filter(key => gitignore.accepts(key))
+    const valueKeys = Object.keys(documentValue || {}).filter(key => gitignore.accepts(key))
     if (jsobjKeys.length !== valueKeys.length || jsobjKeys.some(key => jsobj[key] !== documentValue[key])) {
+      // console.log(jsobj)
+      const newValue = {}
+      for (const key of jsobjKeys) {
+        if (documentValue?.[key] !== jsobj[key]) {
+          console.log(key, documentValue?.[key], jsobj[key])
+        }
+        newValue[key] = jsobj[key]
+      }
+      console.log(newValue)
+      // throw new Error('asdf')
       await workspace?.commit?.(jsobj, 'chokidar.watch')
     }
     console.log('documentValue', documentValue && Object.keys(documentValue))

@@ -38,47 +38,45 @@ program
   .option('-v, --verbose [level]', 'log data flows', x => +x, false) // +false === 0 === INFO, +true === 1 === DEBUG
   .parse()
 
-replicate(program.opts())
+const options = program.opts()
 
-async function replicate (options) {
-  setLogLevel(options.verbose)
-  const username = options.username || question('Username: ')
-  const turtlename = options.turtlename || question('Turtlename: ')
-  const signer = new Signer(username, options.password || questionNewPassword('Password (Backspace won\'t work here): ', { min: 4, max: 999 }))
-  const { publicKey } = await signer.makeKeysFor(turtlename)
+setLogLevel(options.verbose)
+const username = options.username || question('Username: ')
+const turtlename = options.turtlename || question('Turtlename: ')
+const signer = new Signer(username, options.password || questionNewPassword('Password (Backspace won\'t work here): ', { min: 4, max: 999 }))
+const { publicKey } = await signer.makeKeysFor(turtlename)
 
-  logInfo(() => console.log({ username, turtlename, publicKey }))
-  const recaller = new Recaller('turtledb-com')
-  const turtleDB = new TurtleDB('turtledb-com', recaller)
+logInfo(() => console.log({ username, turtlename, publicKey }))
+const recaller = new Recaller('turtledb-com')
+const turtleDB = new TurtleDB('turtledb-com', recaller)
 
-  if (options.archive) {
-    const archivePath = options.archivePath
-    logInfo(() => console.log(`archiving to ${archivePath}`))
-    archiveSync(turtleDB, recaller, archivePath)
-  }
+if (options.archive) {
+  const archivePath = options.archivePath
+  logInfo(() => console.log(`archiving to ${archivePath}`))
+  archiveSync(turtleDB, recaller, archivePath)
+}
 
-  if (options.mirror) {
-    logInfo(() => console.log('mirroring to file system'))
-    mirrorSync(turtlename, turtleDB, signer)
-  }
+if (options.mirror) {
+  logInfo(() => console.log('mirroring to file system'))
+  mirrorSync(turtlename, turtleDB, signer)
+}
 
-  if (options.interactive) {
-    global.username = username
-    global.turtlename = turtlename
-    global.signer = signer
-    global.publicKey = publicKey
-    global.recaller = recaller
-    global.turtleDB = turtleDB
-    global.workspace = await turtleDB.makeWorkspace(signer, turtlename)
+if (options.interactive) {
+  global.username = username
+  global.turtlename = turtlename
+  global.signer = signer
+  global.publicKey = publicKey
+  global.recaller = recaller
+  global.turtleDB = turtleDB
+  global.workspace = await turtleDB.makeWorkspace(signer, turtlename)
 
-    global.TurtleDictionary = TurtleDictionary
-    global.Signer = Signer
-    global.Workspace = Workspace
-    global.AS_REFS = AS_REFS
-    const replServer = start({ breakEvalOnSigint: true })
-    replServer.setupHistory('.node_repl_history', err => {
-      if (err) logError(() => console.error(err))
-    })
-    replServer.on('exit', process.exit)
-  }
+  global.TurtleDictionary = TurtleDictionary
+  global.Signer = Signer
+  global.Workspace = Workspace
+  global.AS_REFS = AS_REFS
+  const replServer = start({ breakEvalOnSigint: true })
+  replServer.setupHistory('.node_repl_history', err => {
+    if (err) logError(() => console.error(err))
+  })
+  replServer.on('exit', process.exit)
 }
