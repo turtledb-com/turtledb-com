@@ -1,7 +1,7 @@
 import { watch } from 'chokidar'
 import { lstat, mkdir, readFile, symlink, unlink, writeFile } from 'fs/promises'
 import { dirname, join, relative } from 'path'
-import { existsSync, mkdirSync } from 'fs'
+import { existsSync, mkdirSync, readdirSync, readFileSync, statSync } from 'fs'
 import { logDebug, logError } from '../branches/.cv6t981m0a2ou7fil4f88ujf6kpj2lojceycv1gdcq23wlzqi2/js/utils/logger.js'
 import { compile } from '@gerhobbelt/gitignore-parser'
 
@@ -10,8 +10,6 @@ import { compile } from '@gerhobbelt/gitignore-parser'
  * @typedef {import('../branches/public/js/turtle/Signer.js').Signer} Signer
  * @typedef {import('../branches/public/js/turtle/Workspace.js').Workspace} Workspace
  */
-
-export const ignored = /(?:\/node_modules\b|.*\.ico$|\.lock$|~$)/i
 
 const UPDATED_FILE = 'updated file'
 const REMOVED_FILE = 'removed file'
@@ -24,8 +22,6 @@ const REMOVED_FILE = 'removed file'
  */
 export async function mirrorSync (name, turtleDB, signer, folder = '.') {
   const workspace = signer && await turtleDB.makeWorkspace(signer, name)
-  console.log('settled?')
-  const skipCommit = false
   let nextTurnPromise
   const nextTurn = async () => {
     const previousPromise = nextTurnPromise
@@ -34,7 +30,23 @@ export async function mirrorSync (name, turtleDB, signer, folder = '.') {
     await previousPromise
     return endTurn
   }
-  const jsobj = {}
+
+  const filenamesIn = (path) => {
+    return readdirSync(path).map(name => {
+      const childPath = join(path, name)
+      const stat = statSync(childPath)
+      if (stat.isSymbolicLink()) return []
+      if (stat.isDirectory()) return filenamesIn(childPath)
+      return childPath
+    }).flat()
+  }
+  const filenames = filenamesIn(folder)
+  console.log('filenames', filenames)
+  const jsobj = Object.fromEntries(filenames.map(filename => [
+    filename,
+    readFileSync(filename, 'utf8')
+  ]))
+
   const publicKey = (await signer?.makeKeysFor?.(name))?.publicKey ?? name
   const log = (action, path) => {
     const relativePath = relative(folder, path)
@@ -72,45 +84,45 @@ export async function mirrorSync (name, turtleDB, signer, folder = '.') {
     isHandlingChokidar = false
 
     setTimeout(async () => {
-      if (!skipCommit) {
-        workspace.recaller.reportKeyMutation(this, UPDATED_FILE, 'chokidar-watch', name)
-        // if (Object.keys(jsobj).length !== Object.keys(lastJsobj).length || Object.keys(jsobj).some(key => jsobj[key] !== lastJsobj[key])) {
-        //   turtleBranch.recaller.reportKeyMutation(this, UPDATED_FILE, 'chokidar-watch', name)
-        //   lastJsobj = Object.assign({}, jsobj)
-        // } else {
-        //   log('no changed files', folder)
-        // }
+      console.log('(chokidar)')
+      const documentValue = workspace.lookup('document', 'value')
+      const gitignore = compile(documentValue?.['.gitignore'] || jsobj['.gitignore'] || '')
+      const jsobjKeys = Object.keys(jsobj).filter(key => gitignore.accepts(key))
+      const valueKeys = Object.keys(documentValue || {}).filter(key => gitignore.accepts(key))
+      if (jsobjKeys.length !== valueKeys.length || jsobjKeys.some(key => jsobj[key] !== documentValue[key])) {
+        // console.log(jsobj)
+        const newValue = {}
+        for (const key of jsobjKeys) {
+          if (documentValue?.[key] !== jsobj[key]) {
+            console.log('change in key:', key, documentValue?.[key], jsobj[key])
+          }
+          newValue[key] = jsobj[key]
+        }
+        console.log('(chokidar) newValue', Object.keys(newValue))
+        // throw new Error('asdf')
+        await workspace?.commit?.(newValue, 'chokidar.watch')
+        console.log({ jsobjKeys, valueKeys })
+        console.log('(chokidar) documentValue', documentValue && Object.keys(documentValue))
+        console.log('(chokidar) jsobj', Object.keys(jsobj))
+        console.log({ publicKey })
       }
+      // if (Object.keys(jsobj).length !== Object.keys(lastJsobj).length || Object.keys(jsobj).some(key => jsobj[key] !== lastJsobj[key])) {
+      //   turtleBranch.recaller.reportKeyMutation(this, UPDATED_FILE, 'chokidar-watch', name)
+      //   lastJsobj = Object.assign({}, jsobj)
+      // } else {
+      //   log('no changed files', folder)
+      // }
       endTurn()
-    }, 5000) // delay should take longer than the commit
+    }, 500) // delay should take longer than the commit
   }
-  watch(folder, { ignored, followSymlinks: false })
+  watch(folder, { followSymlinks: false, ignoreInitial: true })
     .on('add', getPathHandlerFor(UPDATED_FILE))
     .on('change', getPathHandlerFor(UPDATED_FILE))
     .on('unlink', getPathHandlerFor(REMOVED_FILE))
 
   workspace.recaller.watch(`mirrorSync"${name}"`, async () => {
-    workspace.recaller.reportKeyAccess(this, UPDATED_FILE, 'workspace.recaller.watch', name)
     const documentValue = workspace.lookup('document', 'value')
-    const gitignore = compile(documentValue?.['.gitignore'] || jsobj['.gitignore'] || '')
-    const jsobjKeys = Object.keys(jsobj).filter(key => gitignore.accepts(key))
-    const valueKeys = Object.keys(documentValue || {}).filter(key => gitignore.accepts(key))
-    if (jsobjKeys.length !== valueKeys.length || jsobjKeys.some(key => jsobj[key] !== documentValue[key])) {
-      // console.log(jsobj)
-      const newValue = {}
-      for (const key of jsobjKeys) {
-        if (documentValue?.[key] !== jsobj[key]) {
-          console.log(key, documentValue?.[key], jsobj[key])
-        }
-        newValue[key] = jsobj[key]
-      }
-      console.log(newValue)
-      // throw new Error('asdf')
-      await workspace?.commit?.(jsobj, 'chokidar.watch')
-    }
-    console.log('documentValue', documentValue && Object.keys(documentValue))
-    console.log('jsobj', Object.keys(jsobj))
-    console.log({ publicKey })
+    console.log('(workspace recaller) documentValue', documentValue && Object.keys(documentValue))
   })
 
   // if (signer) {
