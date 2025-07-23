@@ -2,8 +2,10 @@ import { watch } from 'chokidar'
 import { lstat, readFile, unlink, writeFile } from 'fs/promises'
 import { join, relative } from 'path'
 import { readdirSync, readFileSync, statSync } from 'fs'
-import { logDebug } from '../branches/.cv6t981m0a2ou7fil4f88ujf6kpj2lojceycv1gdcq23wlzqi2/js/utils/logger.js'
+import { logDebug, logError } from '../branches/.cv6t981m0a2ou7fil4f88ujf6kpj2lojceycv1gdcq23wlzqi2/js/utils/logger.js'
 import { compile } from '@gerhobbelt/gitignore-parser'
+import { BINARY_FILE, JSON_FILE, linesToString, pathToType, TEXT_FILE } from '../branches/.cv6t981m0a2ou7fil4f88ujf6kpj2lojceycv1gdcq23wlzqi2/js/utils/fileTransformer.js'
+import { deepEqual } from '../branches/.cv6t981m0a2ou7fil4f88ujf6kpj2lojceycv1gdcq23wlzqi2/js/utils/deepEqual.js'
 
 /**
  * @typedef {import('../branches/public/js/turtle/connections/TurtleDB.js').TurtleDB} TurtleDB
@@ -42,28 +44,48 @@ export async function mirrorSync (name, turtleDB, signer, folder = '.') {
     }).flat()
   }
   const filenames = filenamesIn(folder)
-  const jsobj = Object.fromEntries(filenames.map(filename => [
-    filename,
-    readFileSync(filename, 'utf8')
-  ]))
+  const jsobj = Object.fromEntries(filenames.map(filename => {
+    const type = pathToType(filename)
+    let file = readFileSync(filename, type === BINARY_FILE ? {} : 'utf8')
+    if (type === JSON_FILE) file = JSON.parse(file)
+    else if (type === TEXT_FILE) file = file.split('\n')
+    console.log('=> transformed =>', filename, type, typeof file, file.constructor.name)
+    return [filename, file]
+  }))
+  // console.log(jsobj)
 
   workspace.recaller.watch(`mirrorSync"${name}"`, async () => {
     const documentValue = workspace.lookup('document', 'value')
     console.log('(workspace recaller) documentValue', documentValue && Object.keys(documentValue))
     if (!documentValue) return
-    const gitignore = compile(documentValue?.['.gitignore'] || jsobj['.gitignore'] || '')
+    const gitignoreContent = linesToString(documentValue?.['.gitignore'] || jsobj['.gitignore']) || ''
+    const gitignore = compile(gitignoreContent)
+    console.log('(workspace recaller)', { gitignoreContent })
     const jsobjKeys = Object.keys(jsobj).filter(key => gitignore.accepts(key))
     const valueKeys = Object.keys(documentValue || {}).filter(key => gitignore.accepts(key))
-    if (jsobjKeys.length !== valueKeys.length || jsobjKeys.some(key => jsobj[key] !== documentValue[key])) {
+    if (!deepEqual(documentValue, jsobj)) {
       skipCommit = true
       for (const key of jsobjKeys) {
         if (!documentValue[key]) {
-          await unlink(key)
+          try {
+            console.log('DELETING', key)
+            await unlink(key)
+          } catch (error) {
+            logError(() => console.error(error))
+          }
         }
       }
       for (const key of valueKeys) {
-        if (documentValue[key] !== jsobj[key]) {
-          await writeFile(key, documentValue[key])
+        if (!deepEqual(documentValue[key], jsobj[key])) {
+          console.log('(workspace recaller) ∆', key, documentValue[key], jsobj[key])
+          const type = pathToType(key)
+          try {
+            if (type === TEXT_FILE) await writeFile(key, documentValue[key].join('\n'))
+            else if (type === JSON_FILE) await writeFile(key, JSON.stringify(documentValue[key], null, 2))
+            else await writeFile(key, documentValue[key], 'binary')
+          } catch (error) {
+            logError(() => console.error(error))
+          }
         }
       }
       skipCommit = false
@@ -83,7 +105,6 @@ export async function mirrorSync (name, turtleDB, signer, folder = '.') {
     try {
       if ((await lstat(path)).isSymbolicLink()) return
     } catch (error) {
-      console.log(error)
       // deleted
     }
     const isFirst = !Object.keys(nextActionsByPath).length && !isHandlingChokidar
@@ -102,7 +123,20 @@ export async function mirrorSync (name, turtleDB, signer, folder = '.') {
         const action = nextActionsByPath[relativePath].pop()
         delete nextActionsByPath[relativePath]
         if (action === UPDATED_FILE) {
-          readFilePromises.push(readFile(path, 'utf8').then(file => { jsobj[relativePath] = file }))
+          const type = pathToType(path)
+          if (type === JSON_FILE) {
+            readFilePromises.push(readFile(path, 'utf8').then(file => {
+              jsobj[relativePath] = JSON.parse(file)
+            }))
+          } else if (type === TEXT_FILE) {
+            readFilePromises.push(readFile(path, 'utf8').then(file => {
+              jsobj[relativePath] = file.split('\n')
+            }))
+          } else {
+            readFilePromises.push(readFile(path, 'binary').then(file => {
+              jsobj[relativePath] = file
+            }))
+          }
         } else if (action === REMOVED_FILE) {
           delete jsobj[relativePath]
         }
@@ -114,17 +148,21 @@ export async function mirrorSync (name, turtleDB, signer, folder = '.') {
     setTimeout(async () => {
       console.log('(chokidar)')
       const documentValue = workspace.lookup('document', 'value')
-      const gitignore = compile(documentValue?.['.gitignore'] || jsobj['.gitignore'] || '')
+      const gitignoreContent = linesToString(documentValue?.['.gitignore'] || jsobj['.gitignore']) || ''
+      const gitignore = compile(gitignoreContent)
+      console.log('(chokidar)', { gitignoreContent })
       const jsobjKeys = Object.keys(jsobj).filter(key => gitignore.accepts(key))
       const valueKeys = Object.keys(documentValue || {}).filter(key => gitignore.accepts(key))
-      if (jsobjKeys.length !== valueKeys.length || jsobjKeys.some(key => jsobj[key] !== documentValue[key])) {
-        const newValue = {}
-        for (const key of jsobjKeys) {
-          if (documentValue?.[key] !== jsobj[key]) {
-            console.log('change in key:', key, documentValue?.[key], jsobj[key])
-          }
-          newValue[key] = jsobj[key]
+      const newValue = {}
+      let changed = false
+      for (const key of jsobjKeys) {
+        if (!deepEqual(documentValue?.[key], jsobj[key])) {
+          changed = true
+          console.log('change in key:', key, documentValue?.[key], jsobj[key])
         }
+        newValue[key] = jsobj[key]
+      }
+      if (changed) {
         console.log('(chokidar) newValue', Object.keys(newValue))
         if (!skipCommit) await workspace?.commit?.(newValue, 'chokidar.watch')
         console.log('(chokidar)', { skipCommit, publicKey, jsobjKeys, valueKeys })
