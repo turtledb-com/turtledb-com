@@ -1,11 +1,13 @@
-import { watch } from 'chokidar'
-import { lstat, readFile, unlink, writeFile } from 'fs/promises'
 import { join, relative } from 'path'
 import { readdirSync, readFileSync, statSync } from 'fs'
-import { logDebug, logError } from '../branches/.cv6t981m0a2ou7fil4f88ujf6kpj2lojceycv1gdcq23wlzqi2/js/utils/logger.js'
+import { lstat, readFile, unlink, writeFile } from 'fs/promises'
+import { watch } from 'chokidar'
 import { compile } from '@gerhobbelt/gitignore-parser'
+import { logDebug, logError } from '../branches/.cv6t981m0a2ou7fil4f88ujf6kpj2lojceycv1gdcq23wlzqi2/js/utils/logger.js'
 import { BINARY_FILE, JSON_FILE, linesToString, pathToType, TEXT_FILE } from '../branches/.cv6t981m0a2ou7fil4f88ujf6kpj2lojceycv1gdcq23wlzqi2/js/utils/fileTransformer.js'
 import { deepEqual } from '../branches/.cv6t981m0a2ou7fil4f88ujf6kpj2lojceycv1gdcq23wlzqi2/js/utils/deepEqual.js'
+import { AS_REFS } from '../branches/.cv6t981m0a2ou7fil4f88ujf6kpj2lojceycv1gdcq23wlzqi2/js/turtle/codecs/CodecType.js'
+import { OPAQUE_UINT8ARRAY } from '../branches/.cv6t981m0a2ou7fil4f88ujf6kpj2lojceycv1gdcq23wlzqi2/js/turtle/codecs/codec.js'
 
 /**
  * @typedef {import('../branches/public/js/turtle/connections/TurtleDB.js').TurtleDB} TurtleDB
@@ -34,21 +36,26 @@ export async function mirrorSync (name, turtleDB, signer, folder = '.') {
     return endTurn
   }
 
-  const filenamesIn = (path) => {
+  const allFilenamesIn = (path) => {
     return readdirSync(path).map(name => {
       const childPath = join(path, name)
       const stat = statSync(childPath)
       if (stat.isSymbolicLink()) return []
-      if (stat.isDirectory()) return filenamesIn(childPath)
+      if (stat.isDirectory()) return allFilenamesIn(childPath)
       return childPath
     }).flat()
   }
-  const filenames = filenamesIn(folder)
+  const filenames = allFilenamesIn(folder)
   const jsobj = Object.fromEntries(filenames.map(filename => {
     const type = pathToType(filename)
-    let file = readFileSync(filename, type === BINARY_FILE ? {} : 'utf8')
-    if (type === JSON_FILE) file = JSON.parse(file)
-    else if (type === TEXT_FILE) file = file.split('\n')
+    let file
+    if (type === JSON_FILE) {
+      file = JSON.parse(readFileSync(filename, 'utf8'))
+    } else if (type === TEXT_FILE) {
+      file = readFileSync(filename, 'utf8').split('\n')
+    } else if (type === BINARY_FILE) {
+      file = new Uint8Array(readFileSync(filename))
+    }
     console.log('=> transformed =>', filename, type, typeof file, file.constructor.name)
     return [filename, file]
   }))
@@ -80,9 +87,13 @@ export async function mirrorSync (name, turtleDB, signer, folder = '.') {
           console.log('(workspace recaller) ∆', key, documentValue[key], jsobj[key])
           const type = pathToType(key)
           try {
-            if (type === TEXT_FILE) await writeFile(key, documentValue[key].join('\n'))
-            else if (type === JSON_FILE) await writeFile(key, JSON.stringify(documentValue[key], null, 2))
-            else await writeFile(key, documentValue[key], 'binary')
+            if (type === JSON_FILE) {
+              await writeFile(key, JSON.stringify(documentValue[key], null, 2))
+            } else if (type === TEXT_FILE) {
+              await writeFile(key, documentValue[key].join('\n'))
+            } else {
+              await writeFile(key, documentValue[key])
+            }
           } catch (error) {
             logError(() => console.error(error))
           }
@@ -133,8 +144,8 @@ export async function mirrorSync (name, turtleDB, signer, folder = '.') {
               jsobj[relativePath] = file.split('\n')
             }))
           } else {
-            readFilePromises.push(readFile(path, 'binary').then(file => {
-              jsobj[relativePath] = file
+            readFilePromises.push(readFile(path).then(file => {
+              jsobj[relativePath] = new Uint8Array(file)
             }))
           }
         } else if (action === REMOVED_FILE) {
@@ -153,18 +164,26 @@ export async function mirrorSync (name, turtleDB, signer, folder = '.') {
       console.log('(chokidar)', { gitignoreContent })
       const jsobjKeys = Object.keys(jsobj).filter(key => gitignore.accepts(key))
       const valueKeys = Object.keys(documentValue || {}).filter(key => gitignore.accepts(key))
-      const newValue = {}
+      const newValueRefs = {}
       let changed = false
       for (const key of jsobjKeys) {
-        if (!deepEqual(documentValue?.[key], jsobj[key])) {
+        const jsobjValue = jsobj[key]
+        if (!deepEqual(documentValue?.[key], jsobjValue)) {
           changed = true
-          console.log('change in key:', key, documentValue?.[key], jsobj[key])
+          console.log('change in key:', key, documentValue?.[key], typeof jsobjValue)
         }
-        newValue[key] = jsobj[key]
+        // newValueRefs[key] = jsobjValue
+        if (jsobjValue instanceof Uint8Array) {
+          newValueRefs[key] = workspace.upsert(jsobjValue, [OPAQUE_UINT8ARRAY])
+        } else {
+          newValueRefs[key] = workspace.upsert(jsobjValue)
+        }
       }
       if (changed) {
-        console.log('(chokidar) newValue', Object.keys(newValue))
-        if (!skipCommit) await workspace?.commit?.(newValue, 'chokidar.watch')
+        console.log('(chokidar) newValueRefs', Object.keys(newValueRefs), newValueRefs)
+        const ref = workspace.upsert(newValueRefs, undefined, AS_REFS)
+        console.log({ ref })
+        if (!skipCommit) await workspace?.commit?.(ref, 'chokidar.watch', true)
         console.log('(chokidar)', { skipCommit, publicKey, jsobjKeys, valueKeys })
       }
       endTurn()

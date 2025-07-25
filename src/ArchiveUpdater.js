@@ -27,11 +27,11 @@ export class ArchiveUpdater extends AbstractUpdater {
 
   indexToPath (index) {
     if (index === undefined) return join(this.path, this.publicKey)
-    return join(this.path, this.publicKey, index.toString(32).padStart(6, '0'))
+    return join(this.path, this.publicKey, index.toString(36).padStart(6, '0'))
   }
 
   async setUint8ArraysLength (length) {
-    const conflictMessage = `Attempt to setUint8ArrayLength(${length}) of "${this.name}" (conflict at ${length.toString(32).padStart(6, '0')}). Backup and delete archive/${this.publicKey} to resolve.`
+    const conflictMessage = `Attempt to setUint8ArrayLength(${length}) of "${this.name}" (conflict at ${length.toString(36).padStart(6, '0')}). Backup and delete archive/${this.publicKey} to resolve.`
     throw new Error(conflictMessage)
   }
 

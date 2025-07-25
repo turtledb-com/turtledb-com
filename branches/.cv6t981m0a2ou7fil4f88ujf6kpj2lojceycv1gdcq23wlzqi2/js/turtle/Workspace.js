@@ -20,6 +20,7 @@ export class Workspace extends TurtleDictionary {
     this.signer = signer
     this.committedBranch = committedBranch
     this.committedBranch.recaller.watch(`update Workspace:${this.name}`, () => {
+      if (!this.committedBranch.u8aTurtle) return
       if (this.committedBranch.u8aTurtle === this.u8aTurtle) return
       if (this.committedBranch.u8aTurtle && this.u8aTurtle) {
         if (this.u8aTurtle.hasAncestor(this.committedBranch.u8aTurtle)) return // uncommitted changes
@@ -38,13 +39,16 @@ export class Workspace extends TurtleDictionary {
       throw new Error('committedBranch must be ancestor of workspace (merge required)')
     }
 
-    const address = this.recaller.call(() => this.upsert({
-      message: this.upsert(message),
-      name: this.upsert(this.name),
-      username: this.upsert(this.signer.username),
-      ts: this.upsert(new Date()),
-      value: asRef ? value : this.upsert(value)
-    }, undefined, AS_REFS), IGNORE_MUTATE)
+    const valueRef = asRef ? value : this.upsert(value)
+    const address = this.recaller.call(() => {
+      return this.upsert({
+        message: this.upsert(message),
+        name: this.upsert(this.name),
+        username: this.upsert(this.signer.username),
+        ts: this.upsert(new Date()),
+        value: valueRef
+      }, undefined, AS_REFS)
+    }, IGNORE_MUTATE)
     this.append(await this.signer.signCommit(this.name, address, this.u8aTurtle, this.committedBranch.u8aTurtle))
     this.squash((this.committedBranch?.index ?? -1) + 1)
     this.committedBranch.u8aTurtle = this.u8aTurtle

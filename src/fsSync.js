@@ -49,7 +49,11 @@ export async function fsSync (name, turtleDB, signer, folder) {
     let isHandlingChokidar
     const getPathHandlerFor = action => async path => {
       log(action, path)
-      if ((await lstat(path)).isSymbolicLink()) return
+      try {
+        if ((await lstat(path)).isSymbolicLink()) return
+      } catch (error) {
+        console.error(error) // it's probably not there
+      }
       const isFirst = !Object.keys(nextActionsByPath).length && !isHandlingChokidar
       isHandlingChokidar = true
       const relativePath = relative(publicKeyFolder, path)
