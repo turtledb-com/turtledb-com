@@ -82,4 +82,15 @@ export class TurtleDictionary extends TurtleBranch {
     }
     return address
   }
+
+  /**
+   * @param {TurtleDictionary} theirs 
+   * @param {boolean} Xours 
+   * @returns {TurtleDictionary}
+   */
+  merge (theirs, Xours = false) {
+    const commonAncestor = findCommonAncestor(this.u8aTurtle, theirs.u8aTurtle)
+    const commonState = commonAncestor.lookup(AS_REFS)
+    console.log(commonState)
+  }
 }

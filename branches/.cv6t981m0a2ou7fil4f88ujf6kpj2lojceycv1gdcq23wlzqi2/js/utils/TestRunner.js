@@ -6,7 +6,10 @@ import { ERROR, FAIL, ONLY, PASS, RUNNER, RUNNING, SUITE, TEST, WAIT } from './T
 
 export function urlToName (url) {
   if (typeof window !== 'undefined' && window?.location?.origin && url.startsWith(window.location.origin)) {
+    console.log(new URL(window.location))
     url = url.slice(window.location.origin.length)
+    const slashCpk = url.match(/\/[0-9A-Za-z]{41,51}(?=\/)/)?.[0]
+    url = url.slice(slashCpk.length)
   }
   url = /(?<=\/public\/).*/.exec(url)?.[0] ?? url
   const parsed = /(?<path>[^?]*)\.test\.js?.*address=(?<address>[^&]*)/.exec(url)
@@ -27,8 +30,6 @@ export class TestRunnerError extends Error {
 export class TestRunner {
   /** @type {Array.<TestRunner>} */
   #children = []
-  /** @type {TestRunner} */
-  #only
   /** @type {Promise} */
   #runPromise
   #runChildrenPromise
@@ -65,7 +66,6 @@ export class TestRunner {
 
   async run () {
     this.#runPromise ??= (async () => {
-      // logTrace(() => console.group('vvv run', this.name, this.type))
       this.runState = RUNNING
       try {
         if (this.#f) await this.#f(this)
@@ -79,8 +79,25 @@ export class TestRunner {
         }
         this.runState = FAIL
       }
-      // logTrace(() => console.groupEnd())
-      // logTrace(() => console.log('^^^ ran', this.name, this.type))
+    })()
+    await this.#runPromise
+  }
+
+  async run () {
+    this.#runPromise ??= (async () => {
+      this.runState = RUNNING
+      try {
+        if (this.#f) await this.#f(this)
+        await this.runChildren()
+      } catch (error) {
+        this.error = error
+        if (this.verbose) logError(() => console.error(error))
+        if (!(error instanceof TestRunnerError)) {
+          logError(() => console.error(error))
+          this.caught(`caught error: ${error.message}`, () => { throw new TestRunnerError(`${this.name}.run`, { cause: error }) })
+        }
+        this.runState = FAIL
+      }
     })()
     return this.#runPromise
   }
@@ -98,19 +115,13 @@ export class TestRunner {
   async runChildren () {
     this.#runChildrenPromise ??= (async () => {
       ++this.runIndex
-      // logTrace(() => console.group('vvv runChildren', this.name, this.type))
       const errors = []
-      if (this._only) {
-        await this._only.run()
-        if (this._only.runState === FAIL) errors.push(this._only.error)
-      } else {
-        for (const child of this.#children) {
-          await child.run()
-          if (child.runState === FAIL) errors.push(child.error)
-        }
+      const hasOnly = this.#children.some(child => child.type === ONLY)
+      console.log({hasOnly, name: this.name})
+      for (const child of this.#children) {
+        if (!hasOnly || child.type === ONLY) await child.run()
+        if (child.runState === FAIL) errors.push(child.error)
       }
-      // logTrace(() => console.groupEnd())
-      // logTrace(() => console.log('^^^ ranChildren', this.name, this.type))
       if (errors.length) {
         throw new TestRunnerError(`${this.name}.runChildren`, { cause: errors })
       }
@@ -126,7 +137,6 @@ export class TestRunner {
       runState: this.runState,
       children: this.children.map(child => child.status)
     }
-    if (this._only) status.only = this._only.status
     return status
   }
 
@@ -146,19 +156,11 @@ export class TestRunner {
   }
 
   get only () {
-    if (!this.#only) {
-      this.recaller.reportKeyMutation(this, 'only', 'init', this.name)
-      this.#only = new TestRunner('only', ONLY, this, this.#f, this.recaller, this.verbose)
-      if (this.runState === RUNNING) {
-        this.#only.#runState = RUNNING
-      }
-    }
-    return this._only
-  }
-
-  get _only () {
-    this.recaller.reportKeyAccess(this, 'only', 'get', this.name)
-    return this.#only
+    const child = new TestRunner('only', ONLY, this, () => undefined, this.recaller, this.verbose)
+    this.#children.push(child)
+    this.#runChildrenPromise = undefined
+    // this.recaller.reportKeyMutation(this, 'children', 'appendChild', this.name)
+    return child
   }
 
   /**
@@ -171,7 +173,7 @@ export class TestRunner {
     const child = new TestRunner(name, type, this, f, this.recaller, this.verbose)
     this.#children.push(child)
     this.#runChildrenPromise = undefined
-    this.recaller.reportKeyMutation(this, 'children', 'appendChild', this.name)
+    // this.recaller.reportKeyMutation(this, 'children', 'appendChild', this.name)
     if (this.runState === RUNNING) {
       await child.run()
     }
@@ -180,8 +182,6 @@ export class TestRunner {
 
   clearChildren () {
     this.#children = []
-    this.#only = undefined
-    this.recaller.reportKeyMutation(this, 'only', 'clearChildren', this.name)
     this.#runChildrenPromise = undefined
     this.recaller.reportKeyMutation(this, 'children', 'clearChildren', this.name)
   }

@@ -38,7 +38,7 @@ export class Workspace extends TurtleDictionary {
     if (this.u8aTurtle && !this.u8aTurtle.hasAncestor(this.committedBranch.u8aTurtle)) {
       throw new Error('committedBranch must be ancestor of workspace (merge required)')
     }
-
+    if (asRef && typeof value !== 'number') throw new Error(`commit asRef must be number, received ${typeof value}`)
     const valueRef = asRef ? value : this.upsert(value)
     const address = this.recaller.call(() => {
       return this.upsert({

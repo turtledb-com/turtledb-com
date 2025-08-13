@@ -102,7 +102,7 @@ export async function withoutServiceWorker (turtleDB, callback) {
       }
       ws.onmessage = event => {
         if (event.data.byteLength) tbMux.incomingBranch.append(new Uint8Array(event.data))
-        else logInfo(() => console.log('-- keep-alive'))
+        else logInfo(() => console.log(`-- keep-alive @ ${(new Date).toISOString()}`))
       }
       await new Promise((resolve, reject) => {
         ws.onclose = resolve

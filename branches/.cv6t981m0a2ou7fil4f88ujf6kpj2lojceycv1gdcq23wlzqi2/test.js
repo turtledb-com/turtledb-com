@@ -18,7 +18,6 @@ const path = ['document', 'value']
 webSocketMuxFactory(turtleDB, async tbMux => {
   window.tbMux = tbMux
 
-  await globalTestRunner.run()
 
   const turtleBranch = await turtleDB.summonBoundTurtleBranch(cpk)
 
@@ -44,7 +43,7 @@ webSocketMuxFactory(turtleDB, async tbMux => {
         }
         // }))
       }
-      await globalTestRunner.rerunChildren()
+      await globalTestRunner.run()
       console.log(globalTestRunner.status)
     }
   })

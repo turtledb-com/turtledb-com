@@ -6,7 +6,7 @@ import { Signer } from './Signer.js'
 import { TurtleDictionary } from './TurtleDictionary.js'
 import { b36ToUint8Array } from './utils.js'
 
-globalTestRunner.describe(urlToName(import.meta.url), suite => {
+globalTestRunner.only.describe(urlToName(import.meta.url), suite => {
   suite.it('encodes and decodes', ({ assert }) => {
     const dictionary = new TurtleDictionary('codec test')
     const arrayWithX = ['a', 'b', 'c']
@@ -111,6 +111,17 @@ globalTestRunner.describe(urlToName(import.meta.url), suite => {
     const uint8Array = b36ToUint8Array(publicKey)
     const address1 = dictionary.upsert(uint8Array, [ATOMIC_UINT8ARRAY])
     assert.equal(dictionary.lookup(address1), uint8Array)
+  })
+  suite.only.it('merges', ({assert}) => {
+    const common = new TurtleDictionary('common')
+    common.upsert({a: 1, b: 2})
+    const ours = new TurtleDictionary('ours', undefined, common.u8aTurtle)
+    ours.upsert({a:3, b:2})
+    const theirs = new TurtleDictionary('theirs', undefined, common.u8aTurtle)
+    ours.upsert({a:1, b:4})
+    ours.merge(theirs)
+    console.log(ours.lookup())
+    assert.assert(true)
   })
 })
 
