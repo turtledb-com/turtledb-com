@@ -28,7 +28,7 @@ export function proxyWithRecaller (
       if (value !== target[propertyKey]) {
         recaller.reportKeyMutation(target, propertyKey, 'set', name)
       }
-      if (!Object.hasOwn(target, propertyKey)) {
+      if (!(propertyKey in target)) {
         recaller.reportKeyMutation(target, OWN_KEYS, 'set', name)
       }
       const result = Reflect.set(target, propertyKey, value)
@@ -38,7 +38,7 @@ export function proxyWithRecaller (
       return result
     },
     deleteProperty: (target, propertyKey) => {
-      if (Object.hasOwn(target, propertyKey)) {
+      if (propertyKey in target) {
         recaller.reportKeyMutation(target, OWN_KEYS, 'delete', name)
       }
       return Reflect.deleteProperty(target, propertyKey)

@@ -1,7 +1,7 @@
 import { AS_REFS } from '../turtle/codecs/CodecType.js'
 import { logInfo } from './logger.js'
 import { TestRunnerError } from './TestRunner.js'
-import { ASSERTION, FAIL } from './TestRunnerConstants.js'
+import { ASSERTION, FAILED } from './TestRunnerConstants.js'
 
 const TON = {
   replacer: function (_key, value) {
@@ -43,7 +43,7 @@ export class Assert {
       failMessage,
       { runner: this.runner, expectedAddress, actualAddress }
     )
-    if (isEqual.runState === FAIL) {
+    if (isEqual.runState === FAILED) {
       printDiff(this.runner.upserter, expectedAddress, actualAddress)
     }
     return isEqual

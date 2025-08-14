@@ -43,7 +43,7 @@ function combineValues (values) {
 function combineConfigs (configs) {
   const keys = Array.from(configs.reduce((keysSet, config) => keysSet.union(new Set(Object.keys(config))), new Set()))
   return keys.reduce((combinedConfigs, key) => {
-    const values = configs.filter(config => Object.hasOwn(config, key)).map(config => config[key])
+    const values = configs.filter(config => key in config).map(config => config[key])
     if (values.length) combinedConfigs[key] = combineValues(values)
     return combinedConfigs
   }, {})

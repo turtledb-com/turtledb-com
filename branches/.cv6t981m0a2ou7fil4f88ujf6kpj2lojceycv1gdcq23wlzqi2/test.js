@@ -5,7 +5,7 @@ import { webSocketMuxFactory } from './js/utils/webSocketMuxFactory.js'
 import { h } from './js/display/h.js'
 import { render } from './js/display/render.js'
 import { showIfElse, mapEntries } from './js/display/helpers.js'
-import { ASSERTION, FAIL, PASS, RUNNER, RUNNING, SUITE, TEST } from './js/utils/TestRunnerConstants.js'
+import { ASSERTION, FAILED, PASSED, RUNNER, RUNNING, SUITE, TEST } from './js/utils/TestRunnerConstants.js'
 import { AS_REFS } from './js/turtle/codecs/CodecType.js'
 
 const recaller = new Recaller('test.js')
@@ -72,13 +72,28 @@ webSocketMuxFactory(turtleDB, async tbMux => {
       const getRunnerCardClass = () => ['runner-card', this.runner.type, this.runner.runState].join(' ')
       const getDetailsAttributes = () => {
         const detailsAttributes = { class: getRunnerCardClass() }
-        if (this.runner.type !== TEST || this.runner.runState !== PASS) detailsAttributes.open = 'open'
+        if (this.runner.type !== TEST || this.runner.runState !== PASSED) detailsAttributes.open = 'open'
         return detailsAttributes
       }
       render(this.shadowRoot, h`
       <style>
         :host {
           font-family: -apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans",Helvetica,Arial,sans-serif,"Apple Color Emoji","Segoe UI Emoji";
+        }
+
+        details {
+          transition: 0.2s all ease-out;
+        }
+        summary {
+          list-style: none;
+        }
+        details summary {
+        }
+        details summary::after {
+          content: ' ►';
+        }
+        details[open] summary:after {
+          content: ' ▼';
         }
 
         .runner-card {
@@ -92,6 +107,11 @@ webSocketMuxFactory(turtleDB, async tbMux => {
         .runner-card:open {
           padding: 0.5rem 1rem;
         }
+        .run-state {
+          display: inline-block;
+          height: 1rem;
+          width: 1rem;
+        }
         .${RUNNER} {
         }
         .${SUITE}:open {
@@ -101,18 +121,18 @@ webSocketMuxFactory(turtleDB, async tbMux => {
         }
         .${ASSERTION} {
         }
-        .${PASS} .type,
-        .${PASS} .run-state {
+        .${PASSED} .type,
+        .${PASSED} .run-state {
           color: #0c0;
         }
-        .${PASS} .name {
+        .${PASSED} .name {
           color: #040;
         }
-        .${FAIL} .type,
-        .${FAIL} .run-state {
+        .${FAILED} .type,
+        .${FAILED} .run-state {
           color: #f00;
         }
-        .${FAIL} .name {
+        .${FAILED} .name {
           color: #a00;
         }
         .${RUNNING} .type,
@@ -128,18 +148,18 @@ webSocketMuxFactory(turtleDB, async tbMux => {
             border-left: 1px solid #444;
             background: linear-gradient(rgb(31, 63, 47), black);
           }
-          .${PASS} .type,
-          .${PASS} .run-state {
+          .${PASSED} .type,
+          .${PASSED} .run-state {
             color: #0f0;
           }
-          .${PASS} .name {
+          .${PASSED} .name {
             color: #ada;
           }
-          .${FAIL} .type,
-          .${FAIL} .run-state {
+          .${FAILED} .type,
+          .${FAILED} .run-state {
             color: #f00;
           }
-          .${FAIL} .name {
+          .${FAILED} .name {
             color: #f88;
           }
           .${RUNNING} .type,

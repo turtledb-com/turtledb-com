@@ -2,7 +2,7 @@ import { TurtleDictionary } from '../turtle/TurtleDictionary.js'
 import { Assert } from './Assert.js'
 import { logError } from './logger.js'
 import { Recaller } from './Recaller.js'
-import { ERROR, FAIL, ONLY, PASS, RUNNER, RUNNING, SKIP, SKIPPED, SUITE, TEST, WAIT } from './TestRunnerConstants.js'
+import { ERROR, FAILED, ONLY, PASSED, RUNNER, RUNNING, SKIP, SKIPPED, SUITE, TEST, WAITING } from './TestRunnerConstants.js'
 
 export function urlToName (url) {
   if (typeof window !== 'undefined' && window?.location?.origin && url.startsWith(window.location.origin)) {
@@ -57,7 +57,7 @@ export class TestRunner {
     this.#f = f
     this.recaller = recaller
     this.verbose = verbose
-    this.#runState = WAIT
+    this.#runState = WAITING
     this.assert = new Assert(this)
     this.runIndex = 0
     this.upserter = new TurtleDictionary(name, recaller)
@@ -76,7 +76,7 @@ export class TestRunner {
           logError(() => console.error(error))
           this.caught(`caught error: ${error.message}`, () => { throw new TestRunnerError(`${this.name}.run`, { cause: error }) })
         }
-        this.runState = FAIL
+        this.runState = FAILED
       }
     })()
     return this.#runPromise
@@ -91,12 +91,12 @@ export class TestRunner {
         if (hasOnly && child.type !== ONLY) child.runState = SKIPPED
         if (child.type === SKIP) child.runState = SKIPPED
         if (child.runState !== SKIPPED) await child.run()
-        if (child.runState === FAIL) errors.push(child.error)
+        if (child.runState === FAILED) errors.push(child.error)
       }
       if (errors.length) {
         throw new TestRunnerError(`${this.name}.runChildren`, { cause: errors })
       }
-      this.runState = PASS
+      this.runState = PASSED
     })()
     return this.#runChildrenPromise
   }

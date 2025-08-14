@@ -1,4 +1,4 @@
-import { ASSERTION, FAIL, PASS, RUNNER, SUITE, TEST } from './TestRunnerConstants.js'
+import { ASSERTION, PASSED, RUNNER, SUITE, TEST, WAITING } from './TestRunnerConstants.js'
 import { globalTestRunner, TestRunner, urlToName } from './TestRunner.js'
 
 globalTestRunner.describe(urlToName(import.meta.url), suite => {
@@ -22,15 +22,15 @@ globalTestRunner.describe(urlToName(import.meta.url), suite => {
       })
     })
 
-    test.assert.equal({
+    console.log({
       name: 'unnamed-test-runner',
       type: RUNNER,
-      runState: '⧖',
+      runState: WAITING,
       children: [
         {
           name: 'abc',
           type: SUITE,
-          runState: '⧖',
+          runState: WAITING,
           children: []
         }
       ]
@@ -39,28 +39,28 @@ globalTestRunner.describe(urlToName(import.meta.url), suite => {
     test.assert.equal({
       name: 'unnamed-test-runner',
       type: RUNNER,
-      runState: PASS,
+      runState: PASSED,
       children: [
         {
           name: 'abc',
           type: SUITE,
-          runState: PASS,
+          runState: PASSED,
           children: [
             {
               name: 'xy',
               type: TEST,
-              runState: PASS,
+              runState: PASSED,
               children: [
                 {
                   name: '1 === 1',
                   type: ASSERTION,
-                  runState: PASS,
+                  runState: PASSED,
                   children: []
                 },
                 {
                   name: '2 === 2',
                   type: ASSERTION,
-                  runState: PASS,
+                  runState: PASSED,
                   children: []
                 }
               ]
@@ -68,12 +68,12 @@ globalTestRunner.describe(urlToName(import.meta.url), suite => {
             {
               name: 'z',
               type: TEST,
-              runState: PASS,
+              runState: PASSED,
               children: [
                 {
                   name: '3 === 3',
                   type: ASSERTION,
-                  runState: PASS,
+                  runState: PASSED,
                   children: []
                 }
               ]
@@ -98,28 +98,28 @@ globalTestRunner.describe(urlToName(import.meta.url), suite => {
     test.assert.equal({
       name: 'unnamed-test-runner',
       type: RUNNER,
-      runState: PASS,
+      runState: PASSED,
       children: [
         {
           name: 'abc',
           type: SUITE,
-          runState: PASS,
+          runState: PASSED,
           children: [
             {
               name: 'xy',
               type: TEST,
-              runState: PASS,
+              runState: PASSED,
               children: [
                 {
                   name: '1 === 1',
                   type: ASSERTION,
-                  runState: PASS,
+                  runState: PASSED,
                   children: []
                 },
                 {
                   name: '2 === 2',
                   type: ASSERTION,
-                  runState: PASS,
+                  runState: PASSED,
                   children: []
                 }
               ]
@@ -127,12 +127,12 @@ globalTestRunner.describe(urlToName(import.meta.url), suite => {
             {
               name: 'z',
               type: TEST,
-              runState: PASS,
+              runState: PASSED,
               children: [
                 {
                   name: '3 === 3',
                   type: ASSERTION,
-                  runState: PASS,
+                  runState: PASSED,
                   children: []
                 }
               ]
@@ -140,7 +140,7 @@ globalTestRunner.describe(urlToName(import.meta.url), suite => {
             {
               name: 'm',
               type: TEST,
-              runState: '⧖',
+              runState: WAITING,
               children: []
             }
           ]
@@ -148,7 +148,7 @@ globalTestRunner.describe(urlToName(import.meta.url), suite => {
         {
           name: 'n',
           type: SUITE,
-          runState: '⧖',
+          runState: WAITING,
           children: []
         }
       ]

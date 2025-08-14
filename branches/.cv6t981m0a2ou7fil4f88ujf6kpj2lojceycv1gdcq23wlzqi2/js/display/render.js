@@ -32,7 +32,7 @@ function _renderAttributes (attributes, node) {
     if (attribute == null) return
     if (attribute && attribute.type === 'attribute') {
       const name = attribute.name
-      if (Object.prototype.hasOwnProperty.call(obj, name)) return
+      if (name in obj) return
       const value = _constructValue(attribute.value, node)
       if (value == null) {
         obj[name] = name
@@ -43,12 +43,12 @@ function _renderAttributes (attributes, node) {
       obj = Object.assign(_renderAttributes(attribute, node), obj)
     } else if (typeof attribute === 'object') {
       Object.entries(attribute).forEach(([name, value]) => {
-        if (Object.prototype.hasOwnProperty.call(obj, name)) return
+        if (name in obj) return
         obj[name] = value
       })
     } else {
       const name = attribute.toString()
-      if (Object.prototype.hasOwnProperty.call(obj, name)) return
+      if (name in obj) return
       obj[name] = name
     }
   })

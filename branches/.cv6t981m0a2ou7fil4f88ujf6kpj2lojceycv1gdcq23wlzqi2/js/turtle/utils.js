@@ -137,7 +137,7 @@ export function softAssign (a, b) {
   let changed = false
   const aKeys = Object.keys(a)
   for (const i of aKeys) {
-    if (Object.hasOwn(b, i)) { // softAssign any overlapping attributes
+    if (i in b) { // softAssign any overlapping attributes
       if (a[i] !== b[i]) {
         if (!a[i] || !b[i]) {
           a[i] = b[i]
@@ -160,7 +160,7 @@ export function softAssign (a, b) {
     }
   }
   for (const i in b) { // add missing attributes
-    if (!Object.hasOwn(a, i)) {
+    if (!(i in a)) {
       a[i] = b[i]
       changed = true
     }

@@ -5,6 +5,9 @@ import { ValueByUint8Array } from './utils.js'
 import { findCommonAncestor } from './U8aTurtle.js'
 import { logError, logInfo } from '../utils/logger.js'
 
+export const OURS = 'ours'
+export const THEIRS = 'theirs'
+
 /**
  * @typedef {import('./U8aTurtle.js').U8aTurtle} U8aTurtle
  * @typedef {import('../utils/Recaller.js').Recaller} Recaller
@@ -84,13 +87,40 @@ export class TurtleDictionary extends TurtleBranch {
   }
 
   /**
-   * @param {TurtleDictionary} theirs 
-   * @param {boolean} Xours 
+   * @param {TurtleDictionary} theirs
+   * @param {OURS | THEIRS} Xours
    * @returns {TurtleDictionary}
    */
-  merge (theirs, Xours = false) {
+  merge (theirs, strategy = THEIRS) {
+    const _merge = (commonAddress, ourAddress, theirAddress) => {
+      if (theirAddress === ourAddress) return theirAddress
+      if (commonAddress === ourAddress) return theirAddress
+      if (commonAddress === theirAddress) return ourAddress
+      const commonState = commonAncestor.lookup(commonAddress, AS_REFS)
+      const oursState = this.lookup(ourAddress, AS_REFS)
+      const theirsState = this.lookup(theirAddress, AS_REFS)
+      const strategyAddress = strategy === OURS ? ourAddress : theirAddress
+      if (!commonState || !oursState || !theirsState) return strategyAddress
+      if (typeof oursState !== 'object' || typeof theirsState !== 'object') return strategyAddress
+      if (Array.isArray(oursState)) {
+        if (!Array.isArray(theirsState)) return strategyAddress
+      } else {
+        if (Array.isArray(theirsState)) return strategyAddress
+        if (oursState.constructor !== Object || theirsState.constructor !== Object) return strategyAddress
+      }
+      const mergedState = Array.isArray(oursState) ? [] : {}
+      const keys = new Set([...Object.keys(oursState), ...Object.keys(theirsState)])
+      for (const key of keys) {
+        const mergedKeyAddress = _merge(commonState?.[key], oursState[key], theirsState[key])
+        if (mergedKeyAddress >= 0) mergedState[key] = mergedKeyAddress
+      }
+      const mergedAddress = this.upsert(mergedState, undefined, AS_REFS)
+      return mergedAddress
+    }
     const commonAncestor = findCommonAncestor(this.u8aTurtle, theirs.u8aTurtle)
-    const commonState = commonAncestor.lookup(AS_REFS)
-    console.log(commonState)
+    const commonAddress = commonAncestor.length - 1
+    const ourAddress = this.length - 1
+    const theirAddress = this.upsert(theirs.lookup())
+    return _merge(commonAddress, ourAddress, theirAddress)
   }
 }

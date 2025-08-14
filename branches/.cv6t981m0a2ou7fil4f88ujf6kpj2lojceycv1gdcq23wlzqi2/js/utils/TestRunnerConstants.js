@@ -1,8 +1,8 @@
-export const PASS = '✓'
-export const FAIL = '✗'
-export const WAIT = '⧖'
-export const RUNNING = '…'
-export const SKIPPED = '◠'
+export const PASSED = '☑'
+export const FAILED = '☒'
+export const WAITING = '□'
+export const RUNNING = '■'
+export const SKIPPED = '⧄'
 
 export const RUNNER = '߷'
 export const SUITE = '●'
