@@ -13,6 +13,7 @@ import { Workspace } from '../branches/.cv6t981m0a2ou7fil4f88ujf6kpj2lojceycv1gd
 import { AS_REFS } from '../branches/.cv6t981m0a2ou7fil4f88ujf6kpj2lojceycv1gdcq23wlzqi2/js/turtle/codecs/CodecType.js'
 import { archiveSync } from '../src/archiveSync.js'
 import { mirrorSync } from '../src/mirrorSync.js'
+import { fileSync } from '../src/fileSync.js'
 
 const { version } = JSON.parse(readFileSync(new URL('../package.json', import.meta.url)))
 
@@ -58,7 +59,7 @@ if (options.archive) {
 
 if (options.mirror) {
   logInfo(() => console.log('mirroring to file system'))
-  mirrorSync(turtlename, turtleDB, signer)
+  fileSync(turtlename, turtleDB, signer, '.', ['.node_repl_history', options.archivePath])
 }
 
 if (options.interactive) {

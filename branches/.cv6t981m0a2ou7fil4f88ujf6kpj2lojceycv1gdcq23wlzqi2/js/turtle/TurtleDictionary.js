@@ -7,6 +7,7 @@ import { logError, logInfo } from '../utils/logger.js'
 
 export const OURS = 'ours'
 export const THEIRS = 'theirs'
+export const THROW = 'throw'
 
 /**
  * @typedef {import('./U8aTurtle.js').U8aTurtle} U8aTurtle
@@ -87,11 +88,11 @@ export class TurtleDictionary extends TurtleBranch {
   }
 
   /**
-   * @param {TurtleDictionary} theirs
-   * @param {OURS | THEIRS} Xours
+   * @param {U8aTurtle} theirs
+   * @param {OURS | THEIRS | THROW} Xours
    * @returns {TurtleDictionary}
    */
-  merge (theirs, strategy = THEIRS) {
+  merge (theirs, strategy = THROW) {
     const _merge = (commonAddress, ourAddress, theirAddress) => {
       if (theirAddress === ourAddress) return theirAddress
       if (commonAddress === ourAddress) return theirAddress
@@ -99,14 +100,18 @@ export class TurtleDictionary extends TurtleBranch {
       const commonState = commonAncestor.lookup(commonAddress, AS_REFS)
       const oursState = this.lookup(ourAddress, AS_REFS)
       const theirsState = this.lookup(theirAddress, AS_REFS)
-      const strategyAddress = strategy === OURS ? ourAddress : theirAddress
-      if (!commonState || !oursState || !theirsState) return strategyAddress
-      if (typeof oursState !== 'object' || typeof theirsState !== 'object') return strategyAddress
+      const strategyAddress = () => {
+        if (strategy === OURS) return ourAddress
+        if (strategy === THEIRS) return theirAddress
+        throw new Error('merge conflict, please resolve manually')
+      }
+      if (!commonState || !oursState || !theirsState) return strategyAddress()
+      if (typeof oursState !== 'object' || typeof theirsState !== 'object') return strategyAddress()
       if (Array.isArray(oursState)) {
-        if (!Array.isArray(theirsState)) return strategyAddress
+        if (!Array.isArray(theirsState)) return strategyAddress()
       } else {
-        if (Array.isArray(theirsState)) return strategyAddress
-        if (oursState.constructor !== Object || theirsState.constructor !== Object) return strategyAddress
+        if (Array.isArray(theirsState)) return strategyAddress()
+        if (oursState.constructor !== Object || theirsState.constructor !== Object) return strategyAddress()
       }
       const mergedState = Array.isArray(oursState) ? [] : {}
       const keys = new Set([...Object.keys(oursState), ...Object.keys(theirsState)])
@@ -117,7 +122,7 @@ export class TurtleDictionary extends TurtleBranch {
       const mergedAddress = this.upsert(mergedState, undefined, AS_REFS)
       return mergedAddress
     }
-    const commonAncestor = findCommonAncestor(this.u8aTurtle, theirs.u8aTurtle)
+    const commonAncestor = findCommonAncestor(this.u8aTurtle, theirs)
     const commonAddress = commonAncestor.length - 1
     const ourAddress = this.length - 1
     const theirAddress = this.upsert(theirs.lookup())

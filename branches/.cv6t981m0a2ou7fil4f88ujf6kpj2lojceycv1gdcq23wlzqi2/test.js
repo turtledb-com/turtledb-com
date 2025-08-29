@@ -18,7 +18,6 @@ const path = ['document', 'value']
 webSocketMuxFactory(turtleDB, async tbMux => {
   window.tbMux = tbMux
 
-
   const turtleBranch = await turtleDB.summonBoundTurtleBranch(cpk)
 
   let alreadyRan
@@ -88,6 +87,7 @@ webSocketMuxFactory(turtleDB, async tbMux => {
           list-style: none;
         }
         details summary {
+          cursor: pointer;
         }
         details summary::after {
           content: ' ►';

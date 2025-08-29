@@ -19,7 +19,7 @@ export class Workspace extends TurtleDictionary {
     super(name, recaller, committedBranch.u8aTurtle)
     this.signer = signer
     this.committedBranch = committedBranch
-    this.committedBranch.recaller.watch(`update Workspace:${this.name}`, () => {
+    this.committedBranch.recaller.watch(`update Workspace with committed changes:${this.name}`, () => {
       if (!this.committedBranch.u8aTurtle) return
       if (this.committedBranch.u8aTurtle === this.u8aTurtle) return
       if (this.committedBranch.u8aTurtle && this.u8aTurtle) {

@@ -3,10 +3,10 @@ import { ATOMIC_UINT8ARRAY, OPAQUE_UINT8ARRAY } from './codecs/codec.js'
 import { AS_REFS } from './codecs/CodecType.js'
 import { Commit } from './codecs/Commit.js'
 import { Signer } from './Signer.js'
-import { TurtleDictionary } from './TurtleDictionary.js'
+import { OURS, TurtleDictionary } from './TurtleDictionary.js'
 import { b36ToUint8Array } from './utils.js'
 
-globalTestRunner.only.describe(urlToName(import.meta.url), suite => {
+globalTestRunner.describe(urlToName(import.meta.url), suite => {
   suite.it('encodes and decodes', ({ assert }) => {
     const dictionary = new TurtleDictionary('codec test')
     const arrayWithX = ['a', 'b', 'c']
@@ -112,14 +112,14 @@ globalTestRunner.only.describe(urlToName(import.meta.url), suite => {
     const address1 = dictionary.upsert(uint8Array, [ATOMIC_UINT8ARRAY])
     assert.equal(dictionary.lookup(address1), uint8Array)
   })
-  suite.only.it('merges', async ({ assert }) => {
+  suite.it('merges', async ({ assert }) => {
     const common = new TurtleDictionary('common')
     common.upsert({ a: 1, b: 2, d: [1, 2, 3] })
     const ours = new TurtleDictionary('ours', undefined, common.u8aTurtle)
     const theirs = new TurtleDictionary('theirs', undefined, common.u8aTurtle)
     theirs.upsert({ a: 1, c: 3, d: [2, 3, 4] })
     ours.upsert({ a: 101, b: 2, c: 3, d: [1, 3, 4, 5] })
-    ours.merge(theirs)
+    ours.merge(theirs.u8aTurtle, OURS)
     assert.equal(ours.lookup(), { a: 101, c: 3, d: [2, 3, 4, 5] })
   })
 })

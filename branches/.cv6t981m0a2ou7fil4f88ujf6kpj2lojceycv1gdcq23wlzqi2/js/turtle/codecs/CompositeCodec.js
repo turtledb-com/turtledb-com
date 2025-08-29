@@ -70,7 +70,7 @@ export class CompositeCodec {
   /**
    * @param {CodecType} codecType
    */
-  addCodecType (codecType) {
+  addCodecType (codecType, testFirst = false) {
     const versionCount = toVersionCount(codecType.versionArrayCounts)
     const footerByVersion = new Array(versionCount)
     for (let combinedVersion = 0; combinedVersion < versionCount; ++combinedVersion) {
@@ -80,6 +80,7 @@ export class CompositeCodec {
     }
     this.footerByCodecTypeAndCombinedVersions.set(codecType, footerByVersion)
     this.codecTypesByName[codecType.name] = codecType
-    this.codecTypes.push(codecType)
+    if (testFirst) this.codecTypes.unshift(codecType)
+    else this.codecTypes.push(codecType)
   }
 }

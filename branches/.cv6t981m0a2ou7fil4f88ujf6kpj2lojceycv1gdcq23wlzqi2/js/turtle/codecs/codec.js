@@ -393,7 +393,7 @@ export const ATOMIC_UINT8ARRAY = new CodecType({
   },
   encode: (value) => {
     const encodedValueLength = encodeNumberToU8a(value.length, 1)
-    const footer = codec.deriveFooter(OPAQUE_UINT8ARRAY, [encodedValueLength.length - 1])
+    const footer = codec.deriveFooter(ATOMIC_UINT8ARRAY, [encodedValueLength.length - 1])
     return combineUint8ArrayLikes([value, encodedValueLength, footer])
   },
   getWidth: (codecVersion, u8aTurtle, index) => {

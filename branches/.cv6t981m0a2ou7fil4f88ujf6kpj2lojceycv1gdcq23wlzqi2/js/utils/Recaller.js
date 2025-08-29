@@ -11,6 +11,8 @@ export const IGNORE_ACCESS = Symbol('IGNORE_ACCESS')
 export const IGNORE_MUTATE = Symbol('IGNORE_MUTATE')
 export const IGNORE = Symbol('IGNORE')
 
+const invert = msg => `\x1b[7m${msg}\x1b[0m`
+
 export class Recaller {
   name
   #mms = new NestedSet()
@@ -54,7 +56,7 @@ export class Recaller {
     this.#disassociateF(f)
     if (!name) throw new Error('must name function watchers')
     this.#nameFunction(f, name)
-    if (this.debug) logInfo(() => console.group(`watching --- ${JSON.stringify(name)}`))
+    if (this.debug) logInfo(() => console.group(`${invert('<==  watching')}: ${JSON.stringify(name)}`))
     this.#stack.unshift(f)
     try {
       f(this)
@@ -85,12 +87,7 @@ export class Recaller {
     if (this.debug) {
       const triggering = this.#getFunctionName(f)
       logInfo(() => console.debug(
-        '<--  access:', {
-          recaller: this.name,
-          method,
-          name,
-          triggering: JSON.stringify(triggering)
-        }
+        `${invert('<--  access')}: ${JSON.stringify({ recaller: this.name, method, name, triggering })}`
       ))
     }
     this.#associate(f, target, key)
@@ -104,12 +101,7 @@ export class Recaller {
     if (this.debug) {
       const triggering = newTriggered.map(f => this.#getFunctionName(f))
       logInfo(() => console.debug(
-        '-->  mutation:', {
-          recaller: this.name,
-          method,
-          name,
-          triggering: JSON.stringify(triggering)
-        }
+        `${invert('-->  mutation')}: ${JSON.stringify({ recaller: this.name, method, name, triggering })}`
       ))
     }
     if (name.match(/\['name'\]\['name'\]/)) throw new Error('double name')
@@ -159,13 +151,10 @@ export class Recaller {
       this.#triggered = new Set()
       if (this.debug) {
         const triggering = [...triggered].map(f => this.#getFunctionName(f))
-        logInfo(() => console.time('handling triggered group'))
-        logInfo(() => console.groupCollapsed('triggering:', {
-          recaller: this.name,
-          tickCount: getTickCount(),
-          loopCounter,
-          triggering: JSON.stringify(triggering)
-        }))
+        logInfo(() => console.time(invert('===  handling triggered group')))
+        logInfo(() => console.groupCollapsed(
+          `${invert('==>  triggering')}: ${JSON.stringify({ recaller: this.name, tickCount: getTickCount(), loopCounter, triggering })}`
+        ))
       }
       triggered.forEach(f => {
         const name = this.#getFunctionName(f)
@@ -178,7 +167,7 @@ export class Recaller {
       ++loopCounter
       if (this.debug) {
         logInfo(() => console.groupEnd())
-        logInfo(() => console.timeEnd('handling triggered group'))
+        logInfo(() => console.timeEnd(invert('===  handling triggered group')))
       }
     }
     this.#handlingTriggered = false
