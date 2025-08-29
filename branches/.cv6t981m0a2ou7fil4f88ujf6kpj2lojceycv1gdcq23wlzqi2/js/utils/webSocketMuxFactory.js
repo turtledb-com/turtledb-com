@@ -66,7 +66,7 @@ export async function withoutServiceWorker (turtleDB, callback) {
   const url = `wss://${location.host}`
   let t = 100
   let connectionCount = 0
-  setInterval(async () => {
+  while (true) {
     logInfo(() => console.log(' ^^^^^^^ creating new websocket and mux'))
     const tbMux = new TurtleBranchMultiplexer(`backup_websocket_#${connectionCount}`, false, turtleDB)
     for (const publicKey of turtleDB.getPublicKeys()) {
@@ -117,5 +117,7 @@ export async function withoutServiceWorker (turtleDB, callback) {
     t = Math.min(t, 2 * 60 * 1000) // 2 minutes max (unjittered)
     t = t * (1 + Math.random()) // exponential backoff and some jitter
     logInfo(() => console.log(` ^^^^^^^ waiting ${(t / 1000).toFixed(2)} s`))
-  }, t)
+    await new Promise(resolve => setTimeout(resolve, t))
+    logInfo(() => console.log(' ^^^^^^^ reconnecting...', { connectionIndex }))
+  }
 }

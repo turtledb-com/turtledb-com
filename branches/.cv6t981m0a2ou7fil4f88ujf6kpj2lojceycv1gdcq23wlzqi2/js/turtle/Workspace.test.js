@@ -1,4 +1,5 @@
 import { globalTestRunner, urlToName } from '../utils/TestRunner.js'
+import { AS_REFS } from './codecs/CodecType.js'
 import { Signer } from './Signer.js'
 import { TurtleBranch } from './TurtleBranch.js'
 import { Workspace } from './Workspace.js'
@@ -10,7 +11,7 @@ const tics = async (count, ticLabel = '') => {
   }
 }
 
-globalTestRunner.describe(urlToName(import.meta.url), suite => {
+globalTestRunner.only.describe(urlToName(import.meta.url), suite => {
   suite.it('handles commits', async ({ assert }) => {
     const signer = new Signer('test1', 'password1')
     const committedBranch1 = new TurtleBranch('committedBranch1')
@@ -33,11 +34,30 @@ globalTestRunner.describe(urlToName(import.meta.url), suite => {
   suite.it('handles simultanous commits', async ({ assert }) => {
     const signer = new Signer('test1', 'password1')
     const committedBranch1 = new TurtleBranch('committedBranch1')
-    const workspace1 = new Workspace('workspace1', signer, committedBranch1.recaller, committedBranch1)
+    const workspace = new Workspace('workspace1', signer, committedBranch1.recaller, committedBranch1)
     await Promise.all([
-      workspace1.commit('one', 'commit 1'),
-      workspace1.commit('two', 'commit 2')
+      workspace.commit('one', 'commit 1'),
+      workspace.commit('two', 'commit 2')
     ])
-    console.log(workspace1.lookup())
+    assert.equal(workspace.index, 1)
+    assert.equal(workspace.lookup().document.value, 'two')
+  })
+  suite.it('handles upsertFile and lookupFile', async ({ assert }) => {
+    const signer = new Signer('test1', 'password1')
+    const committedBranch1 = new TurtleBranch('committedBranch1')
+    const workspace = new Workspace('workspace1', signer, committedBranch1.recaller, committedBranch1)
+    const address1 = workspace.upsertFile('file1.txt', ['line 1', 'line 2', 'line 3'])
+    await workspace.commit(address1, 'commit 1')
+    assert.equal(workspace.lookupFile('file1.txt'), 'line 1\nline 2\nline 3')
+    const address2 = workspace.upsertFile('file2.json', { a: 1, b: 2, c: 3 })
+    const address3 = workspace.upsertFile('file3.bin', new Uint8Array([1, 2, 3, 4, 5]), address2)
+    await workspace.commit(address3, 'commit 3')
+    assert.equal(workspace.lookupFile('file2.json'), JSON.stringify({ a: 1, b: 2, c: 3 }, null, 2))
+    assert.equal(workspace.lookupFile('file3.bin'), new Uint8Array([1, 2, 3, 4, 5]))
+    const address4 = workspace.upsertFile('file1.txt', null)
+    await workspace.commit(address4, 'commit 4')
+    assert.equal(workspace.lookupFile('file1.txt'), undefined)
+    const refs = workspace.lookup('document', 'value', AS_REFS)
+    assert.equal(Object.keys(refs).length, 2)
   })
 })

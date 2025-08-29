@@ -12,7 +12,6 @@ import { TurtleDictionary } from '../branches/.cv6t981m0a2ou7fil4f88ujf6kpj2lojc
 import { Workspace } from '../branches/.cv6t981m0a2ou7fil4f88ujf6kpj2lojceycv1gdcq23wlzqi2/js/turtle/Workspace.js'
 import { AS_REFS } from '../branches/.cv6t981m0a2ou7fil4f88ujf6kpj2lojceycv1gdcq23wlzqi2/js/turtle/codecs/CodecType.js'
 import { archiveSync } from '../src/archiveSync.js'
-import { mirrorSync } from '../src/mirrorSync.js'
 import { fileSync } from '../src/fileSync.js'
 
 const { version } = JSON.parse(readFileSync(new URL('../package.json', import.meta.url)))
@@ -44,7 +43,7 @@ const options = program.opts()
 setLogLevel(options.verbose)
 const username = options.username || question('Username: ')
 const turtlename = options.turtlename || question('Turtlename: ')
-const signer = new Signer(username, options.password || questionNewPassword('Password (Backspace won\'t work here): ', { min: 4, max: 999 }))
+const signer = new Signer(username, options.password || questionNewPassword('Password [ATTENTION!: Backspace won\'t work here]: ', { min: 4, max: 999 }))
 const { publicKey } = await signer.makeKeysFor(turtlename)
 
 logInfo(() => console.log({ username, turtlename, publicKey }))
@@ -59,7 +58,7 @@ if (options.archive) {
 
 if (options.mirror) {
   logInfo(() => console.log('mirroring to file system'))
-  fileSync(turtlename, turtleDB, signer, '.', ['.node_repl_history', options.archivePath])
+  fileSync(turtlename, turtleDB, signer, '.')
 }
 
 if (options.interactive) {
@@ -70,7 +69,6 @@ if (options.interactive) {
   global.recaller = recaller
   global.turtleDB = turtleDB
   global.workspace = await turtleDB.makeWorkspace(signer, turtlename)
-
   global.TurtleDictionary = TurtleDictionary
   global.Signer = Signer
   global.Workspace = Workspace

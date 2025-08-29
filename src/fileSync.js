@@ -20,9 +20,8 @@ const REMOVED_FILE = 'removed file'
  * @param {TurtleDB} turtleDB
  * @param {Signer} signer
  * @param {string} folder
- * @param {any[string]} [ignore=[]]
  */
-export async function fileSync (name, turtleDB, signer, folder = '.', ignore = []) {
+export async function fileSync (name, turtleDB, signer, folder = '.') {
   const workspace = await turtleDB.makeWorkspace(signer, name)
   const allFilenamesIn = (path) => {
     return readdirSync(path).map(file => {

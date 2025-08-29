@@ -186,10 +186,7 @@ webSocketMuxFactory(turtleDB, async tbMux => {
     `, testRunnerRecaller, elementName)
     }
   })
-
-  console.log('\n\n89890890890')
-  // testRunnerRecaller.debug = true
   render(document.body, h`
-  <${elementName} runner=${globalTestRunner} key="global"/>
-`, testRunnerRecaller, 'test/index.js-render')
+    <${elementName} runner=${globalTestRunner} key="global"/>
+  `, testRunnerRecaller, 'test/index.js-render')
 })
