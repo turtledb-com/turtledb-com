@@ -13,6 +13,7 @@ import { Workspace } from '../branches/.cv6t981m0a2ou7fil4f88ujf6kpj2lojceycv1gd
 import { AS_REFS } from '../branches/.cv6t981m0a2ou7fil4f88ujf6kpj2lojceycv1gdcq23wlzqi2/js/turtle/codecs/CodecType.js'
 import { archiveSync } from '../src/archiveSync.js'
 import { fileSync } from '../src/fileSync.js'
+import { s3Sync } from '../src/s3Sync.js'
 
 const { version } = JSON.parse(readFileSync(new URL('../package.json', import.meta.url)))
 
@@ -31,10 +32,30 @@ program
     new Option('--turtlename <string>', 'name for dataset')
       .env('TURTLEDB_TURTLENAME')
   )
+  .addOption(
+    new Option('--s3-end-point <string>', 'endpoint for s3 (like "https://sfo3.digitaloceanspaces.com")')
+      .env('TURTLEDB_S3_END_POINT')
+  )
+  .addOption(
+    new Option('--s3-region <string>', 'region for s3 (like "sfo3")')
+      .env('TURTLEDB_S3_REGION')
+  )
+  .addOption(
+    new Option('--s3-access-key-id <string>', 'accessKeyId for s3')
+      .env('TURTLEDB_S3_ACCESS_KEY_ID')
+  )
+  .addOption(
+    new Option('--s3-secret-access-key <string>', 'secretAccessKey for s3')
+      .env('TURTLEDB_S3_SECRET_ACCESS_KEY')
+  )
+  .addOption(
+    new Option('--s3-bucket <string>', 'bucket for s3')
+      .env('TURTLEDB_S3_BUCKET')
+  )
+  .option('--no-s3', 'disable S3')
   .option('-a, --archive', 'save all turtles to files by public key', false)
-  .option('--archive-path', 'folder to archive to', 'archive')
   .option('-i, --interactive', 'flag to start repl', false)
-  .option('-m, --mirror', 'flag to mirror files locally', false)
+  .option('-f, --fs-mirror', 'flag to mirror files locally', false)
   .option('-v, --verbose [level]', 'log data flows', x => +x, false) // +false === 0 === INFO, +true === 1 === DEBUG
   .parse()
 
@@ -45,13 +66,16 @@ const username = options.username || question('Username: ')
 const turtlename = options.turtlename || question('Turtlename: ')
 const signer = new Signer(username, options.password || questionNewPassword('Password [ATTENTION!: Backspace won\'t work here]: ', { min: 4, max: 999 }))
 const { publicKey } = await signer.makeKeysFor(turtlename)
-
 logInfo(() => console.log({ username, turtlename, publicKey }))
 const recaller = new Recaller('turtledb-com')
 const turtleDB = new TurtleDB('turtledb-com', recaller)
 
+if (options.s3 !== false && (options.s3EndPoint || options.s3Region || options.s3Bucket || options.s3AccessKeyId || options.s3SecretAccessKey)) {
+  s3Sync(turtleDB, recaller, options.s3EndPoint, options.s3Region, options.s3AccessKeyId, options.s3SecretAccessKey, options.s3Bucket)
+}
+
 if (options.archive) {
-  const archivePath = options.archivePath
+  const archivePath = '__turtledb_archive__'
   logInfo(() => console.log(`archiving to ${archivePath}`))
   archiveSync(turtleDB, recaller, archivePath)
 }

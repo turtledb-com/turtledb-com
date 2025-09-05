@@ -1,5 +1,5 @@
-import { join, relative } from 'path'
-import { readdirSync, readFileSync, statSync, unlinkSync, writeFileSync } from 'fs'
+import { dirname, join, relative } from 'path'
+import { mkdirSync, readdirSync, readFileSync, statSync, unlinkSync, writeFileSync } from 'fs'
 import { watch } from 'chokidar'
 import { compile } from '@gerhobbelt/gitignore-parser'
 import { BINARY_FILE, JSON_FILE, linesToString, pathToType, TEXT_FILE } from '../branches/.cv6t981m0a2ou7fil4f88ujf6kpj2lojceycv1gdcq23wlzqi2/js/utils/fileTransformer.js'
@@ -43,6 +43,8 @@ export async function fileSync (name, turtleDB, signer, folder = '.') {
     }
   }
   const writeFileAsType = (filename, content) => {
+    const foldername = dirname(filename)
+    if (foldername.length) mkdirSync(foldername, { recursive: true })
     const type = pathToType(filename)
     if (type === JSON_FILE) {
       writeFileSync(filename, JSON.stringify(content, null, 2))

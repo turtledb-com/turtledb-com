@@ -11,7 +11,7 @@ const tics = async (count, ticLabel = '') => {
   }
 }
 
-globalTestRunner.only.describe(urlToName(import.meta.url), suite => {
+globalTestRunner.describe(urlToName(import.meta.url), suite => {
   suite.it('handles commits', async ({ assert }) => {
     const signer = new Signer('test1', 'password1')
     const committedBranch1 = new TurtleBranch('committedBranch1')

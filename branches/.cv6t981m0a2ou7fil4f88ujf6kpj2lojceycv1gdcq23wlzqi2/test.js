@@ -74,10 +74,19 @@ webSocketMuxFactory(turtleDB, async tbMux => {
         if (this.runner.type !== TEST || this.runner.runState !== PASSED) detailsAttributes.open = 'open'
         return detailsAttributes
       }
+      const order = () => {
+        const stateRank = this.runner.runState === FAILED ? 1 : this.runner.runState === RUNNING ? 0 : this.runner.runState === PASSED ? 3 : 2
+        return +this.key + (this.runner.parent?.children?.length || 1000) * stateRank 
+      }
       render(this.shadowRoot, h`
       <style>
         :host {
           font-family: -apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans",Helvetica,Arial,sans-serif,"Apple Color Emoji","Segoe UI Emoji";
+          order: ${order};
+        }
+        .children {
+          display: flex;
+          flex-direction: column;
         }
 
         details {
@@ -175,7 +184,9 @@ webSocketMuxFactory(turtleDB, async tbMux => {
         <details ${getDetailsAttributes}>
           ${summary}
           <div class="children">
-            ${mapEntries(() => this.runner.children, (child, index) => h`<${elementName} runner=${child} key=${index}/>`)}
+            ${mapEntries(() => this.runner.children, (child, index) => 
+              h`<${elementName} runner=${child} key=${index}/>`
+            )}
           </div>
         </details>
       `, h`

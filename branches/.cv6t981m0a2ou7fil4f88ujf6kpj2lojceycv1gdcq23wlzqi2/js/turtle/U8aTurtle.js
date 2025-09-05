@@ -114,26 +114,30 @@ export class U8aTurtle {
     return this.uint8Array.subarray(this.#remapAddress(start), this.#remapAddress(end, true))
   }
 
+  getAddressAtPath (startingAddress, ...path) {
+    if (!path.length) return startingAddress
+    const u8aTurtle = this.getAncestorByAddress(startingAddress)
+    const codecVersion = codec.getCodecTypeVersion(u8aTurtle.getByte(startingAddress))
+    const ref = codecVersion.decode(u8aTurtle, startingAddress, AS_REFS)
+    const key = path.shift()
+    if (!ref || !(key in ref)) return
+    return u8aTurtle.getAddressAtPath(ref[key], ...path)
+  }
+
   /**
    * @param  {[optional_address:number, ...path:Array.<string>, optional_options:CodecOptions]} path
    * @returns {any}
    */
   lookup (...path) {
-    let address = this.length - 1
-    if (typeof path[0] === 'number') address = path.shift()
+    let startingAddress = this.length - 1
+    if (typeof path[0] === 'number') startingAddress = path.shift()
     /** @type {CodecOptions} */
     let options
     if (/object|undefined/.test(typeof path[path.length - 1])) options = path.pop()
-    let u8aTurtle = this
-    while (path.length) {
-      u8aTurtle = u8aTurtle.getAncestorByAddress(address)
-      const codecVersion = codec.getCodecTypeVersion(u8aTurtle.getByte(address))
-      const ref = codecVersion.decode(u8aTurtle, address, AS_REFS)
-      if (!ref || !(path[0] in ref)) return
-      address = ref[path.shift()]
-    }
+    const address = this.getAddressAtPath(startingAddress, ...path)
+    if (address === undefined) return
     if (address instanceof Uint8Array) return address
-    u8aTurtle = u8aTurtle.getAncestorByAddress(address)
+    const u8aTurtle = this.getAncestorByAddress(address)
     const codecVersion = codec.getCodecTypeVersion(u8aTurtle.getByte(address))
     return codecVersion.decode(u8aTurtle, address, options)
   }
