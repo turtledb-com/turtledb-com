@@ -24,15 +24,16 @@ globalTestRunner.describe(urlToName(import.meta.url), suite => {
     bTalker.start()
     await tics(1) // , 'talkers icebreaking')
 
-    await aWorkspace.commit(42, 'everything')
+    await aWorkspace.commit(42, 'everything', false)
     await commitSettle()
+    console.log('b lookup', b.lookup())
     assert.equal(b.lookup()?.document?.value, 42)
 
-    await aWorkspace.commit(Math.E, 'euler')
+    await aWorkspace.commit(Math.E, 'euler', false)
     await commitSettle()
     assert.equal(b.lookup()?.document?.value, Math.E)
 
-    await aWorkspace.commit(Math.PI, 'pi')
+    await aWorkspace.commit(Math.PI, 'pi', false)
     await commitSettle()
     assert.equal(b.lookup()?.document?.value, Math.PI)
 
@@ -40,12 +41,12 @@ globalTestRunner.describe(urlToName(import.meta.url), suite => {
 
     const brokenWorkspace = new Workspace('broken', signer, aWorkspace.committedBranch.recaller, aWorkspace.committedBranch)
     // const brokenKeys = await signer.makeKeysFor(brokenWorkspace.name)
-    await brokenWorkspace.commit(2, 'two')
+    await brokenWorkspace.commit(2, 'two', false)
     await commitSettle()
     assert.equal(b.lookup()?.document?.value, Math.PI)
 
     const unbrokenWorkspace = new Workspace('test', signer, unbrokenBranch.recaller, unbrokenBranch)
-    await unbrokenWorkspace.commit(4, 'four')
+    await unbrokenWorkspace.commit(4, 'four', false)
     aTalker.turtleBranch.u8aTurtle = unbrokenWorkspace.u8aTurtle
     await commitSettle()
     assert.equal(b.lookup()?.document?.value, 4)
@@ -62,7 +63,7 @@ globalTestRunner.describe(urlToName(import.meta.url), suite => {
     assert.equal(b2.lookup()?.document?.value, 4)
     assert.isAbove(b2.length, bTalker2.outgoingBranch.length) // we have more data than we received
 
-    a2Workspace.commit(5, 'five')
+    a2Workspace.commit(5, 'five', false)
     await commitSettle()
     assert.equal(b2.lookup()?.document?.value, 5)
     assert.isAbove(b2.length, bTalker2.outgoingBranch.length) // we have more data than we received from this connection
@@ -72,9 +73,9 @@ globalTestRunner.describe(urlToName(import.meta.url), suite => {
     const signer = new Signer('username', 'password')
     const aWorkspace = new Workspace('test', signer)
     const keys = await signer.makeKeysFor(aWorkspace.name)
-    await aWorkspace.commit(1, 'one')
-    await aWorkspace.commit(2, 'two')
-    await aWorkspace.commit(3, 'three')
+    await aWorkspace.commit(1, 'one', false)
+    await aWorkspace.commit(2, 'two', false)
+    await aWorkspace.commit(3, 'three', false)
     const clone = new TurtleBranch('clone', undefined, aWorkspace.u8aTurtle.clone())
 
     const originalTalker = new TurtleBranchUpdater('originalTalker', aWorkspace.committedBranch, keys.publicKey, true)
@@ -86,14 +87,14 @@ globalTestRunner.describe(urlToName(import.meta.url), suite => {
     cloneTalker.start()
     await commitSettle()
     assert.equal(JSON.stringify(originalTalker.turtleBranch.lookup()), JSON.stringify(cloneTalker.turtleBranch.lookup()))
-    await aWorkspace.commit(4, 'four')
+    await aWorkspace.commit(4, 'four', false)
     await commitSettle()
     assert.equal(JSON.stringify(originalTalker.turtleBranch.lookup()), JSON.stringify(cloneTalker.turtleBranch.lookup()))
 
     const bWorkspace = new Workspace('test', signer)
-    await bWorkspace.commit(5, 'five')
-    await bWorkspace.commit(6, 'six')
-    await bWorkspace.commit(7, 'seven')
+    await bWorkspace.commit(5, 'five', false)
+    await bWorkspace.commit(6, 'six', false)
+    await bWorkspace.commit(7, 'seven', false)
     originalTalker.turtleBranch.u8aTurtle = bWorkspace.u8aTurtle
     await commitSettle()
     assert.equal(JSON.stringify(originalTalker.turtleBranch.lookup()), JSON.stringify(cloneTalker.turtleBranch.lookup()))
