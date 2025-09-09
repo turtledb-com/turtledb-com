@@ -26,7 +26,6 @@ globalTestRunner.describe(urlToName(import.meta.url), suite => {
 
     await aWorkspace.commit(42, 'everything', false)
     await commitSettle()
-    console.log('b lookup', b.lookup())
     assert.equal(b.lookup()?.document?.value, 42)
 
     await aWorkspace.commit(Math.E, 'euler', false)

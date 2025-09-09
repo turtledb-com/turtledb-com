@@ -80,7 +80,7 @@ if (options.archive) {
   archiveSync(turtleDB, recaller, archivePath)
 }
 
-if (options.mirror) {
+if (options.fsMirror) {
   logInfo(() => console.log('mirroring to file system'))
   fileSync(turtlename, turtleDB, signer, '.')
 }

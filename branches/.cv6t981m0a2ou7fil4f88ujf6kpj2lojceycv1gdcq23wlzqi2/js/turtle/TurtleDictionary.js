@@ -92,14 +92,15 @@ export class TurtleDictionary extends TurtleBranch {
    * @param {OURS | THEIRS | THROW} Xours
    * @returns {TurtleDictionary}
    */
-  merge (theirs, strategy = THROW) {
+  merge (theirs, strategy = THROW, theirStartingAddress, ...path) {
     const _merge = (commonAddress, ourAddress, theirAddress) => {
       if (theirAddress === ourAddress) return theirAddress
       if (commonAddress === ourAddress) return theirAddress
       if (commonAddress === theirAddress) return ourAddress
-      const commonState = commonAncestor.lookup(commonAddress, AS_REFS)
-      const oursState = this.lookup(ourAddress, AS_REFS)
-      const theirsState = this.lookup(theirAddress, AS_REFS)
+      const commonState = commonAddress && commonAncestor.lookup(commonAddress, AS_REFS)
+      const oursState = ourAddress && this.lookup(ourAddress, AS_REFS)
+      const theirsState = theirAddress && this.lookup(theirAddress, AS_REFS)
+      console.log({ commonState, oursState, theirsState })
       const strategyAddress = () => {
         if (strategy === OURS) return ourAddress
         if (strategy === THEIRS) return theirAddress
@@ -123,9 +124,9 @@ export class TurtleDictionary extends TurtleBranch {
       return mergedAddress
     }
     const commonAncestor = findCommonAncestor(this.u8aTurtle, theirs)
-    const commonAddress = commonAncestor.length - 1
-    const ourAddress = this.length - 1
-    const theirAddress = this.upsert(theirs.lookup())
+    const commonAddress = commonAncestor?.getAddressAtPath?.(undefined, ...path)
+    const ourAddress = this.u8aTurtle.getAddressAtPath(undefined, ...path)
+    const theirAddress = this.upsert(theirs.lookup(theirStartingAddress, ...path))
     return _merge(commonAddress, ourAddress, theirAddress)
   }
 }

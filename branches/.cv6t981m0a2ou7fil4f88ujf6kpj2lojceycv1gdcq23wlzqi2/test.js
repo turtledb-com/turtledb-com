@@ -29,21 +29,17 @@ webSocketMuxFactory(turtleDB, async tbMux => {
       const paths = Object.keys(fsRefs).filter(path => /\.test\.js$/.test(path))
       // globalTestRunner.clearChildren()
       for (const path of paths) {
-      // await Promise.all(paths.map(async path => {
         const importPath = `./${path}?address=${fsRefs[path]}&head=${turtleBranch.length - 1}` // include head in path so that all tests rerun on any change
         try {
           await import(importPath)
-        // console.log({ importPath })
         } catch (error) {
           globalTestRunner.describe(urlToName(importPath), suite => {
             suite.it(`import error: ${error.message}`, () => { throw error })
           })
           console.error(error)
         }
-        // }))
       }
       await globalTestRunner.run()
-      console.log(globalTestRunner.status)
     }
   })
 
@@ -53,10 +49,6 @@ webSocketMuxFactory(turtleDB, async tbMux => {
     constructor () {
       super()
       this.attachShadow({ mode: 'open' })
-    }
-
-    attributeChangedCallback (name, oldValue, newValue) {
-      console.log(name, oldValue, newValue)
     }
 
     connectedCallback () {
@@ -76,7 +68,7 @@ webSocketMuxFactory(turtleDB, async tbMux => {
       }
       const order = () => {
         const stateRank = this.runner.runState === FAILED ? 1 : this.runner.runState === RUNNING ? 0 : this.runner.runState === PASSED ? 3 : 2
-        return +this.key + (this.runner.parent?.children?.length || 1000) * stateRank 
+        return +this.key + (this.runner.parent?.children?.length || 1000) * stateRank
       }
       render(this.shadowRoot, h`
       <style>
@@ -184,7 +176,7 @@ webSocketMuxFactory(turtleDB, async tbMux => {
         <details ${getDetailsAttributes}>
           ${summary}
           <div class="children">
-            ${mapEntries(() => this.runner.children, (child, index) => 
+            ${mapEntries(() => this.runner.children, (child, index) =>
               h`<${elementName} runner=${child} key=${index}/>`
             )}
           </div>

@@ -163,7 +163,7 @@ export function logUpdate (name, publicKey, uint8ArrayAddresses, isIncoming) {
     }
     if (uint8ArrayAddresses.length > leftmost + 4) {
       prettyAddresses.push(`\x1b[34m${uint8ArrayAddresses[leftmost]}\x1b[0m`)
-      prettyAddresses.push(`\x1b[2mfilled × ${uint8ArrayAddresses.length - leftmost - 2}\x1b[0m`)
+      prettyAddresses.push(`\x1b[2m... (${uint8ArrayAddresses.length - leftmost - 2})\x1b[0m`)
       prettyAddresses.push(`\x1b[34m${uint8ArrayAddresses[uint8ArrayAddresses.length - 1]}\x1b[0m`)
     } else {
       for (let i = leftmost; i < uint8ArrayAddresses.length; ++i) {

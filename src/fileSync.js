@@ -1,9 +1,9 @@
 import { dirname, join, relative } from 'path'
-import { mkdirSync, readdirSync, readFileSync, statSync, unlinkSync, writeFileSync } from 'fs'
+import { mkdirSync, readdirSync, readFileSync, rmSync, statSync, unlinkSync, writeFileSync } from 'fs'
 import { watch } from 'chokidar'
 import { compile } from '@gerhobbelt/gitignore-parser'
 import { BINARY_FILE, JSON_FILE, linesToString, pathToType, TEXT_FILE } from '../branches/.cv6t981m0a2ou7fil4f88ujf6kpj2lojceycv1gdcq23wlzqi2/js/utils/fileTransformer.js'
-import { logDebug, logError, logInfo } from '../branches/.cv6t981m0a2ou7fil4f88ujf6kpj2lojceycv1gdcq23wlzqi2/js/utils/logger.js'
+import { logDebug, logError, logFatal, logInfo } from '../branches/.cv6t981m0a2ou7fil4f88ujf6kpj2lojceycv1gdcq23wlzqi2/js/utils/logger.js'
 import { deepEqual } from '../branches/.cv6t981m0a2ou7fil4f88ujf6kpj2lojceycv1gdcq23wlzqi2/js/utils/deepEqual.js'
 
 /**
@@ -54,11 +54,18 @@ export async function fileSync (name, turtleDB, signer, folder = '.') {
       writeFileSync(filename, Buffer.from(content))
     }
   }
-  const fileState = Object.fromEntries(
+  const fsFilesObject = Object.fromEntries(
     allFilenamesIn(folder).map(filename =>
       [filename, readFileAsType(filename)]
     )
   )
+
+  const gitFilterFilesObject = (filesObject = {}) => {
+    const gitignoreContent = linesToString(filesObject['.gitignore']) || ''
+    const gitignore = compile(gitignoreContent)
+    const filteredKeys = Object.keys(filesObject).filter(key => gitignore.accepts(key) && !/^__turtledb_/.test(key))
+    return Object.fromEntries(filteredKeys.map(key => [key, filesObject[key]]))
+  }
 
   let timeout
   const actionsByPath = new Map()
@@ -71,31 +78,31 @@ export async function fileSync (name, turtleDB, signer, folder = '.') {
         logDebug(() => console.log(`(fileSync) ${action} in ("${name}"): ${relativePath}`))
         if (action === UPDATED_FILE) {
           try {
-            fileState[path] = readFileAsType(join(folder, path))
+            fsFilesObject[path] = readFileAsType(join(folder, path))
           } catch (error) {
             logError(() => console.error(`Error reading file "${path}" so assuming deletion:`, error))
-            delete fileState[path]
+            delete fsFilesObject[path]
           }
         } else if (action === REMOVED_FILE) {
-          delete fileState[path]
+          delete fsFilesObject[path]
         }
       }
       const events = `{${Array.from(actionsByPath.entries().map(([path, action]) => `[${action}]: "${path}"`)).join(', ')}}`
       actionsByPath.clear()
       const documentValue = workspace.lookup('document', 'value') || {}
-      const gitignoreContent = linesToString(documentValue?.['.gitignore']) || ''
-      const gitignore = compile(gitignoreContent)
-      const fileStateKeys = Object.keys(fileState).filter(key => gitignore.accepts(key))
-      const valueKeys = Object.keys(documentValue || {}).filter(key => gitignore.accepts(key))
+
+      const filteredDocumentValue = gitFilterFilesObject(documentValue)
+      const filteredFsFilesObject = gitFilterFilesObject(fsFilesObject)
+
       let changed = false
-      for (const key of fileStateKeys) {
-        if (!deepEqual(documentValue[key], fileState[key])) {
-          documentValue[key] = fileState[key]
+      for (const key in filteredFsFilesObject) {
+        if (!deepEqual(documentValue[key], filteredFsFilesObject[key])) {
+          documentValue[key] = filteredFsFilesObject[key]
           changed = true
         }
       }
-      for (const key of valueKeys) {
-        if (!(key in fileState)) {
+      for (const key in filteredDocumentValue) {
+        if (!(key in filteredFsFilesObject)) {
           delete documentValue[key]
           changed = true
         }
@@ -109,39 +116,51 @@ export async function fileSync (name, turtleDB, signer, folder = '.') {
     }, 500)
   }
 
-  watch(folder, { followSymlinks: false, ignoreInitial: true })
-    .on('add', getPathHandlerFor(UPDATED_FILE))
-    .on('change', getPathHandlerFor(UPDATED_FILE))
-    .on('unlink', getPathHandlerFor(REMOVED_FILE))
-
+  let firstRun = true
   // workspace.recaller.debug = true
   workspace.recaller.watch(`fileSync"${name}"`, async () => {
-    const documentValue = workspace.committedBranch.lookup('document', 'value')
-    const gitignoreContent = linesToString(documentValue?.['.gitignore'] || fileState['.gitignore']) || ''
-    const gitignore = compile(gitignoreContent)
-    const fileStateKeys = Object.keys(fileState).filter(key => gitignore.accepts(key))
-    const valueKeys = Object.keys(documentValue || {}).filter(key => gitignore.accepts(key))
-    console.log({ fileStateKeys, valueKeys })
+    const filteredCommittedDocumentValue = gitFilterFilesObject(workspace.committedBranch.lookup('document', 'value'))
+    const filteredFsFilesObject = gitFilterFilesObject(fsFilesObject)
     if (workspace.committedBranch.index >= 0) {
-      for (const key of fileStateKeys) {
-        if (!(key in documentValue)) {
-          console.log('deleting', key)
+      for (const key in filteredFsFilesObject) {
+        if (!(key in filteredCommittedDocumentValue)) {
+          if (firstRun) {
+            logFatal(() => console.error(`file "${key}" present in file system but not in TurtleDB, please delete the file or remove it from .gitignore and recommit`))
+            throw new Error(`file "${key}" present in file system but not in TurtleDB, please delete the file or remove it from .gitignore and recommit`)
+          }
           try {
+            delete fsFilesObject[key]
             unlinkSync(key)
+            let dir = dirname(key)
+            while (dir !== '.' && dir !== '/' && readdirSync(dir).length === 0) {
+              rmSync(dir, { recursive: true, force: true })
+              dir = dirname(dir)
+            }
           } catch (error) {
             if (error.code !== 'ENOENT') throw error
           }
         }
       }
-      for (const key of valueKeys) {
-        if (!deepEqual(documentValue[key], fileState[key])) {
-          console.log('rewriting', key)
-          writeFileAsType(key, documentValue[key])
+      for (const key in filteredCommittedDocumentValue) {
+        if (!deepEqual(filteredCommittedDocumentValue[key], filteredFsFilesObject[key])) {
+          if (firstRun && filteredFsFilesObject[key]) {
+            logFatal(() => console.error(`file "${key}" present in TurtleDB but not in file system or different, please add the file or remove it from .gitignore and recommit`))
+            throw new Error(`file "${key}" present in TurtleDB but not in file system or different, please add the file or remove it from .gitignore and recommit`)
+          }
+          fsFilesObject[key] = filteredCommittedDocumentValue[key]
+          writeFileAsType(key, filteredCommittedDocumentValue[key])
         }
       }
-    } else if (fileStateKeys.length === 0) {
-      await workspace.commit(Object.fromEntries(fileStateKeys.map(key => [key, fileState[key]])), 'initial')
+    } else {
+      await workspace.commit(filteredFsFilesObject, 'initial commit from fileSync')
     }
+    if (firstRun) {
+      watch(folder, { followSymlinks: false, ignoreInitial: true })
+        .on('add', getPathHandlerFor(UPDATED_FILE))
+        .on('change', getPathHandlerFor(UPDATED_FILE))
+        .on('unlink', getPathHandlerFor(REMOVED_FILE))
+    }
+    firstRun = false
   })
 
   return workspace

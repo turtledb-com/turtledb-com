@@ -3,7 +3,6 @@ import { findCommonAncestor, fromUint8Arrays, squashTurtle, U8aTurtle } from './
 
 globalTestRunner.describe(urlToName(import.meta.url), suite => {
   suite.it('constructs correctly', ({ assert }) => {
-    console.log('running suite')
     const a = new U8aTurtle(new Uint8Array([0, 1, 2, 3]))
     assert.equal(a.index, 0, 'a.index')
     assert.equal(a.length, 4, 'a.length')

@@ -22,19 +22,6 @@ globalTestRunner.describe(urlToName(import.meta.url), suite => {
       })
     })
 
-    console.log({
-      name: 'unnamed-test-runner',
-      type: RUNNER,
-      runState: WAITING,
-      children: [
-        {
-          name: 'abc',
-          type: SUITE,
-          runState: WAITING,
-          children: []
-        }
-      ]
-    }, runner.status, 'after describe')
     await runner.run()
     test.assert.equal({
       name: 'unnamed-test-runner',

@@ -114,7 +114,7 @@ export class U8aTurtle {
     return this.uint8Array.subarray(this.#remapAddress(start), this.#remapAddress(end, true))
   }
 
-  getAddressAtPath (startingAddress, ...path) {
+  getAddressAtPath (startingAddress = this.length - 1, ...path) {
     if (!path.length) return startingAddress
     const u8aTurtle = this.getAncestorByAddress(startingAddress)
     const codecVersion = codec.getCodecTypeVersion(u8aTurtle.getByte(startingAddress))
@@ -131,6 +131,7 @@ export class U8aTurtle {
   lookup (...path) {
     let startingAddress = this.length - 1
     if (typeof path[0] === 'number') startingAddress = path.shift()
+    else if (typeof path[0] === 'undefined') path.shift()
     /** @type {CodecOptions} */
     let options
     if (/object|undefined/.test(typeof path[path.length - 1])) options = path.pop()

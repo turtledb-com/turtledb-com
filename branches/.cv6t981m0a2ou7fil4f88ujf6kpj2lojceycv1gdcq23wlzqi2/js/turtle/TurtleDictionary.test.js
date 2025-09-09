@@ -3,7 +3,7 @@ import { ATOMIC_UINT8ARRAY, OPAQUE_UINT8ARRAY } from './codecs/codec.js'
 import { AS_REFS } from './codecs/CodecType.js'
 import { Commit } from './codecs/Commit.js'
 import { Signer } from './Signer.js'
-import { OURS, TurtleDictionary } from './TurtleDictionary.js'
+import { OURS, THEIRS, TurtleDictionary } from './TurtleDictionary.js'
 import { b36ToUint8Array } from './utils.js'
 
 globalTestRunner.describe(urlToName(import.meta.url), suite => {
@@ -121,6 +121,12 @@ globalTestRunner.describe(urlToName(import.meta.url), suite => {
     ours.upsert({ a: 101, b: 2, c: 3, d: [1, 3, 4, 5] })
     ours.merge(theirs.u8aTurtle, OURS)
     assert.equal(ours.lookup(), { a: 101, c: 3, d: [2, 3, 4, 5] })
+
+    const another = new TurtleDictionary('another', undefined, ours.u8aTurtle)
+    ours.upsert({ a: 101, c: 3, d: [2, 3, 4, 6] })
+    const address = another.upsert({ a: 201, d: [1, 2, 4, 5] })
+    const mergedAddress = ours.merge(another.u8aTurtle, THEIRS, address, 'd')
+    assert.equal(ours.lookup(mergedAddress), [1, 2, 4, 6])
   })
 })
 

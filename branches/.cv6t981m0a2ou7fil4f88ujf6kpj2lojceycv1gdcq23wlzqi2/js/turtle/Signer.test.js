@@ -14,7 +14,6 @@ globalTestRunner.describe(urlToName(import.meta.url), suite => {
 
     u8aTurtle = new U8aTurtle(signedCommit, u8aTurtle)
     u8aTurtle = squashTurtle(u8aTurtle, 0)
-    console.log(u8aTurtle.lookup())
     const committedTurtle = u8aTurtle
     assert.equal(committedTurtle.lookup().document, u8Array)
     const keys = await signer.makeKeysFor(name)
