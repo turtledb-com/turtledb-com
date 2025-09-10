@@ -120,6 +120,10 @@ export async function fileSync (name, turtleDB, signer, folder = '.') {
   // workspace.recaller.debug = true
   workspace.recaller.watch(`fileSync"${name}"`, async () => {
     const filteredCommittedDocumentValue = gitFilterFilesObject(workspace.committedBranch.lookup('document', 'value'))
+    if (!fsFilesObject['.gitignore'] && firstRun && filteredCommittedDocumentValue['.gitignore']) {
+      fsFilesObject['.gitignore'] = filteredCommittedDocumentValue['.gitignore']
+      writeFileAsType('.gitignore', fsFilesObject['.gitignore'])
+    }
     const filteredFsFilesObject = gitFilterFilesObject(fsFilesObject)
     if (workspace.committedBranch.index >= 0) {
       for (const key in filteredFsFilesObject) {

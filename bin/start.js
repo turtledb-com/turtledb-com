@@ -14,6 +14,8 @@ import { AS_REFS } from '../branches/.cv6t981m0a2ou7fil4f88ujf6kpj2lojceycv1gdcq
 import { archiveSync } from '../src/archiveSync.js'
 import { fileSync } from '../src/fileSync.js'
 import { s3Sync } from '../src/s3Sync.js'
+import { originSync } from '../src/originSync.js'
+import { outletSync } from '../src/outletSync.js'
 
 const { version } = JSON.parse(readFileSync(new URL('../package.json', import.meta.url)))
 
@@ -53,6 +55,16 @@ program
       .env('TURTLEDB_S3_BUCKET')
   )
   .option('--no-s3', 'disable S3')
+  .addOption(
+    new Option('--origin-host <string>', 'remote host to sync to')
+      .env('TURTLEDB_ORIGIN_HOST')
+  )
+  .addOption(
+    new Option('--origin-port <number>', 'remote port to sync to')
+      .env('TURTLEDB_ORIGIN_PORT')
+  )
+  .option('--no-origin', 'disable origin connection')
+  .option('-p, --port <number>', 'local port to sync from', x => +x, 0)
   .option('-a, --archive', 'save all turtles to files by public key', false)
   .option('-i, --interactive', 'flag to start repl', false)
   .option('-f, --fs-mirror', 'flag to mirror files locally', false)
@@ -69,6 +81,17 @@ const { publicKey } = await signer.makeKeysFor(turtlename)
 logInfo(() => console.log({ username, turtlename, publicKey }))
 const recaller = new Recaller('turtledb-com')
 const turtleDB = new TurtleDB('turtledb-com', recaller)
+
+if (options.port) {
+  logInfo(() => console.log(`listening for outlet connections on port ${options.port}`))
+  outletSync(turtleDB, options.port)
+}
+
+if (options.origin !== false && options.originHost) {
+  const originPort = +options.originPort || 1024
+  logInfo(() => console.log(`connecting to origin at ${options.originHost}:${originPort}`))
+  originSync(turtleDB, options.originHost, originPort)
+}
 
 if (options.s3 !== false && (options.s3EndPoint || options.s3Region || options.s3Bucket || options.s3AccessKeyId || options.s3SecretAccessKey)) {
   s3Sync(turtleDB, recaller, options.s3EndPoint, options.s3Region, options.s3AccessKeyId, options.s3SecretAccessKey, options.s3Bucket)
