@@ -4,20 +4,19 @@ import { readFileSync } from 'fs'
 import { start } from 'repl'
 import { Option, program } from 'commander'
 import { question, questionNewPassword } from 'readline-sync'
-import { logError, logInfo, setLogLevel } from '../branches/.cv6t981m0a2ou7fil4f88ujf6kpj2lojceycv1gdcq23wlzqi2/js/utils/logger.js'
-import { Signer } from '../branches/.cv6t981m0a2ou7fil4f88ujf6kpj2lojceycv1gdcq23wlzqi2/js/turtle/Signer.js'
-import { TurtleDB } from '../branches/.cv6t981m0a2ou7fil4f88ujf6kpj2lojceycv1gdcq23wlzqi2/js/turtle/connections/TurtleDB.js'
-import { Recaller } from '../branches/.cv6t981m0a2ou7fil4f88ujf6kpj2lojceycv1gdcq23wlzqi2/js/utils/Recaller.js'
-import { TurtleDictionary } from '../branches/.cv6t981m0a2ou7fil4f88ujf6kpj2lojceycv1gdcq23wlzqi2/js/turtle/TurtleDictionary.js'
-import { Workspace } from '../branches/.cv6t981m0a2ou7fil4f88ujf6kpj2lojceycv1gdcq23wlzqi2/js/turtle/Workspace.js'
-import { AS_REFS } from '../branches/.cv6t981m0a2ou7fil4f88ujf6kpj2lojceycv1gdcq23wlzqi2/js/turtle/codecs/CodecType.js'
+import { logError, logInfo, setLogLevel } from '../public/js/utils/logger.js'
+import { Signer } from '../public/js/turtle/Signer.js'
+import { TurtleDB } from '../public/js/turtle/connections/TurtleDB.js'
+import { Recaller } from '../public/js/utils/Recaller.js'
+import { TurtleDictionary } from '../public/js/turtle/TurtleDictionary.js'
+import { Workspace } from '../public/js/turtle/Workspace.js'
+import { AS_REFS } from '../public/js/turtle/codecs/CodecType.js'
 import { archiveSync } from '../src/archiveSync.js'
 import { fileSync } from '../src/fileSync.js'
 import { s3Sync } from '../src/s3Sync.js'
 import { originSync } from '../src/originSync.js'
 import { outletSync } from '../src/outletSync.js'
 import { webSync } from '../src/webSync.js'
-import { log } from 'console'
 
 const { version } = JSON.parse(readFileSync(new URL('../package.json', import.meta.url)))
 
@@ -120,9 +119,10 @@ if (options.local === true || (options.local === undefined && options.localPort)
 }
 
 if (options.remote === true || (options.remote === undefined && (options.remoteHost || options.remotePort))) {
+  const remoteHost = options.remoteHost || 'turtledb.com'
   const remotePort = +options.remotePort || 1024
-  logInfo(() => console.log(`connecting to remote at ${options.remoteHost}:${remotePort}`))
-  originSync(turtleDB, options.remoteHost, remotePort)
+  logInfo(() => console.log(`connecting to remote at ${remoteHost}:${remotePort}`))
+  originSync(turtleDB, remoteHost, remotePort)
 }
 
 if (options.s3 !== false && (options.s3EndPoint || options.s3Region || options.s3Bucket || options.s3AccessKeyId || options.s3SecretAccessKey)) {
@@ -144,7 +144,7 @@ if (options.web === true || (options.web === undefined && options.webPort)) {
   const webPort = +options.webPort || 8080
   const insecure = !!options.webInsecure
   const https = insecure || !!options.webCertpath
-  const certpath = options.webCertpath || 'dev/cert.json'
+  const certpath = options.webCertpath || '__turtledb_dev__/cert.json'
   logInfo(() => console.log(`listening for web connections on port ${webPort} (https: ${https}, insecure: ${insecure}, certpath: ${certpath})`))
   webSync(webPort, publicKey, turtleDB, https, insecure, certpath, options.webFallback)
 }

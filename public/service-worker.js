@@ -93,14 +93,14 @@ serviceWorkerGlobalScope.addEventListener('fetch', fetchEvent => {
         const type = pathname.split('.').pop()
         fetchEvent.respondWith(turtleDB.summonBoundTurtleBranch(urlPublicKey).then(turtleBranch => {
           const address = +searchParams.get('address')
-          const body = address ? turtleBranch.lookup(address) : turtleBranch?.lookup?.('document', 'value', relativePath)
+          const body = turtleBranch?.lookupFile(relativePath, false, address)
           if (body) {
             const contentType = contentTypeByExtension[type]
             const response = new Response(new Blob([body], { headers: { type: contentType } }), { headers: { 'Content-Type': contentType } })
             return response
           } else {
             try {
-              const configJson = JSON.parse(turtleBranch?.lookup?.('document', 'value', 'config.json'))
+              const configJson = JSON.parse(turtleBranch?.lookupFile?.('config.json'))
               const branchGroups = ['fsReadWrite', 'fsReadOnly']
               for (const branchGroup of branchGroups) {
                 const branches = configJson[branchGroup]

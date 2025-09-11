@@ -2,7 +2,7 @@ import { getConfigFromOptions } from './getConfigFromOptions.js'
 import { join } from 'path'
 import { startServer } from './startServer.js'
 import { mkdir, readFile, symlink, unlink, writeFile } from 'fs/promises'
-import { logInfo, logWarn } from '../branches/.cv6t981m0a2ou7fil4f88ujf6kpj2lojceycv1gdcq23wlzqi2/js/utils/logger.js'
+import { logInfo, logWarn } from '../public/js/utils/logger.js'
 import { parse } from 'dotenv'
 import { keyInYN, question, questionNewPassword } from 'readline-sync'
 

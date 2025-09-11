@@ -2,14 +2,14 @@ import { dirname, join, relative } from 'path'
 import { mkdirSync, readdirSync, readFileSync, rmSync, statSync, unlinkSync, writeFileSync } from 'fs'
 import { watch } from 'chokidar'
 import { compile } from '@gerhobbelt/gitignore-parser'
-import { BINARY_FILE, JSON_FILE, linesToString, pathToType, TEXT_FILE } from '../branches/.cv6t981m0a2ou7fil4f88ujf6kpj2lojceycv1gdcq23wlzqi2/js/utils/fileTransformer.js'
-import { logDebug, logError, logFatal, logInfo } from '../branches/.cv6t981m0a2ou7fil4f88ujf6kpj2lojceycv1gdcq23wlzqi2/js/utils/logger.js'
-import { deepEqual } from '../branches/.cv6t981m0a2ou7fil4f88ujf6kpj2lojceycv1gdcq23wlzqi2/js/utils/deepEqual.js'
+import { BINARY_FILE, JSON_FILE, linesToString, pathToType, TEXT_FILE } from '../public/js/utils/fileTransformer.js'
+import { logDebug, logError, logFatal, logInfo } from '../public/js/utils/logger.js'
+import { deepEqual } from '../public/js/utils/deepEqual.js'
 
 /**
- * @typedef {import('../branches/public/js/turtle/connections/TurtleDB.js').TurtleDB} TurtleDB
- * @typedef {import('../branches/public/js/turtle/Signer.js').Signer} Signer
- * @typedef {import('../branches/public/js/turtle/Workspace.js').Workspace} Workspace
+ * @typedef {import('../public/js/turtle/connections/TurtleDB.js').TurtleDB} TurtleDB
+ * @typedef {import('../public/js/turtle/Signer.js').Signer} Signer
+ * @typedef {import('../public/js/turtle/Workspace.js').Workspace} Workspace
  */
 
 const UPDATED_FILE = 'updated file'
@@ -120,8 +120,8 @@ export async function fileSync (name, turtleDB, signer, folder = '.') {
   // workspace.recaller.debug = true
   workspace.recaller.watch(`fileSync"${name}"`, async () => {
     const filteredCommittedDocumentValue = gitFilterFilesObject(workspace.committedBranch.lookup('document', 'value'))
-    if (!fsFilesObject['.gitignore'] && firstRun && filteredCommittedDocumentValue['.gitignore']) {
-      fsFilesObject['.gitignore'] = filteredCommittedDocumentValue['.gitignore']
+    if (!fsFilesObject['.gitignore'] && firstRun) {
+      fsFilesObject['.gitignore'] = filteredCommittedDocumentValue?.['.gitignore'] || ['.env', '.DS_Store', '']
       writeFileAsType('.gitignore', fsFilesObject['.gitignore'])
     }
     const filteredFsFilesObject = gitFilterFilesObject(fsFilesObject)

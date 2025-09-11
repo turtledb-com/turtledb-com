@@ -3,16 +3,16 @@ import { readdirSync, readFileSync, statSync } from 'fs'
 import { lstat, readFile, unlink, writeFile } from 'fs/promises'
 import { watch } from 'chokidar'
 import { compile } from '@gerhobbelt/gitignore-parser'
-import { logDebug, logError } from '../branches/.cv6t981m0a2ou7fil4f88ujf6kpj2lojceycv1gdcq23wlzqi2/js/utils/logger.js'
-import { BINARY_FILE, JSON_FILE, linesToString, pathToType, TEXT_FILE } from '../branches/.cv6t981m0a2ou7fil4f88ujf6kpj2lojceycv1gdcq23wlzqi2/js/utils/fileTransformer.js'
-import { deepEqual } from '../branches/.cv6t981m0a2ou7fil4f88ujf6kpj2lojceycv1gdcq23wlzqi2/js/utils/deepEqual.js'
-import { AS_REFS } from '../branches/.cv6t981m0a2ou7fil4f88ujf6kpj2lojceycv1gdcq23wlzqi2/js/turtle/codecs/CodecType.js'
-import { OPAQUE_UINT8ARRAY } from '../branches/.cv6t981m0a2ou7fil4f88ujf6kpj2lojceycv1gdcq23wlzqi2/js/turtle/codecs/codec.js'
+import { logDebug, logError } from '../public/js/utils/logger.js'
+import { BINARY_FILE, JSON_FILE, linesToString, pathToType, TEXT_FILE } from '../public/js/utils/fileTransformer.js'
+import { deepEqual } from '../public/js/utils/deepEqual.js'
+import { AS_REFS } from '../public/js/turtle/codecs/CodecType.js'
+import { OPAQUE_UINT8ARRAY } from '../public/js/turtle/codecs/codec.js'
 
 /**
- * @typedef {import('../branches/public/js/turtle/connections/TurtleDB.js').TurtleDB} TurtleDB
- * @typedef {import('../branches/public/js/turtle/Signer.js').Signer} Signer
- * @typedef {import('../branches/public/js/turtle/Workspace.js').Workspace} Workspace
+ * @typedef {import('../public/js/turtle/connections/TurtleDB.js').TurtleDB} TurtleDB
+ * @typedef {import('../public/js/turtle/Signer.js').Signer} Signer
+ * @typedef {import('../public/js/turtle/Workspace.js').Workspace} Workspace
  */
 
 const UPDATED_FILE = 'updated file'

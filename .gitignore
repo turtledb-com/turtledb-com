@@ -2,7 +2,7 @@
 .DS_Store
 
 # don't commit passwords
-.env
+.env*
 
 # coverage reports
 coverage/

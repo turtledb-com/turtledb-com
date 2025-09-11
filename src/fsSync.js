@@ -2,12 +2,12 @@ import { watch } from 'chokidar'
 import { lstat, mkdir, readFile, symlink, unlink, writeFile } from 'fs/promises'
 import { dirname, join, relative } from 'path'
 import { existsSync, mkdirSync } from 'fs'
-import { logDebug, logError } from '../branches/.cv6t981m0a2ou7fil4f88ujf6kpj2lojceycv1gdcq23wlzqi2/js/utils/logger.js'
+import { logDebug, logError } from '../public/js/utils/logger.js'
 
 /**
- * @typedef {import('../branches/public/js/turtle/connections/TurtleDB.js').TurtleDB} TurtleDB
- * @typedef {import('../branches/public/js/turtle/Signer.js').Signer} Signer
- * @typedef {import('../branches/public/js/turtle/Workspace.js').Workspace} Workspace
+ * @typedef {import('../public/js/turtle/connections/TurtleDB.js').TurtleDB} TurtleDB
+ * @typedef {import('../public/js/turtle/Signer.js').Signer} Signer
+ * @typedef {import('../public/js/turtle/Workspace.js').Workspace} Workspace
  */
 
 export const ignored = /(?:\/node_modules\b|.*\.ico$|\.lock$|~$)/i

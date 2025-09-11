@@ -1,9 +1,10 @@
 import { AS_REFS, DEREFERENCE } from './codecs/CodecType.js'
-import { codec } from './codecs/codec.js'
+import { ATOMIC_UINT8ARRAY, codec } from './codecs/codec.js'
 import { TurtleBranch } from './TurtleBranch.js'
 import { ValueByUint8Array } from './utils.js'
 import { findCommonAncestor } from './U8aTurtle.js'
 import { logError, logInfo } from '../utils/logger.js'
+import { JSON_FILE, pathToType, TEXT_FILE } from '../utils/fileTransformer.js'
 
 export const OURS = 'ours'
 export const THEIRS = 'theirs'
@@ -128,5 +129,29 @@ export class TurtleDictionary extends TurtleBranch {
     const ourAddress = this.u8aTurtle.getAddressAtPath(undefined, ...path)
     const theirAddress = this.upsert(theirs.lookup(theirStartingAddress, ...path))
     return _merge(commonAddress, ourAddress, theirAddress)
+  }
+
+  upsertFile (filename, content, valueAddress) {
+    const type = pathToType(filename)
+    let documentValueRefs
+    if (valueAddress >= 0) {
+      documentValueRefs = this.lookup(valueAddress, AS_REFS) || {}
+    } else {
+      documentValueRefs = this.committedBranch.lookup('document', 'value', AS_REFS) || {}
+    }
+    if (!content) {
+      delete documentValueRefs[filename]
+    } else {
+      let address
+      if (content instanceof Uint8Array) address = this.upsert(content, [ATOMIC_UINT8ARRAY])
+      else if (typeof content === 'string') {
+        if (type === JSON_FILE) address = this.upsert(JSON.parse(content))
+        else if (type === TEXT_FILE) address = this.upsert(content.split('\n'))
+        else throw new Error('unsupported file type')
+      } else if (content && typeof content === 'object') address = this.upsert(content)
+      else throw new Error('unsupported file type')
+      documentValueRefs[filename] = address
+    }
+    return this.upsert(documentValueRefs, undefined, AS_REFS)
   }
 }

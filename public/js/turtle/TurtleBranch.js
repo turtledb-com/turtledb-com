@@ -3,6 +3,7 @@ import { squashTurtle, U8aTurtle } from './U8aTurtle.js'
 import { combineUint8Arrays } from '../utils/combineUint8Arrays.js'
 import { combineUint8ArrayLikes } from '../utils/combineUint8ArrayLikes.js'
 import { logInfo, logWarn } from '../utils/logger.js'
+import { JSON_FILE, pathToType, TEXT_FILE } from '../utils/fileTransformer.js'
 
 /**
  * @typedef {import('./codecs/CodecType.js').CodecOptions} CodecOptions
@@ -131,4 +132,14 @@ export class TurtleBranch {
    * @returns {any}
    */
   lookup (...path) { return this.u8aTurtle?.lookup?.(...path) }
+
+  lookupFile (filename, asStored = false, address) {
+    const type = pathToType(filename)
+    const storedContent = address ? this.lookup(address) : this.lookup('document', 'value', filename)
+    if (asStored || !storedContent) return storedContent
+    if (storedContent instanceof Uint8Array) return storedContent
+    if (type === JSON_FILE) return JSON.stringify(storedContent, null, 2)
+    if (type === TEXT_FILE) return storedContent.join('\n')
+    return undefined
+  }
 }

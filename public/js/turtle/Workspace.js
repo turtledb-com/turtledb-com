@@ -2,8 +2,6 @@ import { IGNORE_MUTATE, Recaller } from '../utils/Recaller.js'
 import { AS_REFS } from './codecs/CodecType.js'
 import { TurtleBranch } from './TurtleBranch.js'
 import { TurtleDictionary } from './TurtleDictionary.js'
-import { JSON_FILE, pathToType, TEXT_FILE } from '../utils/fileTransformer.js'
-import { ATOMIC_UINT8ARRAY } from './codecs/codec.js'
 
 /**
  * @typedef {import('./Signer.js').Signer} Signer
@@ -60,40 +58,5 @@ export class Workspace extends TurtleDictionary {
     if (asRef && typeof value !== 'number') throw new Error(`commit asRef must be number, received ${typeof value}`)
     this._queuedCommit = this.#queueCommit(value, message, asRef, this._queuedCommit)
     return this._queuedCommit
-  }
-
-  upsertFile (filename, content, valueAddress) {
-    const type = pathToType(filename)
-    let documentValueRefs
-    if (valueAddress >= 0) {
-      documentValueRefs = this.lookup(valueAddress, AS_REFS) || {}
-    } else {
-      documentValueRefs = this.committedBranch.lookup('document', 'value', AS_REFS) || {}
-    }
-    if (!content) {
-      delete documentValueRefs[filename]
-    } else {
-      let address
-      if (content instanceof Uint8Array) address = this.upsert(content, [ATOMIC_UINT8ARRAY])
-      else if (typeof content === 'string') {
-        if (type === JSON_FILE) address = this.upsert(JSON.parse(content))
-        else if (type === TEXT_FILE) address = this.upsert(content.split('\n'))
-        else throw new Error('unsupported file type')
-      } else if (content && typeof content === 'object') address = this.upsert(content)
-      else throw new Error('unsupported file type')
-      documentValueRefs[filename] = address
-    }
-    return this.upsert(documentValueRefs, undefined, AS_REFS)
-  }
-
-  lookupFile (filename, asStored = false) {
-    const type = pathToType(filename)
-    const storedContent = this.lookup('document', 'value', filename)
-    console.log({ storedContent, type })
-    if (asStored || !storedContent) return storedContent
-    if (storedContent instanceof Uint8Array) return storedContent
-    if (type === JSON_FILE) return JSON.stringify(storedContent, null, 2)
-    if (type === TEXT_FILE) return storedContent.join('\n')
-    return undefined
   }
 }
