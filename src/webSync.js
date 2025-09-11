@@ -95,7 +95,7 @@ export async function webSync (port, basePublicKey, turtleDB, https, insecure, c
   // app.use(express.static(root))
 
   let server
-  if (https || insecure) {
+  if (https) {
     if (insecure) process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0'
     const fullcertpath = join(process.cwd(), certpath)
     const certOptions = await manageCert(fullcertpath)
@@ -135,7 +135,7 @@ export async function webSync (port, basePublicKey, turtleDB, https, insecure, c
   })
 
   server.listen(port, () => {
-    logInfo(() => console.log(`local webserver started: ${(https || insecure) ? 'https' : 'http'}://localhost:${port}
+    logInfo(() => console.log(`local webserver started: ${https ? 'https' : 'http'}://localhost:${port}
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!! FUN-FACT: Self-signed certificates break service-workers !!!
@@ -143,6 +143,6 @@ export async function webSync (port, basePublicKey, turtleDB, https, insecure, c
     (HINT): On MacOS and in a browser started with this command ──╮
                a service-worker can use a self-signed cert.       │
 ╭─────────────────────────────────────────────────────────────────╯
-╰─▶ open '/Applications/Google Chrome Canary.app' --args --ignore-certificate-errors https://localhost:8080/`))
+╰─▶ open '/Applications/Google Chrome Canary.app' --args --ignore-certificate-errors https://localhost:${port}/`))
   })
 }

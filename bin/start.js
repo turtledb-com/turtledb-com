@@ -16,6 +16,8 @@ import { fileSync } from '../src/fileSync.js'
 import { s3Sync } from '../src/s3Sync.js'
 import { originSync } from '../src/originSync.js'
 import { outletSync } from '../src/outletSync.js'
+import { webSync } from '../src/webSync.js'
+import { log } from 'console'
 
 const { version } = JSON.parse(readFileSync(new URL('../package.json', import.meta.url)))
 
@@ -34,6 +36,7 @@ program
     new Option('--turtlename <string>', 'name for dataset')
       .env('TURTLEDB_TURTLENAME')
   )
+
   .addOption(
     new Option('--s3-end-point <string>', 'endpoint for s3 (like "https://sfo3.digitaloceanspaces.com")')
       .env('TURTLEDB_S3_END_POINT')
@@ -55,19 +58,47 @@ program
       .env('TURTLEDB_S3_BUCKET')
   )
   .option('--no-s3', 'disable S3')
+
   .addOption(
-    new Option('--origin-host <string>', 'remote host to sync to')
-      .env('TURTLEDB_ORIGIN_HOST')
+    new Option('--remote-host <string>', 'remote host to sync to')
+      .env('TURTLEDB_REMOTE_HOST')
   )
   .addOption(
-    new Option('--origin-port <number>', 'remote port to sync to')
-      .env('TURTLEDB_ORIGIN_PORT')
+    new Option('--remote-port <number>', 'remote port to sync to')
+      .env('TURTLEDB_REMOTE_PORT')
   )
-  .option('--no-origin', 'disable origin connection')
-  .option('-p, --port <number>', 'local port to sync from', x => +x, 0)
+  .option('--remote', 'enable remote connection')
+  .option('--no-remote', 'disable remote connection')
+
+  .addOption(
+    new Option('--local-port <number>', 'local port to sync from')
+      .env('TURTLEDB_LOCAL_PORT')
+  )
+  .option('--local', 'enable local connection')
+  .option('--no-local', 'disable local connection')
+
+  .addOption(
+    new Option('--web-port <number>', 'web port to sync from')
+      .env('TURTLEDB_WEB_PORT')
+  )
+  .addOption(
+    new Option('--web-fallback <string>', 'project public key to use as fallback for web')
+      .env('TURTLEDB_WEB_FALLBACK')
+  )
+  .addOption(
+    new Option('--web-certpath <string>', 'path to self-cert for web')
+      .env('TURTLEDB_WEB_CERTPATH')
+  )
+  .addOption(
+    new Option('--web-insecure', '(local dev) allow unauthorized for web')
+      .env('TURTLEDB_WEB_INSECURE')
+  )
+  .option('--web', 'enable web connection')
+  .option('--no-web', 'disable web connection')
+
   .option('-a, --archive', 'save all turtles to files by public key', false)
-  .option('-i, --interactive', 'flag to start repl', false)
   .option('-f, --fs-mirror', 'flag to mirror files locally', false)
+  .option('-i, --interactive', 'flag to start repl', false)
   .option('-v, --verbose [level]', 'log data flows', x => +x, false) // +false === 0 === INFO, +true === 1 === DEBUG
   .parse()
 
@@ -82,15 +113,16 @@ logInfo(() => console.log({ username, turtlename, publicKey }))
 const recaller = new Recaller('turtledb-com')
 const turtleDB = new TurtleDB('turtledb-com', recaller)
 
-if (options.port) {
-  logInfo(() => console.log(`listening for outlet connections on port ${options.port}`))
-  outletSync(turtleDB, options.port)
+if (options.local === true || (options.local === undefined && options.localPort)) {
+  const localPort = +options.localPort || 1024
+  logInfo(() => console.log(`listening for local connections on port ${localPort}`))
+  outletSync(turtleDB, localPort)
 }
 
-if (options.origin !== false && options.originHost) {
-  const originPort = +options.originPort || 1024
-  logInfo(() => console.log(`connecting to origin at ${options.originHost}:${originPort}`))
-  originSync(turtleDB, options.originHost, originPort)
+if (options.remote === true || (options.remote === undefined && (options.remoteHost || options.remotePort))) {
+  const remotePort = +options.remotePort || 1024
+  logInfo(() => console.log(`connecting to remote at ${options.remoteHost}:${remotePort}`))
+  originSync(turtleDB, options.remoteHost, remotePort)
 }
 
 if (options.s3 !== false && (options.s3EndPoint || options.s3Region || options.s3Bucket || options.s3AccessKeyId || options.s3SecretAccessKey)) {
@@ -108,6 +140,16 @@ if (options.fsMirror) {
   fileSync(turtlename, turtleDB, signer, '.')
 }
 
+if (options.web === true || (options.web === undefined && options.webPort)) {
+  const webPort = +options.webPort || 8080
+  const insecure = !!options.webInsecure
+  const https = insecure || !!options.webCertpath
+  const certpath = options.webCertpath || 'dev/cert.json'
+  logInfo(() => console.log(`listening for web connections on port ${webPort} (https: ${https}, insecure: ${insecure}, certpath: ${certpath})`))
+  webSync(webPort, publicKey, turtleDB, https, insecure, certpath, options.webFallback)
+}
+
+console.log(options)
 if (options.interactive) {
   global.username = username
   global.turtlename = turtlename
