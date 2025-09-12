@@ -88,7 +88,7 @@ serviceWorkerGlobalScope.addEventListener('fetch', fetchEvent => {
         url.pathname = `${url.pathname}index.html`
       }
       if (!slash || isDir) {
-        fetchEvent.respondWith(Response.redirect(url.toString(), 301))
+        fetchEvent.respondWith(Response.redirect(url.toString(), 302))
       } else {
         const type = pathname.split('.').pop()
         fetchEvent.respondWith(turtleDB.summonBoundTurtleBranch(urlPublicKey).then(turtleBranch => {
@@ -111,7 +111,7 @@ serviceWorkerGlobalScope.addEventListener('fetch', fetchEvent => {
                       if (pathname.startsWith(nickname)) {
                         const pathFromKey = pathname.slice(nickname.length)
                         url.pathname = `/${key}/${pathFromKey}`
-                        return Response.redirect(url.toString(), 301)
+                        return Response.redirect(url.toString(), 302)
                       }
                     }
                   }

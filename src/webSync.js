@@ -39,7 +39,7 @@ export async function webSync (port, basePublicKey, turtleDB, https, insecure, c
     const url = new URL(req.url, `${req.protocol}://${req.host}`)
     const { pathname, searchParams } = url
     if (pathname === '/') {
-      res.redirect(301, `/${basePublicKey}/index.html`)
+      res.redirect(302, `/${basePublicKey}/index.html`)
       return
     }
     const matchGroups = pathname.match(/\/(?<urlPublicKey>[0-9A-Za-z]{41,51})(?<slash>\/?)(?<relativePath>.*)$/)?.groups
@@ -53,8 +53,8 @@ export async function webSync (port, basePublicKey, turtleDB, https, insecure, c
         url.pathname = `${url.pathname}index.html`
       }
       if (!slash || isDir) {
-        // fetchEvent.respondWith(Response.redirect(url.toString(), 301))
-        res.redirect(301, url.toString())
+        // fetchEvent.respondWith(Response.redirect(url.toString(), 302))
+        res.redirect(302, url.toString())
       } else {
         const type = pathname.split('.').pop()
         const turtleBranch = await turtleDB.summonBoundTurtleBranch(urlPublicKey)
@@ -76,7 +76,7 @@ export async function webSync (port, basePublicKey, turtleDB, https, insecure, c
                     const nickname = `/${urlPublicKey}/${name}/`
                     if (pathname.startsWith(nickname)) {
                       url.pathname = `/${key}/${pathname.slice(nickname.length)}`
-                      return res.redirect(301, url.toString())
+                      return res.redirect(302, url.toString())
                     }
                   }
                 }
