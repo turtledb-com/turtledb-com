@@ -1,5 +1,5 @@
 # the true price of a pretty laptop
-.DS_Store
+**/.DS_Store
 
 # don't commit passwords
 .env*
