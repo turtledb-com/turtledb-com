@@ -1,12 +1,12 @@
 import { join } from 'path'
-import { AbstractUpdater } from '../branches/.cv6t981m0a2ou7fil4f88ujf6kpj2lojceycv1gdcq23wlzqi2/js/turtle/connections/AbstractUpdater.js'
+import { AbstractUpdater } from '../public/js/turtle/connections/AbstractUpdater.js'
 import { getExistenceLength } from './getExistenceLength.js'
 import { access, mkdir, readFile, writeFile } from 'fs/promises'
-import { verifyCommitU8a } from '../branches/.cv6t981m0a2ou7fil4f88ujf6kpj2lojceycv1gdcq23wlzqi2/js/turtle/Signer.js'
+import { verifyCommitU8a } from '../public/js/turtle/Signer.js'
 
 /**
  * @typedef {import('@aws-sdk/client-s3').S3Client} S3Client
- * @typedef {import('../branches/public/js/utils/Recaller.js').Recaller} Recaller
+ * @typedef {import('../public/js/utils/Recaller.js').Recaller} Recaller
  */
 
 export class ArchiveUpdater extends AbstractUpdater {
@@ -27,11 +27,11 @@ export class ArchiveUpdater extends AbstractUpdater {
 
   indexToPath (index) {
     if (index === undefined) return join(this.path, this.publicKey)
-    return join(this.path, this.publicKey, index.toString(32).padStart(6, '0'))
+    return join(this.path, this.publicKey, index.toString(36).padStart(6, '0'))
   }
 
   async setUint8ArraysLength (length) {
-    const conflictMessage = `Attempt to setUint8ArrayLength(${length}) of "${this.name}" (conflict at ${length.toString(32).padStart(6, '0')}). Backup and delete archive/${this.publicKey} to resolve.`
+    const conflictMessage = `Attempt to setUint8ArrayLength(${length}) of "${this.name}" (conflict at ${length.toString(36).padStart(6, '0')}). Backup and delete archive/${this.publicKey} to resolve.`
     throw new Error(conflictMessage)
   }
 

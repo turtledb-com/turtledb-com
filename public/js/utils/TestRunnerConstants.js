@@ -1,0 +1,13 @@
+export const PASSED = '☑'
+export const FAILED = '☒'
+export const WAITING = '□'
+export const RUNNING = '■'
+export const SKIPPED = '⧄'
+
+export const RUNNER = '߷'
+export const SUITE = '●'
+export const TEST = '⇶'
+export const ASSERTION = '→'
+export const ONLY = '⮕'
+export const SKIP = '⇏'
+export const ERROR = '⚠'

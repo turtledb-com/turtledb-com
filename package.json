@@ -1,39 +1,33 @@
 {
   "name": "turtledb-com",
-  "version": "0.3.6",
+  "version": "0.4.0",
   "description": "A humanly achievable way to create humanly useful applications",
   "type": "module",
   "repository": "git@github.com:turtledb-com/turtledb-com.git",
   "author": "David Tudury <david.tudury@gmail.com>",
   "license": "AGPL-3.0",
-  "bin": {
-    "turtledb-com": "./bin/turtledb-com.js"
-  },
+  "bin": "./bin/turtledb-com.js",
   "dependencies": {
     "@aws-sdk/client-s3": "^3.782.0",
+    "@gerhobbelt/gitignore-parser": "^0.2.0-9",
     "@noble/secp256k1": "^2.2.3",
     "chokidar": "^4.0.3",
     "commander": "^13.1.0",
+    "dotenv": "^17.2.2",
     "express": "^5.1.0",
     "mkcert": "^3.2.0",
     "readline-sync": "^1.4.10",
     "ws": "^8.18.1"
   },
   "devDependencies": {
-    "c8": "^10.1.3"
+    "c8": "^10.1.3",
+    "standard": "^17.1.2"
   },
   "scripts": {
-    "start": "./bin/turtledb-com.js -i -p 8080 -t 1024",
-    "d": "./bin/turtledb-com.js",
-    "dev": "./bin/turtledb-com.js -i --insecure --https --web-port 8080 --fs-name public --no-s3",
-    "sync": "./bin/turtledb-com.js -i --insecure --https --web-port 8080 -o turtledb.com --outlet-port 1024 --fs-name public --no-s3",
-    "syncs3": "./bin/turtledb-com.js -i --insecure --https --web-port 8080 --outlet-port 1024 --fs-name public",
-    "dev1": "./bin/turtledb-com.js -i --insecure --https --web-port 8081 --outlet-port 1025 --origin-port 1024 --origin-host localhost --no-s3",
-    "dev2": "./bin/turtledb-com.js -i --insecure --https --web-port 8082 --origin-port 1025 --origin-host localhost --outlet-port 0 --no-s3",
-    "fallback": "./bin/turtledb-com.js -i -o turtledb.com --insecure --https --web-port 9090 --no-s3 --web-fallback juu2u25yqod1ticwiwnpujtaishju3msefvy79oiti00d8xir0",
+    "start": "./bin/turtledb-com.js -i",
+    "dev": "cd public/ && ../bin/turtledb-com.js --env-file=../.env_dev -i -a -v -f",
     "canary": "open '/Applications/Google Chrome Canary.app' --args --ignore-certificate-errors https://localhost:8080/",
     "test": "./bin/test.js",
-    "readonly": "./bin/turtledb-com.js -i -o turtledb.com -k k7mzt0eeaadnl0c84x7jb9kzlm85dmcz1j6q9kwwq8w8f5d78e --no-s3",
     "coverage": "c8 -r html -r text -r json-summary -x '**/*.test.js' $npm_execpath run test"
   },
   "standard": {

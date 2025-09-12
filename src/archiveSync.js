@@ -1,4 +1,4 @@
-import { TurtleBranchUpdater } from '../branches/.cv6t981m0a2ou7fil4f88ujf6kpj2lojceycv1gdcq23wlzqi2/js/turtle/connections/TurtleBranchUpdater.js'
+import { TurtleBranchUpdater } from '../public/js/turtle/connections/TurtleBranchUpdater.js'
 import { ArchiveUpdater } from './ArchiveUpdater.js'
 
 /**

@@ -4,12 +4,12 @@ import { manageCert } from './manageCert.js'
 import { createServer as createHttpsServer } from 'https'
 import { createServer as createHttpServer } from 'http'
 import { WebSocketServer } from 'ws'
-import { TurtleBranchMultiplexer } from '../branches/.cv6t981m0a2ou7fil4f88ujf6kpj2lojceycv1gdcq23wlzqi2/js/turtle/connections/TurtleBranchMultiplexer.js'
+import { TurtleBranchMultiplexer } from '../public/js/turtle/connections/TurtleBranchMultiplexer.js'
 import { randomUUID } from 'crypto'
-import { logDebug, logInfo, logError } from '../branches/.cv6t981m0a2ou7fil4f88ujf6kpj2lojceycv1gdcq23wlzqi2/js/utils/logger.js'
+import { logDebug, logInfo, logError } from '../public/js/utils/logger.js'
 
 /**
- * @typedef {import('../branches/public/js/turtle/connections/TurtleDB.js').TurtleDB} TurtleDB
+ * @typedef {import('../public/js/turtle/connections/TurtleDB.js').TurtleDB} TurtleDB
  */
 
 const uuid = randomUUID()
@@ -59,13 +59,13 @@ export async function webSync (port, basePublicKey, turtleDB, https, insecure, c
         const type = pathname.split('.').pop()
         const turtleBranch = await turtleDB.summonBoundTurtleBranch(urlPublicKey)
         const address = +searchParams.get('address')
-        const body = address ? turtleBranch.lookup(address) : turtleBranch?.lookup?.('document', 'value', relativePath)
+        const body = turtleBranch?.lookupFile(relativePath, false, address)
         if (body) {
           res.type(type)
           res.send(body)
         } else {
           try {
-            const configJson = JSON.parse(turtleBranch?.lookup?.('document', 'value', 'config.json'))
+            const configJson = JSON.parse(turtleBranch?.lookupFile?.('config.json'))
             logInfo(() => console.log({ configJson }))
             const branchGroups = ['fsReadWrite', 'fsReadOnly']
             for (const branchGroup of branchGroups) {
@@ -95,7 +95,7 @@ export async function webSync (port, basePublicKey, turtleDB, https, insecure, c
   // app.use(express.static(root))
 
   let server
-  if (https || insecure) {
+  if (https) {
     if (insecure) process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0'
     const fullcertpath = join(process.cwd(), certpath)
     const certOptions = await manageCert(fullcertpath)
@@ -135,7 +135,7 @@ export async function webSync (port, basePublicKey, turtleDB, https, insecure, c
   })
 
   server.listen(port, () => {
-    logInfo(() => console.log(`local webserver started: ${(https || insecure) ? 'https' : 'http'}://localhost:${port}
+    logInfo(() => console.log(`local webserver started: ${https ? 'https' : 'http'}://localhost:${port}
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!! FUN-FACT: Self-signed certificates break service-workers !!!
@@ -143,6 +143,6 @@ export async function webSync (port, basePublicKey, turtleDB, https, insecure, c
     (HINT): On MacOS and in a browser started with this command ──╮
                a service-worker can use a self-signed cert.       │
 ╭─────────────────────────────────────────────────────────────────╯
-╰─▶ open '/Applications/Google Chrome Canary.app' --args --ignore-certificate-errors https://localhost:8080/`))
+╰─▶ open '/Applications/Google Chrome Canary.app' --args --ignore-certificate-errors https://localhost:${port}/`))
   })
 }

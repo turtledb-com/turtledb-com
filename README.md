@@ -1,10 +1,6 @@
 # turtledb-com
 
-A humanly achievable way to create useful applications for other humans.
-
-> [!NOTE] 
-> This document is meant to be academic.
-> Links to documents meant for developers are at the end
+The easiest way to build a web app.
 
 > [!WARNING] 
 > THIS PROJECT IS A WORK IN PROGRESS
@@ -13,14 +9,14 @@ A humanly achievable way to create useful applications for other humans.
 ## The Problem
 
 Setting up and maintaining the technologies to make a useful application is prohibitively expensive for humans. 
-This is because "industry best practices" are made by businesses.
+This is because "Industry Best Solutions" are made by businesses.
 Business applications must scale with world-spanning teams and be able to consume data from billions of users. 
 
 The internet is for humans but applications are for businesses.
 
 ## The Solution 
 
-Replace "industry best practices" with a "cheap, easy, and good enough practice"
+A technology that isn't for "Industry". Something cheap, easy, and good enough. We're not "Industry" (yet). Our solutions aren't fancy, they just need to work (now).
 
 ### Solution Requirements
 

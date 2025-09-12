@@ -2,7 +2,7 @@
 .DS_Store
 
 # don't commit passwords
-.env
+.env*
 
 # coverage reports
 coverage/
@@ -24,3 +24,7 @@ archive/
 
 # good luck, I'm behind 7 lock files
 yarn.lock
+
+jsconfig.json
+bin/_temp
+_scrapyard
