@@ -145,9 +145,9 @@ export class TurtleDictionary extends TurtleBranch {
       let address
       if (content instanceof Uint8Array) address = this.upsert(content, [ATOMIC_UINT8ARRAY])
       else if (typeof content === 'string') {
-        if (type === JSON_FILE) address = this.upsert(JSON.parse(content))
-        else if (type === TEXT_FILE) address = this.upsert(content.split('\n'))
-        else throw new Error('unsupported file type')
+        if (content.length && type === JSON_FILE) address = this.upsert(JSON.parse(content))
+        else if (content.length && type === TEXT_FILE) address = this.upsert(content.split('\n'))
+        else address = this.upsert(content)
       } else if (content && typeof content === 'object') address = this.upsert(content)
       else throw new Error('unsupported file type')
       documentValueRefs[filename] = address

@@ -1,5 +1,5 @@
 import { dirname, join, relative } from 'path'
-import { mkdirSync, readdirSync, readFileSync, rmSync, statSync, unlinkSync, writeFileSync } from 'fs'
+import { mkdirSync, read, readdirSync, readFileSync, rmSync, statSync, unlinkSync, writeFileSync } from 'fs'
 import { watch } from 'chokidar'
 import { compile } from '@gerhobbelt/gitignore-parser'
 import { BINARY_FILE, JSON_FILE, linesToString, pathToType, TEXT_FILE } from '../public/js/utils/fileTransformer.js'
@@ -35,7 +35,13 @@ export async function fileSync (name, turtleDB, signer, folder = '.') {
   const readFileAsType = (filename) => {
     const type = pathToType(filename)
     if (type === JSON_FILE) {
-      return JSON.parse(readFileSync(filename, 'utf8'))
+      const content = readFileSync(filename, 'utf8')
+      try {
+        return JSON.parse(content)
+      } catch (error) {
+        logError(() => console.error(`Error parsing JSON file "${filename}", returning raw text instead:`, error))
+        return content
+      }
     } else if (type === TEXT_FILE) {
       return readFileSync(filename, 'utf8').split('\n')
     } else if (type === BINARY_FILE) {
@@ -46,7 +52,9 @@ export async function fileSync (name, turtleDB, signer, folder = '.') {
     const foldername = dirname(filename)
     if (foldername.length) mkdirSync(foldername, { recursive: true })
     const type = pathToType(filename)
-    if (type === JSON_FILE) {
+    if (typeof content === 'string') {
+      writeFileSync(filename, content)
+    } else if (type === JSON_FILE) {
       writeFileSync(filename, JSON.stringify(content, null, 2))
     } else if (type === TEXT_FILE) {
       writeFileSync(filename, content.join('\n'))
