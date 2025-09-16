@@ -8,7 +8,7 @@ import { logError, logInfo, setLogLevel } from '../public/js/utils/logger.js'
 import { Signer } from '../public/js/turtle/Signer.js'
 import { TurtleDB } from '../public/js/turtle/connections/TurtleDB.js'
 import { Recaller } from '../public/js/utils/Recaller.js'
-import { TurtleDictionary } from '../public/js/turtle/TurtleDictionary.js'
+import { OURS, THEIRS, THROW, TurtleDictionary } from '../public/js/turtle/TurtleDictionary.js'
 import { Workspace } from '../public/js/turtle/Workspace.js'
 import { AS_REFS } from '../public/js/turtle/codecs/CodecType.js'
 import { archiveSync } from '../src/archiveSync.js'
@@ -98,7 +98,7 @@ program
   .option('--no-web', 'disable web connection')
 
   .option('-a, --archive', 'save all turtles to files by public key', false)
-  .option('-f, --fs-mirror', 'flag to mirror files locally', false)
+  .option('-f, --fs-mirror [resolve]', `flag to mirror files locally and (optionally) how to handle conflicts (${OURS}, ${THEIRS}, ${THROW})`, THROW) // THROW is safest - copilot
   .option('-i, --interactive', 'flag to start repl', false)
   .option('-v, --verbose [level]', 'log data flows', x => +x, false) // +false === 0 === INFO, +true === 1 === DEBUG
   .parse()
@@ -109,6 +109,8 @@ if (options.envFile) {
   program.parse() // re-parse with new env vars
   Object.assign(options, program.opts()) // update options with new env vars
 }
+
+console.log({ options })
 
 setLogLevel(options.verbose)
 const username = options.username || question('Username: ')
@@ -143,8 +145,13 @@ if (options.archive) {
 }
 
 if (options.fsMirror) {
+  if (options.fsMirror === true) options.fsMirror = THROW // default to THROW if --fs-mirror is provided without argument
+  if (![OURS, THEIRS, THROW].includes(options.fsMirror)) {
+    logError(() => console.error(`fs-mirror resolve option must be "${OURS}", "${THEIRS}" or "${THROW}" (you provided: "${options.fsMirror}")`))
+    process.exit(1)
+  }
   logInfo(() => console.log('mirroring to file system'))
-  fileSync(turtlename, turtleDB, signer, '.')
+  fileSync(turtlename, turtleDB, signer, '.', options.fsMirror)
 }
 
 if (options.web === true || (options.web === undefined && options.webPort)) {

@@ -5,6 +5,7 @@ import { compile } from '@gerhobbelt/gitignore-parser'
 import { BINARY_FILE, JSON_FILE, linesToString, pathToType, TEXT_FILE } from '../public/js/utils/fileTransformer.js'
 import { logDebug, logError, logFatal, logInfo } from '../public/js/utils/logger.js'
 import { deepEqual } from '../public/js/utils/deepEqual.js'
+import { OURS, THEIRS, THROW } from '../public/js/turtle/TurtleDictionary.js'
 
 /**
  * @typedef {import('../public/js/turtle/connections/TurtleDB.js').TurtleDB} TurtleDB
@@ -21,7 +22,7 @@ const REMOVED_FILE = 'removed file'
  * @param {Signer} signer
  * @param {string} folder
  */
-export async function fileSync (name, turtleDB, signer, folder = '.') {
+export async function fileSync (name, turtleDB, signer, folder = '.', resolve = THROW) {
   const workspace = await turtleDB.makeWorkspace(signer, name)
   const allFilenamesIn = (path) => {
     return readdirSync(path).map(file => {
@@ -127,41 +128,74 @@ export async function fileSync (name, turtleDB, signer, folder = '.') {
   let firstRun = true
   // workspace.recaller.debug = true
   workspace.recaller.watch(`fileSync"${name}"`, async () => {
-    const filteredCommittedDocumentValue = gitFilterFilesObject(workspace.committedBranch.lookup('document', 'value'))
+    const committedDocumentValue = workspace.committedBranch.lookup('document', 'value') || {}
+    const filteredCommittedDocumentValue = gitFilterFilesObject(committedDocumentValue)
     if (!fsFilesObject['.gitignore'] && firstRun) {
       fsFilesObject['.gitignore'] = filteredCommittedDocumentValue?.['.gitignore'] || ['.env', '.DS_Store', '']
       writeFileAsType('.gitignore', fsFilesObject['.gitignore'])
     }
     const filteredFsFilesObject = gitFilterFilesObject(fsFilesObject)
     if (workspace.committedBranch.index >= 0) {
+      let touched = false
       for (const key in filteredFsFilesObject) {
         if (!(key in filteredCommittedDocumentValue)) {
           if (firstRun) {
-            logFatal(() => console.error(`file "${key}" present in file system but not in TurtleDB, please delete the file or remove it from .gitignore and recommit`))
-            throw new Error(`file "${key}" present in file system but not in TurtleDB, please delete the file or remove it from .gitignore and recommit`)
-          }
-          try {
-            delete fsFilesObject[key]
-            unlinkSync(key)
-            let dir = dirname(key)
-            while (dir !== '.' && dir !== '/' && readdirSync(dir).length === 0) {
-              rmSync(dir, { recursive: true, force: true })
-              dir = dirname(dir)
+            if (resolve === OURS) {
+              committedDocumentValue[key] = filteredFsFilesObject[key]
+              touched = true
+            } else if (resolve === THEIRS) {
+              delete fsFilesObject[key]
+              try {
+                unlinkSync(key)
+                let dir = dirname(key)
+                while (dir !== '.' && dir !== '/' && readdirSync(dir).length === 0) {
+                  rmSync(dir, { recursive: true, force: true })
+                  dir = dirname(dir)
+                }
+              } catch (error) {
+                if (error.code !== 'ENOENT') throw error
+              }
+            } else if (resolve === THROW) {
+              logFatal(() => console.error(`file "${key}" present in file system but not in TurtleDB, please delete the file or remove it from .gitignore and recommit`))
+              throw new Error(`file "${key}" present in file system but not in TurtleDB, please delete the file or remove it from .gitignore and recommit`)
             }
-          } catch (error) {
-            if (error.code !== 'ENOENT') throw error
+          } else {
+            try {
+              delete fsFilesObject[key]
+              unlinkSync(key)
+              let dir = dirname(key)
+              while (dir !== '.' && dir !== '/' && readdirSync(dir).length === 0) {
+                rmSync(dir, { recursive: true, force: true })
+                dir = dirname(dir)
+              }
+            } catch (error) {
+              if (error.code !== 'ENOENT') throw error
+            }
           }
         }
       }
       for (const key in filteredCommittedDocumentValue) {
         if (!deepEqual(filteredCommittedDocumentValue[key], filteredFsFilesObject[key])) {
-          if (firstRun && filteredFsFilesObject[key]) {
-            logFatal(() => console.error(`file "${key}" present in TurtleDB but not in file system or different, please add the file or remove it from .gitignore and recommit`))
-            throw new Error(`file "${key}" present in TurtleDB but not in file system or different, please add the file or remove it from .gitignore and recommit`)
+          if (firstRun) {
+            if (resolve === OURS) {
+              if (key in filteredFsFilesObject) {
+                committedDocumentValue[key] = filteredFsFilesObject[key]
+              } else {
+                delete committedDocumentValue[key]
+              }
+              touched = true
+            } else if (resolve === THEIRS) {
+              fsFilesObject[key] = filteredCommittedDocumentValue[key]
+              writeFileAsType(key, filteredCommittedDocumentValue[key])
+            } else if (resolve === THROW) {
+              logFatal(() => console.error(`file "${key}" present in TurtleDB but different in file system, please update the file or remove it from .gitignore and recommit`))
+              throw new Error(`file "${key}" present in TurtleDB but different in file system, please update the file or remove it from .gitignore and recommit`)
+            }
           }
-          fsFilesObject[key] = filteredCommittedDocumentValue[key]
-          writeFileAsType(key, filteredCommittedDocumentValue[key])
         }
+      }
+      if (touched) {
+        await workspace.commit(committedDocumentValue, 'reolved conflict commit from fileSync')
       }
     } else {
       await workspace.commit(filteredFsFilesObject, 'initial commit from fileSync')
