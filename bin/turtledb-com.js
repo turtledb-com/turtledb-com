@@ -24,7 +24,6 @@ const { version } = JSON.parse(readFileSync(new URL('../package.json', import.me
 program
   .name('turtledb-com')
   .version(version)
-  .option('--env-file <path>', 'path to .env file')
   .addOption(
     new Option('--username <string>', 'username to use for Signer')
       .env('TURTLEDB_USERNAME')
@@ -37,6 +36,49 @@ program
     new Option('--turtlename <string>', 'name for dataset')
       .env('TURTLEDB_TURTLENAME')
   )
+  .option('-f, --fs-mirror [resolve]', `flag to mirror files locally and (optionally) how to handle conflicts (${OURS}, ${THEIRS}, ${THROW})`)
+  .option('-i, --interactive', 'flag to start repl', false)
+  .option('-a, --archive', 'save all turtles to files by public key', false)
+  .option('-v, --verbose [level]', 'log data flows', x => +x, false) // +false === 0 === INFO, +true === 1 === DEBUG
+
+  .option('--env-file <path>', 'path to .env file')
+
+  .addOption(
+    new Option('--web-port <number>', 'web port to sync from')
+      .env('TURTLEDB_WEB_PORT')
+  )
+  .addOption(
+    new Option('--web-fallback <string>', 'project public key to use as fallback for web')
+      .env('TURTLEDB_WEB_FALLBACK')
+  )
+  .addOption(
+    new Option('--web-certpath <string>', 'path to self-cert for web')
+      .env('TURTLEDB_WEB_CERTPATH')
+  )
+  .addOption(
+    new Option('--web-insecure', '(local dev) allow unauthorized for web')
+      .env('TURTLEDB_WEB_INSECURE')
+  )
+  .option('--web', 'enable web connection')
+  .option('--no-web', 'disable web connection')
+
+  .addOption(
+    new Option('--remote-host <string>', 'remote host to sync to')
+      .env('TURTLEDB_REMOTE_HOST')
+  )
+  .addOption(
+    new Option('--remote-port <number>', 'remote port to sync to')
+      .env('TURTLEDB_REMOTE_PORT')
+  )
+  .option('--remote', 'enable remote connection')
+  .option('--no-remote', 'disable remote connection')
+
+  .addOption(
+    new Option('--local-port <number>', 'local port to sync from')
+      .env('TURTLEDB_LOCAL_PORT')
+  )
+  .option('--local', 'enable local connection')
+  .option('--no-local', 'disable local connection')
 
   .addOption(
     new Option('--s3-end-point <string>', 'endpoint for s3 (like "https://sfo3.digitaloceanspaces.com")')
@@ -60,47 +102,6 @@ program
   )
   .option('--no-s3', 'disable S3')
 
-  .addOption(
-    new Option('--remote-host <string>', 'remote host to sync to')
-      .env('TURTLEDB_REMOTE_HOST')
-  )
-  .addOption(
-    new Option('--remote-port <number>', 'remote port to sync to')
-      .env('TURTLEDB_REMOTE_PORT')
-  )
-  .option('--remote', 'enable remote connection')
-  .option('--no-remote', 'disable remote connection')
-
-  .addOption(
-    new Option('--local-port <number>', 'local port to sync from')
-      .env('TURTLEDB_LOCAL_PORT')
-  )
-  .option('--local', 'enable local connection')
-  .option('--no-local', 'disable local connection')
-
-  .addOption(
-    new Option('--web-port <number>', 'web port to sync from')
-      .env('TURTLEDB_WEB_PORT')
-  )
-  .addOption(
-    new Option('--web-fallback <string>', 'project public key to use as fallback for web')
-      .env('TURTLEDB_WEB_FALLBACK')
-  )
-  .addOption(
-    new Option('--web-certpath <string>', 'path to self-cert for web')
-      .env('TURTLEDB_WEB_CERTPATH')
-  )
-  .addOption(
-    new Option('--web-insecure', '(local dev) allow unauthorized for web')
-      .env('TURTLEDB_WEB_INSECURE')
-  )
-  .option('--web', 'enable web connection')
-  .option('--no-web', 'disable web connection')
-
-  .option('-a, --archive', 'save all turtles to files by public key', false)
-  .option('-f, --fs-mirror [resolve]', `flag to mirror files locally and (optionally) how to handle conflicts (${OURS}, ${THEIRS}, ${THROW})`, THROW) // THROW is safest - copilot
-  .option('-i, --interactive', 'flag to start repl', false)
-  .option('-v, --verbose [level]', 'log data flows', x => +x, false) // +false === 0 === INFO, +true === 1 === DEBUG
   .parse()
 
 const options = program.opts()
@@ -109,8 +110,6 @@ if (options.envFile) {
   program.parse() // re-parse with new env vars
   Object.assign(options, program.opts()) // update options with new env vars
 }
-
-console.log({ options })
 
 setLogLevel(options.verbose)
 const username = options.username || question('Username: ')
