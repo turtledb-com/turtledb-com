@@ -156,8 +156,8 @@ export async function fileSync (name, turtleDB, signer, folder = '.', resolve = 
                 if (error.code !== 'ENOENT') throw error
               }
             } else if (resolve === THROW) {
-              logFatal(() => console.error(`file "${key}" present in file system but not in TurtleDB, please delete the file or remove it from .gitignore and recommit`))
-              throw new Error(`file "${key}" present in file system but not in TurtleDB, please delete the file or remove it from .gitignore and recommit`)
+              logFatal(() => console.error(`file "${key}" present in file system but not in TurtleDB, please use "--fs-mirror theirs" to delete the file or "--fs-mirror ours" to commit the file`))
+              throw new Error(`file "${key}" present in file system but not in TurtleDB, please use "--fs-mirror theirs" to delete the file or "--fs-mirror ours" to commit the file`)
             }
           } else {
             try {
@@ -188,8 +188,8 @@ export async function fileSync (name, turtleDB, signer, folder = '.', resolve = 
               fsFilesObject[key] = filteredCommittedDocumentValue[key]
               writeFileAsType(key, filteredCommittedDocumentValue[key])
             } else if (resolve === THROW) {
-              logFatal(() => console.error(`file "${key}" present in TurtleDB but different in file system, please update the file or remove it from .gitignore and recommit`))
-              throw new Error(`file "${key}" present in TurtleDB but different in file system, please update the file or remove it from .gitignore and recommit`)
+              logFatal(() => console.error(`file "${key}" present in TurtleDB but different in file system, please use "--fs-mirror theirs" to overwrite local changes or "--fs-mirror ours" to commit local changes`))
+              throw new Error(`file "${key}" present in TurtleDB but different in file system, please use "--fs-mirror theirs" to overwrite local changes or "--fs-mirror ours" to commit local changes`)
             }
           }
         }
