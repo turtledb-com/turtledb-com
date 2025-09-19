@@ -1,5 +1,5 @@
 import { dirname, join, relative } from 'path'
-import { mkdirSync, read, readdirSync, readFileSync, rmSync, statSync, unlinkSync, writeFileSync } from 'fs'
+import { mkdirSync, readdirSync, readFileSync, rmSync, statSync, unlinkSync, writeFileSync } from 'fs'
 import { watch } from 'chokidar'
 import { compile } from '@gerhobbelt/gitignore-parser'
 import { BINARY_FILE, JSON_FILE, linesToString, pathToType, TEXT_FILE } from '../public/js/utils/fileTransformer.js'
@@ -84,7 +84,7 @@ export async function fileSync (name, turtleDB, signer, folder = '.', resolve = 
     clearTimeout(timeout)
     timeout = setTimeout(() => {
       for (const [path, action] of actionsByPath) {
-        logDebug(() => console.log(`(fileSync) ${action} in ("${name}"): ${relativePath}`))
+        logDebug(() => console.log(`(fileSync) ${action} in ("${name}"): ${path}`))
         if (action === UPDATED_FILE) {
           try {
             fsFilesObject[path] = readFileAsType(join(folder, path))

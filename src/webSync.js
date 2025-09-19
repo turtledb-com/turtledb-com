@@ -42,51 +42,64 @@ export async function webSync (port, basePublicKey, turtleDB, https, insecure, c
       res.redirect(302, `/${basePublicKey}/index.html`)
       return
     }
-    const matchGroups = pathname.match(/\/(?<urlPublicKey>[0-9A-Za-z]{41,51})(?<slash>\/?)(?<relativePath>.*)$/)?.groups
     try {
-      const { urlPublicKey, slash, relativePath } = matchGroups ?? { urlPublicKey: fallback || basePublicKey, slash: '/', relativePath: pathname.slice(1) }
-      const isDir = !relativePath || relativePath.endsWith('/')
-      if (!slash) {
-        url.pathname = `/${urlPublicKey}/${relativePath}`
-      }
-      if (isDir) {
-        url.pathname = `${url.pathname}index.html`
-      }
-      if (!slash || isDir) {
-        // fetchEvent.respondWith(Response.redirect(url.toString(), 302))
+      const directories = pathname.split('/')
+      if (directories[directories.length - 1] === '') {
+        directories[directories.length - 1] = 'index.html'
+        url.pathname = directories.join('/')
         res.redirect(302, url.toString())
+        return
+      }
+      directories.shift()
+      let urlPublicKey = fallback || basePublicKey
+      console.log(directories[0], /^[0-9A-Za-z]{41,51}$/.test(directories[0]))
+      if (/^[0-9A-Za-z]{41,51}$/.test(directories[0])) {
+        urlPublicKey = directories.shift()
+      }
+      const type = pathname.split('.').pop()
+      const turtleBranch = await turtleDB.summonBoundTurtleBranch(urlPublicKey)
+      const address = +searchParams.get('address')
+      const body = turtleBranch?.lookupFile(directories.join('/'), false, address)
+      if (body) {
+        res.type(type)
+        res.send(body)
       } else {
-        const type = pathname.split('.').pop()
-        const turtleBranch = await turtleDB.summonBoundTurtleBranch(urlPublicKey)
-        const address = +searchParams.get('address')
-        const body = turtleBranch?.lookupFile(relativePath, false, address)
-        if (body) {
-          res.type(type)
-          res.send(body)
-        } else {
-          try {
-            const configJson = JSON.parse(turtleBranch?.lookupFile?.('config.json'))
-            logInfo(() => console.log({ configJson }))
+        try {
+          const configJson = turtleBranch?.lookupFile?.('config.json')
+          const packageJson = turtleBranch?.lookupFile?.('package.json')
+          if (configJson) {
+            const config = JSON.parse(configJson)
+            logInfo(() => console.log({ config }))
             const branchGroups = ['fsReadWrite', 'fsReadOnly']
             for (const branchGroup of branchGroups) {
-              const branches = configJson[branchGroup]
+              const branches = config[branchGroup]
               if (branches) {
                 for (const { name, key } of branches) {
                   if (name && key) {
-                    const nickname = `/${urlPublicKey}/${name}/`
-                    if (pathname.startsWith(nickname)) {
-                      url.pathname = `/${key}/${pathname.slice(nickname.length)}`
+                    if (directories[0] === name) {
+                      url.pathname = `/${key}/${directories.slice(1).join('/')}`
                       return res.redirect(302, url.toString())
                     }
                   }
                 }
               }
             }
-          } catch {
-            logDebug(() => console.log('not found, no config', pathname))
+          } else if (packageJson) {
+            const aliases = JSON.parse(packageJson).turtle.aliases
+            if (aliases && directories[0] === '__turtledb_aliases__') {
+              directories.shift()
+              const name = directories.shift()
+              const key = aliases[name]
+              if (key) {
+                url.pathname = `/${key}/${directories.join('/')}`
+                return res.redirect(302, url.toString())
+              }
+            }
           }
-          next()
+        } catch {
+          logDebug(() => console.log('not found, no config', pathname))
         }
+        next()
       }
     } catch (error) {
       logError(() => console.error(error))

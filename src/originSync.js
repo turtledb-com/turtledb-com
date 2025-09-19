@@ -35,7 +35,7 @@ export async function originSync (turtleDB, host, port) {
               if (socket.write(chunk)) {
                 // logDebug(() => console.log('host outgoing data', chunk))
               } else {
-                logWarn(() => console.warn('socket failed to write'))
+                logWarn(() => console.warn('socket failed to write', chunk.length, 'bytes, ending connection', chunk))
                 // break
               }
             }

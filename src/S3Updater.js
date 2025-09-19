@@ -1,7 +1,8 @@
-import { GetObjectCommand, ListObjectsV2Command, PutObjectCommand } from '@aws-sdk/client-s3'
+import { GetObjectCommand, HeadObjectCommand, ListObjectsV2Command, PutObjectCommand } from '@aws-sdk/client-s3'
 import { AbstractUpdater } from '../public/js/turtle/connections/AbstractUpdater.js'
 import { verifyCommitU8a } from '../public/js/turtle/Signer.js'
 import { getExistenceLength } from './getExistenceLength.js'
+import { logSilly } from '../public/js/utils/logger.js'
 
 /**
  * @typedef {import('@aws-sdk/client-s3').S3Client} S3Client
@@ -23,16 +24,34 @@ export class S3Updater extends AbstractUpdater {
     super(name, publicKey, true, recaller)
     this.s3Client = s3Client
     this.bucket = bucket
+    this.indexToKey = S3Updater.indexToKey
+    this.checkBase = this.s3Client.send(new HeadObjectCommand({
+      Bucket: this.bucket,
+      Key: this.indexToKey(this.publicKey, 32)
+    })).then(() => {
+      // not base32
+    }).catch(() => {
+      return this.s3Client.send(new HeadObjectCommand({
+        Bucket: this.bucket,
+        Key: this.indexToKey(this.publicKey, 36)
+      })).then(() => {
+        this.indexToKey = S3Updater.indexToKey32
+      }).catch(() => {
+        // less than 32 so it's fine
+      })
+    })
+    logSilly(() => console.log('S3Updater still has checkBase:', !!this.checkBase))
   }
 
   /**
    * @returns {Promise.<number>}
    */
   async getUint8ArraysLength () {
+    await this.checkBase
     if (this.#length !== undefined) return this.#length
     const getExists = async index => {
       const listObjectsV2Response = await this.s3Client.send(new ListObjectsV2Command({
-        ...(index ? { StartAfter: S3Updater.indexToKey(this.publicKey, index - 1) } : {}),
+        ...(index ? { StartAfter: this.indexToKey(this.publicKey, index - 1) } : {}),
         MaxKeys: 1,
         Bucket: this.bucket,
         Prefix: this.publicKey
@@ -60,7 +79,7 @@ export class S3Updater extends AbstractUpdater {
       try {
         const object = await this.s3Client.send(new GetObjectCommand({
           Bucket: this.bucket,
-          Key: S3Updater.indexToKey(this.publicKey, i)
+          Key: this.indexToKey(this.publicKey, i)
         }))
         object.Body.transformToByteArray().then(resolve)
       } catch (error) { reject(error) }
@@ -87,7 +106,7 @@ export class S3Updater extends AbstractUpdater {
         await this.s3Client.send(new PutObjectCommand({
           Bucket: this.bucket,
           Body: uint8Array,
-          Key: S3Updater.indexToKey(this.publicKey, this.#length)
+          Key: this.indexToKey(this.publicKey, this.#length)
         }))
         ++this.#length
         resolve(uint8Array)
@@ -102,4 +121,5 @@ export class S3Updater extends AbstractUpdater {
    * @returns {string}
    */
   static indexToKey = (publicKey, index) => `${publicKey}/${index.toString(36).padStart(6, '0')}`
+  static indexToKey32 = (publicKey, index) => `${publicKey}/${index.toString(32).padStart(6, '0')}`
 }
