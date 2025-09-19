@@ -17,8 +17,9 @@ export async function outletSync (turtleDB, port) {
             if (socket.write(chunk)) {
               // logDebug(() => console.log('origin.host outgoing data', chunk))
             } else {
-              logWarn(() => console.warn('socket failed to write', chunk.length, 'bytes, ending connection', chunk))
-              // break
+              logWarn(() => console.warn('socket failed to write awaiting drain'))
+              await new Promise(resolve => socket.once('drain', resolve))
+              logWarn(() => console.warn('socket drained, continuing'))
             }
           }
         } catch (error) {
