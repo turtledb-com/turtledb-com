@@ -52,7 +52,6 @@ export async function webSync (port, basePublicKey, turtleDB, https, insecure, c
       }
       directories.shift()
       let urlPublicKey = fallback || basePublicKey
-      console.log(directories[0], /^[0-9A-Za-z]{41,51}$/.test(directories[0]))
       if (/^[0-9A-Za-z]{41,51}$/.test(directories[0])) {
         urlPublicKey = directories.shift()
       }

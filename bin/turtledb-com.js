@@ -174,6 +174,7 @@ if (options.interactive) {
   global.TurtleDictionary = TurtleDictionary
   global.Signer = Signer
   global.Workspace = Workspace
+  global.setLogLevel = setLogLevel
   global.AS_REFS = AS_REFS
   const replServer = start({ breakEvalOnSigint: true })
   replServer.setupHistory('.node_repl_history', err => {
