@@ -4,7 +4,7 @@ import { readFileSync } from 'fs'
 import { start } from 'repl'
 import { Option, program } from 'commander'
 import { question, questionNewPassword } from 'readline-sync'
-import { logError, logInfo, setLogLevel } from '../public/js/utils/logger.js'
+import { LOG_LEVELS, logError, logInfo, logSilly, setLogLevel } from '../public/js/utils/logger.js'
 import { Signer } from '../public/js/turtle/Signer.js'
 import { TurtleDB } from '../public/js/turtle/connections/TurtleDB.js'
 import { Recaller } from '../public/js/utils/Recaller.js'
@@ -21,9 +21,29 @@ import { config } from 'dotenv'
 
 const { version } = JSON.parse(readFileSync(new URL('../package.json', import.meta.url)))
 
+const defaultWebPort = 8080
+const defaultRemoteHost = 'turtledb.com'
+const defaultRemotePort = 1024
+const defaultLocalPort = 1024
+
+const makeParserWithOptions = (...options) => value => {
+  console.log({ value })
+  if (options.length) {
+    if (value === true) return options[0]
+    if (value === '') return options[0]
+    if (value === 'true') return options[0]
+  }
+  if (value === 'false') return false
+  if (!isNaN(+value)) value = +value
+  if (options.length <= 1 || options.includes(value)) return value
+  throw new Error(`value must be one of: ${options.join(', ')}`)
+}
+
 program
   .name('turtledb-com')
   .version(version)
+  .option('--env-file <path>', 'path to .env file')
+
   .addOption(
     new Option('--username <string>', 'username to use for Signer')
       .env('TURTLEDB_USERNAME')
@@ -36,15 +56,38 @@ program
     new Option('--turtlename <string>', 'name for dataset')
       .env('TURTLEDB_TURTLENAME')
   )
-  .option('-f, --fs-mirror [resolve]', `flag to mirror files locally and (optionally) how to handle conflicts (${OURS}, ${THEIRS}, ${THROW})`)
-  .option('-i, --interactive', 'flag to start repl', false)
-  .option('-a, --archive', 'save all turtles to files by public key', false)
-  .option('-v, --verbose [level]', 'log data flows', x => +x, false) // +false === 0 === INFO, +true === 1 === DEBUG
-
-  .option('--env-file <path>', 'path to .env file')
 
   .addOption(
-    new Option('--web-port <number>', 'web port to sync from')
+    new Option('-f, --fs-mirror [resolve]', 'mirror files locally and handle')
+      .default(false)
+      .preset(THROW)
+      .choices([OURS, THEIRS, THROW, ''])
+      .argParser(makeParserWithOptions(THROW, OURS, THEIRS))
+      .env('TURTLEDB_FS_MIRROR')
+  )
+  .addOption(
+    new Option('-i, --interactive', 'flag to start repl')
+      .default(false)
+      .env('TURTLEDB_INTERACTIVE')
+  )
+  .addOption(
+    new Option('-a, --archive', 'save all turtles to files by public key')
+      .default(false)
+      .env('TURTLEDB_ARCHIVE')
+  )
+  .addOption(
+    new Option('-v, --verbose [level]', 'log data flows')
+      .default(0)
+      .preset(1)
+      .choices(Object.values(LOG_LEVELS).map(v => v.toString()))
+      .argParser(makeParserWithOptions(1, ...Object.values(LOG_LEVELS)))
+      .env('TURTLEDB_VERBOSE')
+  )
+
+  .addOption(
+    new Option('-w, --web-port <number>', 'web port to sync from')
+      .default(false)
+      .argParser(makeParserWithOptions(defaultWebPort))
       .env('TURTLEDB_WEB_PORT')
   )
   .addOption(
@@ -59,29 +102,31 @@ program
     new Option('--web-insecure', '(local dev) allow unauthorized for web')
       .env('TURTLEDB_WEB_INSECURE')
   )
-  .option('--web', 'enable web connection')
-  .option('--no-web', 'disable web connection')
 
   .addOption(
     new Option('--remote-host <string>', 'remote host to sync to')
+      .default(false)
+      .argParser(makeParserWithOptions(defaultRemoteHost))
       .env('TURTLEDB_REMOTE_HOST')
   )
   .addOption(
     new Option('--remote-port <number>', 'remote port to sync to')
+      .default(false)
+      .argParser(makeParserWithOptions(defaultRemotePort))
       .env('TURTLEDB_REMOTE_PORT')
   )
-  .option('--remote', 'enable remote connection')
-  .option('--no-remote', 'disable remote connection')
 
   .addOption(
     new Option('--local-port <number>', 'local port to sync from')
+      .default(false)
+      .argParser(makeParserWithOptions(defaultLocalPort))
       .env('TURTLEDB_LOCAL_PORT')
   )
-  .option('--local', 'enable local connection')
-  .option('--no-local', 'disable local connection')
 
   .addOption(
     new Option('--s3-end-point <string>', 'endpoint for s3 (like "https://sfo3.digitaloceanspaces.com")')
+      .default(false)
+      .argParser(makeParserWithOptions())
       .env('TURTLEDB_S3_END_POINT')
   )
   .addOption(
@@ -100,7 +145,6 @@ program
     new Option('--s3-bucket <string>', 'bucket for s3')
       .env('TURTLEDB_S3_BUCKET')
   )
-  .option('--no-s3', 'disable S3')
 
   .parse()
 
@@ -111,6 +155,8 @@ if (options.envFile) {
   Object.assign(options, program.opts()) // update options with new env vars
 }
 
+logSilly(() => console.log({ options }))
+
 setLogLevel(options.verbose)
 const username = options.username || question('Username: ')
 const turtlename = options.turtlename || question('Turtlename: ')
@@ -120,20 +166,20 @@ logInfo(() => console.log({ username, turtlename, publicKey }))
 const recaller = new Recaller('turtledb-com')
 const turtleDB = new TurtleDB('turtledb-com', recaller)
 
-if (options.local === true || (options.local === undefined && options.localPort)) {
-  const localPort = +options.localPort || 1024
+if (options.localPort !== false) {
+  const localPort = +options.localPort || defaultLocalPort
   logInfo(() => console.log(`listening for local connections on port ${localPort}`))
   outletSync(turtleDB, localPort)
 }
 
-if (options.remote === true || (options.remote === undefined && (options.remoteHost || options.remotePort))) {
-  const remoteHost = options.remoteHost || 'turtledb.com'
-  const remotePort = +options.remotePort || 1024
+if (options.remoteHost !== false || options.remotePort !== false) {
+  const remoteHost = options.remoteHost || defaultRemoteHost
+  const remotePort = +options.remotePort || defaultRemotePort
   logInfo(() => console.log(`connecting to remote at ${remoteHost}:${remotePort}`))
   originSync(turtleDB, remoteHost, remotePort)
 }
 
-if (options.s3 !== false && (options.s3EndPoint || options.s3Region || options.s3Bucket || options.s3AccessKeyId || options.s3SecretAccessKey)) {
+if (options.s3EndPoint !== false) {
   s3Sync(turtleDB, recaller, options.s3EndPoint, options.s3Region, options.s3AccessKeyId, options.s3SecretAccessKey, options.s3Bucket)
 }
 
@@ -143,8 +189,8 @@ if (options.archive) {
   archiveSync(turtleDB, recaller, archivePath)
 }
 
-if (options.fsMirror) {
-  if (options.fsMirror === true) options.fsMirror = THROW // default to THROW if --fs-mirror is provided without argument
+if (options.fsMirror !== false) {
+  if (options.fsMirror === true || options.fsMirror === '') options.fsMirror = THROW // default to THROW if --fs-mirror is provided without argument
   if (![OURS, THEIRS, THROW].includes(options.fsMirror)) {
     logError(() => console.error(`fs-mirror resolve option must be "${OURS}", "${THEIRS}" or "${THROW}" (you provided: "${options.fsMirror}")`))
     process.exit(1)
@@ -153,8 +199,9 @@ if (options.fsMirror) {
   fileSync(turtlename, turtleDB, signer, '.', options.fsMirror)
 }
 
-if (options.web === true || (options.web === undefined && options.webPort)) {
-  const webPort = +options.webPort || 8080
+if (options.webPort !== false) {
+  if (options.webPort === true) options.webPort = defaultWebPort
+  const webPort = +options.webPort
   const insecure = !!options.webInsecure
   const https = insecure || !!options.webCertpath
   const certpath = options.webCertpath || '__turtledb_dev__/cert.json'
