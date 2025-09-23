@@ -27,7 +27,6 @@ const defaultRemotePort = 1024
 const defaultLocalPort = 1024
 
 const makeParserWithOptions = (...options) => value => {
-  console.log({ value })
   if (options.length) {
     if (value === true) return options[0]
     if (value === '') return options[0]
@@ -85,8 +84,9 @@ program
   )
 
   .addOption(
-    new Option('-w, --web-port <number>', 'web port to sync from')
+    new Option('-w, --web-port [number]', 'web port to sync from')
       .default(false)
+      .preset(defaultWebPort)
       .argParser(makeParserWithOptions(defaultWebPort))
       .env('TURTLEDB_WEB_PORT')
   )
@@ -106,19 +106,22 @@ program
   .addOption(
     new Option('--remote-host <string>', 'remote host to sync to')
       .default(false)
+      .preset(defaultRemoteHost)
       .argParser(makeParserWithOptions(defaultRemoteHost))
       .env('TURTLEDB_REMOTE_HOST')
   )
   .addOption(
-    new Option('--remote-port <number>', 'remote port to sync to')
+    new Option('-r, --remote-port [number]', 'remote port to sync to')
       .default(false)
+      .preset(defaultRemotePort)
       .argParser(makeParserWithOptions(defaultRemotePort))
       .env('TURTLEDB_REMOTE_PORT')
   )
 
   .addOption(
-    new Option('--local-port <number>', 'local port to sync from')
+    new Option('-l, --local-port [number]', 'local port to sync from')
       .default(false)
+      .preset(defaultLocalPort)
       .argParser(makeParserWithOptions(defaultLocalPort))
       .env('TURTLEDB_LOCAL_PORT')
   )
@@ -155,9 +158,11 @@ if (options.envFile) {
   Object.assign(options, program.opts()) // update options with new env vars
 }
 
-logSilly(() => console.log({ options }))
-
 setLogLevel(options.verbose)
+logSilly(() => console.log({ options }))
+// console.log({ options })
+// process.exit(0)
+
 const username = options.username || question('Username: ')
 const turtlename = options.turtlename || question('Turtlename: ')
 const signer = new Signer(username, options.password || questionNewPassword('Password [ATTENTION!: Backspace won\'t work here]: ', { min: 4, max: 999 }))
@@ -190,7 +195,6 @@ if (options.archive) {
 }
 
 if (options.fsMirror !== false) {
-  if (options.fsMirror === true || options.fsMirror === '') options.fsMirror = THROW // default to THROW if --fs-mirror is provided without argument
   if (![OURS, THEIRS, THROW].includes(options.fsMirror)) {
     logError(() => console.error(`fs-mirror resolve option must be "${OURS}", "${THEIRS}" or "${THROW}" (you provided: "${options.fsMirror}")`))
     process.exit(1)
@@ -200,7 +204,6 @@ if (options.fsMirror !== false) {
 }
 
 if (options.webPort !== false) {
-  if (options.webPort === true) options.webPort = defaultWebPort
   const webPort = +options.webPort
   const insecure = !!options.webInsecure
   const https = insecure || !!options.webCertpath

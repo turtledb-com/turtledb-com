@@ -5,118 +5,51 @@ The easiest way to build a web app.
 > [!WARNING] 
 > THIS PROJECT IS A WORK IN PROGRESS
 
+## A Reinvented Internet
 
-## The Problem
+* This project takes your directories and puts them on the web.
+* It distributes and remembers your changes as you make them.
 
-Setting up and maintaining the technologies to make a useful application is prohibitively expensive for humans. 
-This is because "Industry Best Solutions" are made by businesses.
-Business applications must scale with world-spanning teams and be able to consume data from billions of users. 
+## Getting Started
 
-The internet is for humans but applications are for businesses.
+0. have a growth mindset
+0. install node [^1]
+0. make a directory for your new web-site
+0. open a terminal and `cd` to your directory [~1]
+0. run `npx turtledb-com -f -r` and answer the questions
+0. add some .html to your directory (and .css and .js if you want (and maybe some images?)) [^1]
+0. see your amazing website online (and wow your friends)
 
-## The Solution 
+[^1]: you can do it! I believe in you! (but if a step takes more than 10 minutes of "how do I open a terminal on windows?" please let me know. (let's improve some documentation))
 
-A technology that isn't for "Industry". Something cheap, easy, and good enough. We're not "Industry" (yet). Our solutions aren't fancy, they just need to work (now).
+## command line options
 
-### Solution Requirements
+`npx turtledb-com -h`
 
-* The server is fully managed and inexpensive.
-* The application is useful.
-* Any technologies are standard and easy to learn.
-
-We achieve this by treating each app-instance as a stand-alone unit with human-scale usage.
-This way we are able treat all the data an app-instance ever creates as a single database entry.
-This strategy *significantly* reduces the complexity and cost of serving an application.
-Additionally, when possible, this project uses standard web technologies.
-
-## Definition of Terms
-
-##### Application
-For now we aren't handling images, audio, or video (CSS, SVG, and Canvas are fine though). 
-Some possible applications with limited media are:
-
-* class notes
-* chat
-* internet forums
-* issue trackers
-* personal publications
-* grocery lists
-
-##### App-Instance
-To be used, an application is copied into a new cryptographically signed instance (`TurtleBranch`). 
-Any data or other changes must be signed and added to this instance.
-
-##### Human
-The term *human* is used rather than *user*. 
-The most important *user* for most apps are marketing departments.
-For turtledb-com apps, the most important *user* is the consumer.
-
-##### Human-scale
-About 2MB of input data
--- The average human typing speed is 40 WPM. 
-2MB of typed data would take 175 hours to input. 
-
-##### `Turtle`
-A read-only holder for "all the data an app-instance ever creates" (see more below)
-
-##### `TurtleBranch`
-A moveable tag pointing to a `Turtle`. 
-An app-instance's uses a `TurtleBranch` to point to the current state of "all the data".
-
-##### Useful 
-The term *useful* is meant as a minimum set of features all apps must provide.
-An application must be able to display, persist, and share user-generated data.
-
-## A Little More about `Turtle`s
-
-Everything using this project is built on `Turtle`s.
-A `Turtle` is an object that holds a dictionary of an app-instance's data encoded as a series of arrays of bytes.
-A `new Turtle` can be created by taking an existing `Turtle` and combining it with changes as a new arrays of bytes.
-Because a `Turtle` is data broken into smaller packets it's the definition of a data-stream.
-At it's most basic, the internet is designed to allow communication between networked computers using data-streams. 
-Because `Turtle`s are streams, the internet is literally designed to make useful apps with them.
-
-## Overview
-
-> [!NOTE] 
-> Fun Facts: 
-> * "Turtle" is a reference to ["Turtles All the Way Down"](https://en.wikipedia.org/wiki/Turtles_all_the_way_down)
-> * The primary inspirations for this project are bittorrent, bitcoin, git, and the w3c. 
-
-### turtledb-com is Version Control
-
-Every version of a `Turtle` ends with a signed `Commit`. 
-All previous `Commit`s are included with each new `Turtle`
-
-After being streamed, a `Turtle`'s `Commit` can be decoded to a JavaScript value. 
-The committed value can be anything but it's recommended you use an object with `timestamp`, `message`, and `state` fields.
-
-### turtledb-com is a transfer protocol
-
-From a storage point-of-view, a `Turtle` is a sequence of *changes*.
-Each *change* is described in a byte array.
-A `Turtle` can be synced just by sending any missing byte arrays.
-
-From the codec's point-of-view, a `Turtle` is a dictionary of values and sub-values.
-The `Turtle`'s dictionary of reusable values grows with each new *change*.
-As the dictionary grows, the efficiency of the protocol increases.
-
-### turtledb-com is a service provider
-
-turtledb-com as a service provides a file-system for virtual computers described in JavaScript, HTML, and CSS.
-
-turtledb.com is the built-in service provider designed to handle realistic-levels of human-scale usage.
-
-### turtledb-com includes a display framework
-
-This project uses a light-weight display framework to simplify data rendering. 
-It's not a core part of the problem-solution but it's part of turtledb-com (you don't have to use it but you'll see it in this project).
-
-## Additional Documentation
-
-> [!WARNING] 
-> This section is fictional, notes-to-self, and/or rough-sketches for now
-
-* [Basic Usage](docs/basic_usage.md)
-* [Server Setup](docs/server_setup.md)
-* [Turtles, and Peers, and S3](docs/turtles_peers_s3.md)
+> Usage: turtledb-com [options]
+> 
+> Options:
+| flags | description |
+|---|---|
+| -V, --version                    | output the version number |
+| --env-file <path>                | path to .env file |
+| --username <string>              | username to use for Signer (env: TURTLEDB_USERNAME) |
+| --password <string>              | password to use for Signer (env: TURTLEDB_PASSWORD) |
+| --turtlename <string>            | name for dataset (env: TURTLEDB_TURTLENAME) |
+| -f, --fs-mirror [resolve]        | mirror files locally and handle (choices: "ours", "theirs", "throw", "", default: false, preset: "throw", env: TURTLEDB_FS_MIRROR) |
+| -i, --interactive                | flag to start repl (default: false, env: TURTLEDB_INTERACTIVE) |
+| -a, --archive                    | save all turtles to files by public key (default: false, env: TURTLEDB_ARCHIVE) |
+| -v, --verbose [level]            | log data flows (choices: "-Infinity", "-3", "-2", "-1", "0", "1", "2", "3", "Infinity", default: 0, preset: 1, env: TURTLEDB_VERBOSE) |
+| -w, --web-port [number]          | web port to sync from (default: false, preset: 8080, env: TURTLEDB_WEB_PORT) |
+| --web-fallback <string>          | project public key to use as fallback for web (env: TURTLEDB_WEB_FALLBACK) |
+| --web-certpath <string>          | path to self-cert for web (env: TURTLEDB_WEB_CERTPATH) |
+| --web-insecure                   | (local dev) allow unauthorized for web (env: TURTLEDB_WEB_INSECURE) |
+| --remote-host <string>           | remote host to sync to (default: false, env: TURTLEDB_REMOTE_HOST) |
+| -r, --remote-port [number]       | remote port to sync to (default: false, preset: 1024, env: TURTLEDB_REMOTE_PORT) |
+| -l, --local-port [number]        | local port to sync from (default: false, preset: 1024, env: TURTLEDB_LOCAL_PORT) |
+| --s3-end-point <string>          | endpoint for s3 (like "https://sfo3.digitaloceanspaces.com") (default: false, env: TURTLEDB_S3_END_POINT) |
+| --s3-region <string>             | region for s3 (like "sfo3") (env: TURTLEDB_S3_REGION) |
+| --s3-access-key-id <string>      | accessKeyId for s3 (env: TURTLEDB_S3_ACCESS_KEY_ID) |
+| --s3-secret-access-key <string>  | secretAccessKey for s3 (env: TURTLEDB_S3_SECRET_ACCESS_KEY) |
+| --s3-bucket <string>             | bucket for s3 (env: TURTLEDB_S3_BUCKET) |
+| -h, --help                       | display help for command |
