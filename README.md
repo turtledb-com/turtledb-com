@@ -20,36 +20,99 @@ The easiest way to build a web app.
 0. add some .html to your directory (and .css and .js if you want (and maybe some images?)) [^1]
 0. see your amazing website online (and wow your friends)
 
-[^1]: you can do it! I believe in you! (but if a step takes more than 10 minutes of "how do I open a terminal on windows?" please let me know. (let's improve some documentation))
+[^1]: You can do it! I believe in you! (but if a step takes more than 10 minutes of "how do I open a terminal on windows?" please let me know. (Let's improve some documentation!🎉))
 
 ## command line options
 
-`npx turtledb-com -h`
+### `npx turtledb-com -h`
 
-> Usage: turtledb-com [options]
+A short overview of all the available options. 
+
+> [!NOTE]
+> `-f` syncs from your directory, `-r` syncs to the internet
+
+> #### Options:
+> | flag(s) | description |
+> |---|---|
+> | -V, --version                    | output the version number |
+> | --env-file <path>                | path to .env file |
+> | --username <string>              | username to use for Signer (env: TURTLEDB_USERNAME) |
+> | --password <string>              | password to use for Signer (env: TURTLEDB_PASSWORD) |
+> | --turtlename <string>            | name for dataset (env: TURTLEDB_TURTLENAME) |
+> | -f, --fs-mirror [resolve]        | mirror files locally and handle (choices: "ours", "theirs", "throw", "", default: false, preset: "throw", env: TURTLEDB_FS_MIRROR) |
+> | -i, --interactive                | flag to start repl (default: false, env: TURTLEDB_INTERACTIVE) |
+> | -a, --archive                    | save all turtles to files by public key (default: false, env: TURTLEDB_ARCHIVE) |
+> | -v, --verbose [level]            | log data flows (choices: "-Infinity", "-3", "-2", "-1", "0", "1", "2", "3", "Infinity", default: 0, preset: 1, env: TURTLEDB_VERBOSE) |
 > 
-> Options:
-| flags | description |
+> #### Web Server:
+> | flag(s) | description |
+> |---|---|
+> | -w, --web-port [number]          | web port to sync from (default: false, preset: 8080, env: TURTLEDB_WEB_PORT) |
+> | --web-fallback <string>          | project public key to use as fallback for web (env: TURTLEDB_WEB_FALLBACK) |
+> | --web-certpath <string>          | path to self-cert for web (env: TURTLEDB_WEB_CERTPATH) |
+> | --web-insecure                   | (local dev) allow unauthorized for web (env: TURTLEDB_WEB_INSECURE) |
+> 
+> #### TurtleDB Syncing:
+> | flag(s) | description |
+> |---|---|
+> | --remote-host <string>           | remote host to sync to (default: false, env: TURTLEDB_REMOTE_HOST) |
+> | -r, --remote-port [number]       | remote port to sync to (default: false, preset: 1024, env: TURTLEDB_REMOTE_PORT) |
+> | -l, --local-port [number]        | local port to sync from (default: false, preset: 1024, env: TURTLEDB_LOCAL_PORT) |
+> 
+> #### S3-like Service Syncing:
+> | flag(s) | description |
+> |---|---|
+> | --s3-end-point <string>          | endpoint for s3 (like "https://sfo3.digitaloceanspaces.com") (default: false, env: TURTLEDB_S3_END_POINT) |
+> | --s3-region <string>             | region for s3 (like "sfo3") (env: TURTLEDB_S3_REGION) |
+> | --s3-access-key-id <string>      | accessKeyId for s3 (env: TURTLEDB_S3_ACCESS_KEY_ID) |
+> | --s3-secret-access-key <string>  | secretAccessKey for s3 (env: TURTLEDB_S3_SECRET_ACCESS_KEY) |
+> | --s3-bucket <string>             | bucket for s3 (env: TURTLEDB_S3_BUCKET) |
+> | -h, --help                       | display help for command |
+
+
+
+### `--env-file <path>`
+
+> [!IMPORTANT]
+> Never put a file with secret information (like a password) in a folder that will sync it remotely
+
+Lets you replace multiple other flags...
+```bash
+npx turtledb-com --username=jance --password=secret --turtlename=test -f -r
+```
+
+...with one flag and a path to a file...
+
+```bash
+npx turtledb-com --env-file=../.env
+
+```
+
+...that's easy to understand.
+> `../.env`
+> ```env
+> TURTLEDB_USERNAME=jance
+> TURTLEDB_PASSWORD=secret
+> TURTLEDB_TURTLENAME=test
+> TURTLEDB_FS_MIRROR=
+> TURTLEDB_REMOTE_PORT=
+> ```
+(blank values get set to the preset value)
+
+
+### `-f, --fs-mirror [resolve]`
+
+Takes the current directory and syncs it with the TurtleDB instance.
+Calling the flag with no value is the same as calling `--fs-mirror=throw`.
+There are 3 options:
+| Option | What to do in case of a conflict |
 |---|---|
-| -V, --version                    | output the version number |
-| --env-file <path>                | path to .env file |
-| --username <string>              | username to use for Signer (env: TURTLEDB_USERNAME) |
-| --password <string>              | password to use for Signer (env: TURTLEDB_PASSWORD) |
-| --turtlename <string>            | name for dataset (env: TURTLEDB_TURTLENAME) |
-| -f, --fs-mirror [resolve]        | mirror files locally and handle (choices: "ours", "theirs", "throw", "", default: false, preset: "throw", env: TURTLEDB_FS_MIRROR) |
-| -i, --interactive                | flag to start repl (default: false, env: TURTLEDB_INTERACTIVE) |
-| -a, --archive                    | save all turtles to files by public key (default: false, env: TURTLEDB_ARCHIVE) |
-| -v, --verbose [level]            | log data flows (choices: "-Infinity", "-3", "-2", "-1", "0", "1", "2", "3", "Infinity", default: 0, preset: 1, env: TURTLEDB_VERBOSE) |
-| -w, --web-port [number]          | web port to sync from (default: false, preset: 8080, env: TURTLEDB_WEB_PORT) |
-| --web-fallback <string>          | project public key to use as fallback for web (env: TURTLEDB_WEB_FALLBACK) |
-| --web-certpath <string>          | path to self-cert for web (env: TURTLEDB_WEB_CERTPATH) |
-| --web-insecure                   | (local dev) allow unauthorized for web (env: TURTLEDB_WEB_INSECURE) |
-| --remote-host <string>           | remote host to sync to (default: false, env: TURTLEDB_REMOTE_HOST) |
-| -r, --remote-port [number]       | remote port to sync to (default: false, preset: 1024, env: TURTLEDB_REMOTE_PORT) |
-| -l, --local-port [number]        | local port to sync from (default: false, preset: 1024, env: TURTLEDB_LOCAL_PORT) |
-| --s3-end-point <string>          | endpoint for s3 (like "https://sfo3.digitaloceanspaces.com") (default: false, env: TURTLEDB_S3_END_POINT) |
-| --s3-region <string>             | region for s3 (like "sfo3") (env: TURTLEDB_S3_REGION) |
-| --s3-access-key-id <string>      | accessKeyId for s3 (env: TURTLEDB_S3_ACCESS_KEY_ID) |
-| --s3-secret-access-key <string>  | secretAccessKey for s3 (env: TURTLEDB_S3_SECRET_ACCESS_KEY) |
-| --s3-bucket <string>             | bucket for s3 (env: TURTLEDB_S3_BUCKET) |
-| -h, --help                       | display help for command |
+| ours | commit the version of the file in the folder |
+| theirs | remove or replace files in folder to match last commit |
+| throw | throw an error |
+
+### `-r, --remote-port [number]`
+
+The flag with no value turns on the default syncing with turtledb.com.
+
+If you want to sync with somewhere else you'll want to set `--remote-host` to the other instance.

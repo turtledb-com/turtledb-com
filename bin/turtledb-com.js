@@ -89,26 +89,31 @@ program
       .preset(defaultWebPort)
       .argParser(makeParserWithOptions(defaultWebPort))
       .env('TURTLEDB_WEB_PORT')
+      .helpGroup('Web Server:')
   )
   .addOption(
     new Option('--web-fallback <string>', 'project public key to use as fallback for web')
       .env('TURTLEDB_WEB_FALLBACK')
+      .helpGroup('Web Server:')
   )
   .addOption(
     new Option('--web-certpath <string>', 'path to self-cert for web')
       .env('TURTLEDB_WEB_CERTPATH')
+      .helpGroup('Web Server:')
   )
   .addOption(
     new Option('--web-insecure', '(local dev) allow unauthorized for web')
       .env('TURTLEDB_WEB_INSECURE')
+      .helpGroup('Web Server:')
   )
 
   .addOption(
-    new Option('--remote-host <string>', 'remote host to sync to')
+    new Option('--remote-host [string]', 'remote host to sync to')
       .default(false)
       .preset(defaultRemoteHost)
       .argParser(makeParserWithOptions(defaultRemoteHost))
       .env('TURTLEDB_REMOTE_HOST')
+      .helpGroup('TurtleDB Syncing:')
   )
   .addOption(
     new Option('-r, --remote-port [number]', 'remote port to sync to')
@@ -116,6 +121,7 @@ program
       .preset(defaultRemotePort)
       .argParser(makeParserWithOptions(defaultRemotePort))
       .env('TURTLEDB_REMOTE_PORT')
+      .helpGroup('TurtleDB Syncing:')
   )
 
   .addOption(
@@ -124,6 +130,7 @@ program
       .preset(defaultLocalPort)
       .argParser(makeParserWithOptions(defaultLocalPort))
       .env('TURTLEDB_LOCAL_PORT')
+      .helpGroup('TurtleDB Syncing:')
   )
 
   .addOption(
@@ -131,22 +138,27 @@ program
       .default(false)
       .argParser(makeParserWithOptions())
       .env('TURTLEDB_S3_END_POINT')
+      .helpGroup('S3-like Service Syncing:')
   )
   .addOption(
     new Option('--s3-region <string>', 'region for s3 (like "sfo3")')
       .env('TURTLEDB_S3_REGION')
+      .helpGroup('S3-like Service Syncing:')
   )
   .addOption(
     new Option('--s3-access-key-id <string>', 'accessKeyId for s3')
       .env('TURTLEDB_S3_ACCESS_KEY_ID')
+      .helpGroup('S3-like Service Syncing:')
   )
   .addOption(
     new Option('--s3-secret-access-key <string>', 'secretAccessKey for s3')
       .env('TURTLEDB_S3_SECRET_ACCESS_KEY')
+      .helpGroup('S3-like Service Syncing:')
   )
   .addOption(
     new Option('--s3-bucket <string>', 'bucket for s3')
       .env('TURTLEDB_S3_BUCKET')
+      .helpGroup('S3-like Service Syncing:')
   )
 
   .parse()
