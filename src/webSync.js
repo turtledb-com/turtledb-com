@@ -43,14 +43,20 @@ export async function webSync (port, basePublicKey, turtleDB, https, insecure, c
       return
     }
     try {
-      const directories = pathname.split('/')
+      let directories = pathname.split('/')
       if (directories[directories.length - 1] === '') {
         directories[directories.length - 1] = 'index.html'
         url.pathname = directories.join('/')
         res.redirect(302, url.toString())
         return
       }
-      directories.shift()
+      const unfilteredLength = directories.length
+      directories = directories.filter(Boolean)
+      if (unfilteredLength !== directories.length + 1) {
+        url.pathname = directories.join('/')
+        res.redirect(302, url.toString())
+        return
+      }
       let urlPublicKey = fallback || basePublicKey
       if (/^[0-9A-Za-z]{41,51}$/.test(directories[0])) {
         urlPublicKey = directories.shift()

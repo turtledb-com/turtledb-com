@@ -15,7 +15,7 @@ The easiest way to build a web app.
 0. have a growth mindset
 0. install node [^1]
 0. make a directory for your new web-site
-0. open a terminal and `cd` to your directory [~1]
+0. open a terminal and `cd` to your directory [^1]
 0. run `npx turtledb-com -f -r` and answer the questions
 0. add some .html to your directory (and .css and .js if you want (and maybe some images?)) [^1]
 0. see your amazing website online (and wow your friends)

@@ -25,6 +25,8 @@ const defaultWebPort = 8080
 const defaultRemoteHost = 'turtledb.com'
 const defaultRemotePort = 1024
 const defaultLocalPort = 1024
+const defaultWebFallback = 'ctclduqytfepmxfpxe8561b8h75l4u5n2t3sxlrmfc889xjz57'
+const defaultPublicKey = 'ctclduqytfepmxfpxe8561b8h75l4u5n2t3sxlrmfc889xjz57'
 
 const makeParserWithOptions = (...options) => value => {
   if (options.length) {
@@ -169,17 +171,25 @@ if (options.envFile) {
   program.parse() // re-parse with new env vars
   Object.assign(options, program.opts()) // update options with new env vars
 }
+let username = options.username
+let turtlename = options.turtlename
+let signer
+let publicKey = defaultPublicKey
+if (options.fsMirror !== false) {
+  username ||= question('Username: ')
+  turtlename ||= question('Turtlename: ')
+  signer = new Signer(username, options.password || questionNewPassword('Password [ATTENTION!: Backspace won\'t work here]: ', { min: 4, max: 999 }))
+} else if (username && turtlename && options.password) {
+  signer = new Signer(username, options.password)
+  publicKey = (await signer.makeKeysFor(turtlename)).publicKey
+  logInfo(() => console.log({ username, turtlename, publicKey }))
+}
 
 setLogLevel(options.verbose)
 logSilly(() => console.log({ options }))
 // console.log({ options })
 // process.exit(0)
 
-const username = options.username || question('Username: ')
-const turtlename = options.turtlename || question('Turtlename: ')
-const signer = new Signer(username, options.password || questionNewPassword('Password [ATTENTION!: Backspace won\'t work here]: ', { min: 4, max: 999 }))
-const { publicKey } = await signer.makeKeysFor(turtlename)
-logInfo(() => console.log({ username, turtlename, publicKey }))
 const recaller = new Recaller('turtledb-com')
 const turtleDB = new TurtleDB('turtledb-com', recaller)
 
@@ -221,10 +231,9 @@ if (options.webPort !== false) {
   const https = insecure || !!options.webCertpath
   const certpath = options.webCertpath || '__turtledb_dev__/cert.json'
   logInfo(() => console.log(`listening for web connections on port ${webPort} (https: ${https}, insecure: ${insecure}, certpath: ${certpath})`))
-  webSync(webPort, publicKey, turtleDB, https, insecure, certpath, options.webFallback)
+  webSync(webPort, publicKey || defaultPublicKey, turtleDB, https, insecure, certpath, options.webFallback || defaultWebFallback)
 }
 
-console.log(options)
 if (options.interactive) {
   global.username = username
   global.turtlename = turtlename
