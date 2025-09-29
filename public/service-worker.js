@@ -6,7 +6,8 @@
 import { TurtleBranchMultiplexer } from './js/turtle/connections/TurtleBranchMultiplexer.js'
 import { TurtleDB } from './js/turtle/connections/TurtleDB.js'
 import { Signer } from './js/turtle/Signer.js'
-import { logError, logInfo, logWarn } from './js/utils/logger.js'
+import { defaultPublicKey, handleRedirect } from './js/utils/handleRedirect.js'
+import { logError, logInfo } from './js/utils/logger.js'
 import { withoutServiceWorker } from './js/utils/webSocketMuxFactory.js'
 
 /**
@@ -75,58 +76,23 @@ const contentTypeByExtension = {
 
 serviceWorkerGlobalScope.addEventListener('fetch', fetchEvent => {
   const url = new URL(fetchEvent.request.url)
-  const { pathname, searchParams } = url
-  const matchGroups = pathname.match(/\/(?<urlPublicKey>[0-9A-Za-z]{41,51})(?<slash>\/?)(?<relativePath>.*)$/)?.groups
-  try {
-    if (matchGroups?.urlPublicKey) {
-      const { urlPublicKey, slash, relativePath } = matchGroups
-      const isDir = !relativePath || relativePath.endsWith('/')
-      if (!slash) {
-        url.pathname = `/${urlPublicKey}/${relativePath}`
-      }
-      if (isDir) {
-        url.pathname = `${url.pathname}index.html`
-      }
-      if (!slash || isDir) {
-        fetchEvent.respondWith(Response.redirect(url.toString(), 302))
-      } else {
-        const type = pathname.split('.').pop()
-        fetchEvent.respondWith(turtleDB.summonBoundTurtleBranch(urlPublicKey).then(turtleBranch => {
-          const address = +searchParams.get('address')
-          const body = turtleBranch?.lookupFile(relativePath, false, address)
-          if (body) {
-            const contentType = contentTypeByExtension[type]
-            const response = new Response(new Blob([body], { headers: { type: contentType } }), { headers: { 'Content-Type': contentType } })
-            return response
-          } else {
-            try {
-              const configJson = JSON.parse(turtleBranch?.lookupFile?.('config.json'))
-              const branchGroups = ['fsReadWrite', 'fsReadOnly']
-              for (const branchGroup of branchGroups) {
-                const branches = configJson[branchGroup]
-                if (branches) {
-                  for (const { name, key } of branches) {
-                    if (name && key) {
-                      const nickname = `/${urlPublicKey}/${name}/`
-                      if (pathname.startsWith(nickname)) {
-                        const pathFromKey = pathname.slice(nickname.length)
-                        url.pathname = `/${key}/${pathFromKey}`
-                        return Response.redirect(url.toString(), 302)
-                      }
-                    }
-                  }
-                }
-              }
-            } catch {
-              logWarn(() => console.warn('not found, no config', pathname))
-            }
-          }
-        }))
+  const redirectPromise = handleRedirect(
+    url.pathname,
+    +url.searchParams.get('address'),
+    turtleDB,
+    defaultPublicKey,
+    href => {
+      return Response.redirect(href, 302)
+    },
+    (type, body) => {
+      if (body) {
+        const contentType = contentTypeByExtension[type] || 'application/octet-stream'
+        const response = new Response(new Blob([body], { headers: { type: contentType } }), { headers: { 'Content-Type': contentType } })
+        return response
       }
     }
-  } catch (error) {
-    logError(() => console.error(error))
-  }
+  )
+  fetchEvent.respondWith(redirectPromise)
 })
 
 withoutServiceWorker(turtleDB)

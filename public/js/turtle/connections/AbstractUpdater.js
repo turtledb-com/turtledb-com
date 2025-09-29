@@ -81,7 +81,6 @@ export class AbstractUpdater extends TurtleTalker {
               if (this.Xours) {
                 incomingUint8ArrayAddresses.length = Math.max(i - 1, 0)
               }
-              console.log(this.Xours, this.name)
               break
             }
           }

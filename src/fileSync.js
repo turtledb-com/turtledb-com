@@ -190,6 +190,9 @@ export async function fileSync (name, turtleDB, signer, folder = '.', resolve = 
       writeFileAsType(join(folder, '.gitignore'), fsFilesObject['.gitignore'])
     }
     const filteredFsFilesObject = gitFilterFilesObject(fsFilesObject)
+    if (filteredFsFilesObject['package.json']) {
+      console.log('package.json found, please consider using ".turtledb_aliases__" folder instead of public key in URL')
+    }
     if (workspace.committedBranch.index >= 0) {
       if (!firstRun || resolve === THEIRS) {
         setFsToValue(committedDocumentValue, filteredCommittedDocumentValue, folder)

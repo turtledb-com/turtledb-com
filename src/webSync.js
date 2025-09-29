@@ -7,6 +7,7 @@ import { WebSocketServer } from 'ws'
 import { TurtleBranchMultiplexer } from '../public/js/turtle/connections/TurtleBranchMultiplexer.js'
 import { randomUUID } from 'crypto'
 import { logDebug, logInfo, logError } from '../public/js/utils/logger.js'
+import { handleRedirect } from '../public/js/utils/handleRedirect.js'
 
 /**
  * @typedef {import('../public/js/turtle/connections/TurtleDB.js').TurtleDB} TurtleDB
@@ -36,79 +37,13 @@ export async function webSync (port, basePublicKey, turtleDB, https, insecure, c
       res.send(JSON.stringify({ workspace: { uuid, root } }))
       return
     }
-    const url = new URL(req.url, `${req.protocol}://${req.host}`)
-    const { pathname, searchParams } = url
-    if (pathname === '/') {
-      res.redirect(302, `/${basePublicKey}/index.html`)
-      return
-    }
-    try {
-      let directories = pathname.split('/')
-      if (directories[directories.length - 1] === '') {
-        directories[directories.length - 1] = 'index.html'
-        url.pathname = directories.join('/')
-        res.redirect(302, url.toString())
-        return
-      }
-      const unfilteredLength = directories.length
-      directories = directories.filter(Boolean)
-      if (unfilteredLength !== directories.length + 1) {
-        url.pathname = directories.join('/')
-        res.redirect(302, url.toString())
-        return
-      }
-      let urlPublicKey = fallback || basePublicKey
-      if (/^[0-9A-Za-z]{41,51}$/.test(directories[0])) {
-        urlPublicKey = directories.shift()
-      }
-      const type = pathname.split('.').pop()
-      const turtleBranch = await turtleDB.summonBoundTurtleBranch(urlPublicKey)
-      const address = +searchParams.get('address')
-      const body = turtleBranch?.lookupFile(directories.join('/'), false, address)
-      if (body) {
-        res.type(type)
-        res.send(body)
-      } else {
-        try {
-          const configJson = turtleBranch?.lookupFile?.('config.json')
-          const packageJson = turtleBranch?.lookupFile?.('package.json')
-          if (configJson) {
-            const config = JSON.parse(configJson)
-            logInfo(() => console.log({ config }))
-            const branchGroups = ['fsReadWrite', 'fsReadOnly']
-            for (const branchGroup of branchGroups) {
-              const branches = config[branchGroup]
-              if (branches) {
-                for (const { name, key } of branches) {
-                  if (name && key) {
-                    if (directories[0] === name) {
-                      url.pathname = `/${key}/${directories.slice(1).join('/')}`
-                      return res.redirect(302, url.toString())
-                    }
-                  }
-                }
-              }
-            }
-          } else if (packageJson) {
-            const aliases = JSON.parse(packageJson).turtle.aliases
-            if (aliases && directories[0] === '__turtledb_aliases__') {
-              directories.shift()
-              const name = directories.shift()
-              const key = aliases[name]
-              if (key) {
-                url.pathname = `/${key}/${directories.join('/')}`
-                return res.redirect(302, url.toString())
-              }
-            }
-          }
-        } catch {
-          logDebug(() => console.log('not found, no config', pathname))
-        }
-        next()
-      }
-    } catch (error) {
-      logError(() => console.error(error))
-    }
+    handleRedirect(req.url, +req.params.address, turtleDB, fallback || basePublicKey, href => {
+      res.redirect(302, href)
+    }, (type, body) => {
+      if (!body) return next()
+      res.type(type)
+      res.send(body)
+    })
   })
   // app.use(express.static(root))
 

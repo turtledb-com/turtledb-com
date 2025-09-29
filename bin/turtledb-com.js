@@ -18,6 +18,7 @@ import { originSync } from '../src/originSync.js'
 import { outletSync } from '../src/outletSync.js'
 import { webSync } from '../src/webSync.js'
 import { config } from 'dotenv'
+import { defaultPublicKey } from '../public/js/utils/handleRedirect.js'
 
 const { version } = JSON.parse(readFileSync(new URL('../package.json', import.meta.url)))
 
@@ -25,8 +26,7 @@ const defaultWebPort = 8080
 const defaultRemoteHost = 'turtledb.com'
 const defaultRemotePort = 1024
 const defaultLocalPort = 1024
-const defaultWebFallback = 'ctclduqytfepmxfpxe8561b8h75l4u5n2t3sxlrmfc889xjz57'
-const defaultPublicKey = 'ctclduqytfepmxfpxe8561b8h75l4u5n2t3sxlrmfc889xjz57'
+const defaultWebFallback = defaultPublicKey
 
 const makeParserWithOptions = (...options) => value => {
   if (options.length) {
