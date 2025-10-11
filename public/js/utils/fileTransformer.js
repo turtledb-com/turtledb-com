@@ -13,4 +13,4 @@ export const pathToType = path => {
 }
 
 export const stringToLines = string => string.split('\n')
-export const linesToString = lines => Array.isArray(lines) && lines.join('\n')
+export const linesToString = lines => (typeof lines === 'string' && lines) || (Array.isArray(lines) && lines.join('\n')) || ''

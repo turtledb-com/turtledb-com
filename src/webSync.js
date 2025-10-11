@@ -23,8 +23,9 @@ const uuid = randomUUID()
  * @param {boolean} insecure
  * @param {string} certpath
  * @param {string} fallback
+ * @param {string} [turtleDBFolder='.turtleDB']
  */
-export async function webSync (port, basePublicKey, turtleDB, https, insecure, certpath, fallback) {
+export async function webSync (port, basePublicKey, turtleDB, https, insecure, certpath, fallback, turtleDBFolder = '.turtleDB') {
   const root = join(process.cwd(), basePublicKey)
   const app = express()
   app.use((req, _res, next) => {
@@ -37,7 +38,7 @@ export async function webSync (port, basePublicKey, turtleDB, https, insecure, c
       res.send(JSON.stringify({ workspace: { uuid, root } }))
       return
     }
-    handleRedirect(req.url, +req.params.address, turtleDB, fallback || basePublicKey, href => {
+    handleRedirect(req.url, +req.params.address, turtleDB, fallback || basePublicKey, turtleDBFolder, href => {
       res.redirect(302, href)
     }, (type, body) => {
       if (!body) return next()

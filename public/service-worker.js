@@ -81,6 +81,7 @@ serviceWorkerGlobalScope.addEventListener('fetch', fetchEvent => {
     +url.searchParams.get('address'),
     turtleDB,
     defaultPublicKey,
+    '.turtleDB',
     href => {
       return Response.redirect(href, 302)
     },

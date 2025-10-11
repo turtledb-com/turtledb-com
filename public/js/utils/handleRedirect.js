@@ -12,10 +12,11 @@ export const defaultPublicKey = 'ctclduqytfepmxfpxe8561b8h75l4u5n2t3sxlrmfc889xj
  * @param {string} address
  * @param {TurtleDB} turtleDB
  * @param {string} publicKey
+ * @param {string} turtleDBFolder
  * @param {(href: string) => void} redirect
  * @param {(type: string, body: string) => void} reply
  */
-export const handleRedirect = async (url, address, turtleDB, publicKey = defaultPublicKey, redirect, reply) => {
+export const handleRedirect = async (url, address, turtleDB, publicKey = defaultPublicKey, turtleDBFolder, redirect, reply) => {
   const type = url.split('.').pop()
   if (url === '/') {
     return redirect(`/${publicKey}/index.html`)
@@ -63,7 +64,7 @@ export const handleRedirect = async (url, address, turtleDB, publicKey = default
           }
         } else if (packageJson) {
           const aliases = JSON.parse(packageJson).turtle.aliases
-          if (aliases && directories[0] === '__turtledb_aliases__') {
+          if (aliases && directories.join('/').startsWith(`${turtleDBFolder}/aliases/`)) {
             directories.shift()
             const name = directories.shift()
             const key = aliases[name]

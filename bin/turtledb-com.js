@@ -84,6 +84,11 @@ program
       .argParser(makeParserWithOptions(1, ...Object.values(LOG_LEVELS)))
       .env('TURTLEDB_VERBOSE')
   )
+  .addOption(
+    new Option('--turtleDB-folder <path>', 'path to folder for TurtleDB files')
+      .default('.turtleDB')
+      .env('TURTLEDB_FOLDER')
+  )
 
   .addOption(
     new Option('-w, --web-port [number]', 'web port to sync from')
@@ -211,7 +216,7 @@ if (options.s3EndPoint !== false) {
 }
 
 if (options.archive) {
-  const archivePath = '__turtledb_archive__'
+  const archivePath = `${options.turtleDBFolder}/archive`
   logInfo(() => console.log(`archiving to ${archivePath}`))
   archiveSync(turtleDB, recaller, archivePath)
 }
@@ -222,16 +227,16 @@ if (options.fsMirror !== false) {
     process.exit(1)
   }
   logInfo(() => console.log('mirroring to file system'))
-  fileSync(turtlename, turtleDB, signer, '.', options.fsMirror)
+  fileSync(turtlename, turtleDB, signer, '.', options.fsMirror, options.turtleDBFolder)
 }
 
 if (options.webPort !== false) {
   const webPort = +options.webPort
   const insecure = !!options.webInsecure
   const https = insecure || !!options.webCertpath
-  const certpath = options.webCertpath || '__turtledb_dev__/cert.json'
+  const certpath = options.webCertpath || `${options.turtleDBFolder}/dev/cert.json`
   logInfo(() => console.log(`listening for web connections on port ${webPort} (https: ${https}, insecure: ${insecure}, certpath: ${certpath})`))
-  webSync(webPort, publicKey || defaultPublicKey, turtleDB, https, insecure, certpath, options.webFallback || defaultWebFallback)
+  webSync(webPort, publicKey || defaultPublicKey, turtleDB, https, insecure, certpath, options.webFallback || defaultWebFallback, options.turtleDBFolder)
 }
 
 if (options.interactive) {

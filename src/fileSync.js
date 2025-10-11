@@ -1,5 +1,5 @@
 import { dirname, join, relative } from 'path'
-import { mkdirSync, readdirSync, readFileSync, rmSync, statSync, unlinkSync, writeFileSync } from 'fs'
+import { mkdirSync, read, readdirSync, readFileSync, rmSync, statSync, symlinkSync, unlinkSync, writeFileSync } from 'fs'
 import { watch } from 'chokidar'
 import { compile } from '@gerhobbelt/gitignore-parser'
 import { BINARY_FILE, JSON_FILE, linesToString, pathToType, TEXT_FILE } from '../public/js/utils/fileTransformer.js'
@@ -16,10 +16,10 @@ import { OURS, THEIRS, THROW } from '../public/js/turtle/TurtleDictionary.js'
 const UPDATED_FILE = 'updated file'
 const REMOVED_FILE = 'removed file'
 
-const gitFilterFilesObject = (fsFilesObject = {}) => {
-  const gitignoreContent = linesToString(fsFilesObject['.gitignore']) || '.env\n.DS_Store\n'
+const gitFilterFilesObject = (fsFilesObject = {}, turtleDBFolder = '.turtleDB', gitignoreContent) => {
+  gitignoreContent = linesToString(gitignoreContent || fsFilesObject['.gitignore'] || ['.env', '.DS_Store'])
   const gitignore = compile(gitignoreContent)
-  const filteredKeys = Object.keys(fsFilesObject).filter(key => gitignore.accepts(key) && !/^__turtledb_/.test(key))
+  const filteredKeys = Object.keys(fsFilesObject).filter(key => gitignore.accepts(key) && !key.startsWith(turtleDBFolder + '/'))
   return Object.fromEntries(filteredKeys.map(key => [key, fsFilesObject[key]]))
 }
 
@@ -83,29 +83,29 @@ const deleteFile = filename => {
   }
 }
 
-const setFsToValue = (newValues, fsFilesObject, cwd) => {
-  const filteredFsFilesObject = gitFilterFilesObject(fsFilesObject)
+const setFsToValue = (newFilesObject, oldFilesObject, cwd, turtleDBFolder = '.turtleDB') => {
+  const filteredNewFilesObject = gitFilterFilesObject(newFilesObject, turtleDBFolder)
+  const filteredFsFilesObject = gitFilterFilesObject(readFolder(cwd), turtleDBFolder, filteredNewFilesObject['.gitignore'])
   for (const key in filteredFsFilesObject) {
-    if (!(key in newValues)) {
+    if (!(key in filteredNewFilesObject)) {
       deleteFile(join(cwd, key))
-      delete fsFilesObject[key]
+      delete oldFilesObject[key]
     }
   }
-  for (const key in newValues) {
-    if (!deepEqual(newValues[key], filteredFsFilesObject[key])) {
-      writeFileAsType(join(cwd, key), newValues[key])
-      fsFilesObject[key] = newValues[key]
+  for (const key in filteredNewFilesObject) {
+    if (!deepEqual(filteredNewFilesObject[key], filteredFsFilesObject[key])) {
+      writeFileAsType(join(cwd, key), filteredNewFilesObject[key])
+      oldFilesObject[key] = filteredNewFilesObject[key]
     }
   }
 }
 
-export async function clobberFolder (turtleBranch, folder = '.') {
-  const fsFilesObject = readFolder(folder)
+export async function clobberFolder (turtleBranch, folder = '.', turtleDBFolder = '.turtleDB') {
   let timeout
   const handleFileChange = () => {
     clearTimeout(timeout)
     timeout = setTimeout(() => {
-      setFsToValue(turtleBranch.lookup('document', 'value') || {}, fsFilesObject, folder)
+      setFsToValue(turtleBranch.lookup('document', 'value') || {}, readFolder(folder), folder, turtleDBFolder)
     }, 500)
   }
   watch(folder, { followSymlinks: false, ignoreInitial: true })
@@ -113,7 +113,7 @@ export async function clobberFolder (turtleBranch, folder = '.') {
     .on('change', handleFileChange)
     .on('unlink', handleFileChange)
   turtleBranch.recaller.watch(`fileSync"${turtleBranch.name}"`, async () => {
-    setFsToValue(turtleBranch.lookup('document', 'value') || {}, fsFilesObject, folder)
+    setFsToValue(turtleBranch.lookup('document', 'value') || {}, readFolder(folder), folder, turtleDBFolder)
   })
 }
 
@@ -122,8 +122,11 @@ export async function clobberFolder (turtleBranch, folder = '.') {
  * @param {TurtleDB} turtleDB
  * @param {Signer} signer
  * @param {string} folder
+ * @param {string} resolve
+ * @param {string} turtleDBFolder
+ * @returns {Promise<Workspace>}
  */
-export async function fileSync (name, turtleDB, signer, folder = '.', resolve = THROW) {
+export async function fileSync (name, turtleDB, signer, folder = '.', resolve = THROW, turtleDBFolder = '.turtleDB') {
   const workspace = await turtleDB.makeWorkspace(signer, name)
   const fsFilesObject = readFolder(folder)
 
@@ -151,8 +154,8 @@ export async function fileSync (name, turtleDB, signer, folder = '.', resolve = 
       actionsByPath.clear()
       const documentValue = workspace.lookup('document', 'value') || {}
 
-      const filteredDocumentValue = gitFilterFilesObject(documentValue)
-      const filteredFsFilesObject = gitFilterFilesObject(fsFilesObject)
+      const filteredDocumentValue = gitFilterFilesObject(documentValue, turtleDBFolder)
+      const filteredFsFilesObject = gitFilterFilesObject(fsFilesObject, turtleDBFolder)
 
       let changed = false
       for (const key in filteredFsFilesObject) {
@@ -184,18 +187,36 @@ export async function fileSync (name, turtleDB, signer, folder = '.', resolve = 
   // workspace.recaller.debug = true
   workspace.recaller.watch(`fileSync"${name}"`, async () => {
     const committedDocumentValue = workspace.committedBranch.lookup('document', 'value') || {}
-    const filteredCommittedDocumentValue = gitFilterFilesObject(committedDocumentValue)
+    const filteredCommittedDocumentValue = gitFilterFilesObject(committedDocumentValue, turtleDBFolder)
     if (!fsFilesObject['.gitignore'] && firstRun) {
-      fsFilesObject['.gitignore'] = filteredCommittedDocumentValue?.['.gitignore'] || ['.env', '.DS_Store', '']
+      fsFilesObject['.gitignore'] = filteredCommittedDocumentValue?.['.gitignore'] || ['.turtleDB', '.env', '.DS_Store', '']
       writeFileAsType(join(folder, '.gitignore'), fsFilesObject['.gitignore'])
     }
-    const filteredFsFilesObject = gitFilterFilesObject(fsFilesObject)
+    const filteredFsFilesObject = gitFilterFilesObject(fsFilesObject, turtleDBFolder)
     if (filteredFsFilesObject['package.json']) {
-      console.log('package.json found, please consider using ".turtledb_aliases__" folder instead of public key in URL')
+      const packageJson = workspace.lookup('document', 'value', 'package.json')
+      const dependencies = packageJson?.turtleDB?.dependencies || {}
+      for (const name in dependencies) {
+        const modulePublicKey = dependencies[name]
+        const moduleFolder = join(folder, '__turtledb_modules__', modulePublicKey)
+        try {
+          mkdirSync(moduleFolder, { recursive: true })
+        } catch (error) {
+          if (error.code !== 'EEXIST') logError(() => console.error(error))
+        }
+        const symlinkFolder = join(folder, name)
+        try {
+          symlinkSync(moduleFolder, symlinkFolder, 'dir')
+        } catch (error) {
+          if (error.code !== 'EEXIST') logError(() => console.error(error))
+        }
+        const turtleBranch = await turtleDB.summonBoundTurtleBranch(modulePublicKey)
+        clobberFolder(turtleBranch, moduleFolder, turtleDBFolder)
+      }
     }
     if (workspace.committedBranch.index >= 0) {
-      if (!firstRun || resolve === THEIRS) {
-        setFsToValue(committedDocumentValue, filteredCommittedDocumentValue, folder)
+      if (firstRun || resolve === THEIRS) {
+        setFsToValue(committedDocumentValue, fsFilesObject, folder, turtleDBFolder)
       } else if (resolve === OURS) {
         let touched = false
         for (const key in filteredFsFilesObject) {
