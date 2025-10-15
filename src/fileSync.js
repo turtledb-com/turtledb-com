@@ -1,5 +1,5 @@
 import { dirname, join, relative } from 'path'
-import { mkdirSync, read, readdirSync, readFileSync, rmSync, statSync, symlinkSync, unlinkSync, writeFileSync } from 'fs'
+import { mkdirSync, readdirSync, readFileSync, rmSync, symlinkSync, unlinkSync, writeFileSync, readlinkSync, lstatSync } from 'fs'
 import { watch } from 'chokidar'
 import { compile } from '@gerhobbelt/gitignore-parser'
 import { BINARY_FILE, JSON_FILE, linesToString, pathToType, TEXT_FILE } from '../public/js/utils/fileTransformer.js'
@@ -23,18 +23,11 @@ const gitFilterFilesObject = (fsFilesObject = {}, turtleDBFolder = '.turtleDB', 
   return Object.fromEntries(filteredKeys.map(key => [key, fsFilesObject[key]]))
 }
 
-const allFilenamesIn = (path, cwd = '.') => {
-  return readdirSync(join(cwd, path)).map(file => {
-    const childPath = join(path, file)
-    const stat = statSync(join(cwd, childPath))
-    if (stat.isSymbolicLink()) return []
-    if (stat.isDirectory()) return allFilenamesIn(childPath, cwd)
-    return childPath
-  }).flat()
-}
-
 const readFileAsType = (filename) => {
   const type = pathToType(filename)
+  if (lstatSync(filename).isSymbolicLink()) {
+    return { symlink: readlinkSync(filename) }
+  }
   if (type === JSON_FILE) {
     const content = readFileSync(filename, 'utf8')
     try {
@@ -51,9 +44,15 @@ const readFileAsType = (filename) => {
 }
 
 const readFolder = folder => Object.fromEntries(
-  allFilenamesIn(folder).map(filename =>
-    [filename, readFileAsType(filename)]
-  )
+  readdirSync(folder, { withFileTypes: true, recursive: true }).map(dirent => {
+    const childPath = join(dirent.parentPath, dirent.name)
+    if (dirent.isDirectory()) {
+      return false
+    } else if (dirent.isSymbolicLink()) {
+      return [childPath, { symlink: readlinkSync(childPath) }]
+    }
+    return [childPath, readFileAsType(childPath)]
+  }).filter(Boolean)
 )
 const writeFileAsType = (filename, content) => {
   const foldername = dirname(filename)
@@ -61,6 +60,8 @@ const writeFileAsType = (filename, content) => {
   const type = pathToType(filename)
   if (typeof content === 'string') {
     writeFileSync(filename, content)
+  } else if (content?.symlink) {
+    symlinkSync(content.symlink, filename)
   } else if (type === JSON_FILE) {
     writeFileSync(filename, JSON.stringify(content, null, 2))
   } else if (type === TEXT_FILE) {
@@ -100,7 +101,7 @@ const setFsToValue = (newFilesObject, oldFilesObject, cwd, turtleDBFolder = '.tu
   }
 }
 
-export async function clobberFolder (turtleBranch, folder = '.', turtleDBFolder = '.turtleDB') {
+export async function resetFolder (turtleBranch, folder = '.', turtleDBFolder = '.turtleDB') {
   let timeout
   const handleFileChange = () => {
     clearTimeout(timeout)
@@ -129,7 +130,6 @@ export async function clobberFolder (turtleBranch, folder = '.', turtleDBFolder 
 export async function fileSync (name, turtleDB, signer, folder = '.', resolve = THROW, turtleDBFolder = '.turtleDB') {
   const workspace = await turtleDB.makeWorkspace(signer, name)
   const fsFilesObject = readFolder(folder)
-
   let timeout
   const actionsByPath = new Map()
   const getPathHandlerFor = action => async path => {
@@ -193,27 +193,6 @@ export async function fileSync (name, turtleDB, signer, folder = '.', resolve = 
       writeFileAsType(join(folder, '.gitignore'), fsFilesObject['.gitignore'])
     }
     const filteredFsFilesObject = gitFilterFilesObject(fsFilesObject, turtleDBFolder)
-    if (filteredFsFilesObject['package.json']) {
-      const packageJson = workspace.lookup('document', 'value', 'package.json')
-      const dependencies = packageJson?.turtleDB?.dependencies || {}
-      for (const name in dependencies) {
-        const modulePublicKey = dependencies[name]
-        const moduleFolder = join(folder, '__turtledb_modules__', modulePublicKey)
-        try {
-          mkdirSync(moduleFolder, { recursive: true })
-        } catch (error) {
-          if (error.code !== 'EEXIST') logError(() => console.error(error))
-        }
-        const symlinkFolder = join(folder, name)
-        try {
-          symlinkSync(moduleFolder, symlinkFolder, 'dir')
-        } catch (error) {
-          if (error.code !== 'EEXIST') logError(() => console.error(error))
-        }
-        const turtleBranch = await turtleDB.summonBoundTurtleBranch(modulePublicKey)
-        clobberFolder(turtleBranch, moduleFolder, turtleDBFolder)
-      }
-    }
     if (workspace.committedBranch.index >= 0) {
       if (firstRun || resolve === THEIRS) {
         setFsToValue(committedDocumentValue, fsFilesObject, folder, turtleDBFolder)

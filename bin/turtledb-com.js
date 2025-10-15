@@ -227,7 +227,7 @@ if (options.fsMirror !== false) {
     process.exit(1)
   }
   logInfo(() => console.log('mirroring to file system'))
-  fileSync(turtlename, turtleDB, signer, '.', options.fsMirror, options.turtleDBFolder)
+  fileSync(turtlename, turtleDB, signer, undefined, options.fsMirror, options.turtleDBFolder)
 }
 
 if (options.webPort !== false) {
