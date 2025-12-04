@@ -137,6 +137,7 @@ export class TurtleBranch {
     const type = pathToType(filename)
     const storedContent = address ? this.lookup(address) : this.lookup('document', 'value', filename)
     if (asStored || !storedContent) return storedContent
+    if (storedContent?.symlink) return storedContent
     if (storedContent instanceof Uint8Array) return storedContent
     if (typeof storedContent === 'string') return storedContent
     if (type === JSON_FILE) return JSON.stringify(storedContent, null, 2)
