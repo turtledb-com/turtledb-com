@@ -25,63 +25,122 @@ import { proxyFolder } from './proxyFolder.js'
  */
 export async function fileSync (name, turtleDB, signer, folder = '.', resolve = THROW, turtleDBFolder = '.turtleDB') {
   const workspace = await turtleDB.makeWorkspace(signer, name)
+  const workspaceFilesObject = workspace.lookup('document', 'value') || {}
 
-  const gitFilter = (fsFilesObject = {}, gitignoreContent) => {
-    gitignoreContent = linesToString(gitignoreContent || fsFilesObject['.gitignore'] || ['.env', '.DS_Store'])
+  const gitFilter = (filesObject = {}, gitignoreContent) => {
+    gitignoreContent = linesToString(gitignoreContent || filesObject['.gitignore'] || ['.env', '.DS_Store'])
     const gitignore = compile(gitignoreContent)
-    const filteredKeys = Object.keys(fsFilesObject).filter(key => gitignore.accepts(key) && !key.startsWith(turtleDBFolder + '/'))
-    return Object.fromEntries(filteredKeys.sort().map(key => [key, fsFilesObject[key]]))
+    const filteredKeys = Object.keys(filesObject).filter(key => gitignore.accepts(key) && !key.startsWith(turtleDBFolder + '/'))
+    return Object.fromEntries(filteredKeys.sort().map(key => [key, filesObject[key]]))
   }
 
-  const syncFoldersBySymlink = {}
-  let firstRun = true
+  const replicateFiles = (a, b, applyGitFilter) => {
+    const aTracked = applyGitFilter ? gitFilter(a) : a
+    let bTracked = applyGitFilter ? gitFilter(b) : b
+    let touched = false
+    Object.keys(aTracked).forEach(key => {
+      if (!deepEqual(b[key], aTracked[key])) {
+        console.log(`setting b[${key}], replace:${!!b[key]}`)
+        b[key] = aTracked[key]
+        touched = true
+      }
+    })
+    bTracked = applyGitFilter ? gitFilter(b) : b // after possible .gitignore update
+    Object.keys(bTracked).forEach(key => {
+      if (!aTracked[key]) {
+        console.log(`deleting b[${key}]`)
+        delete b[key]
+        touched = true
+      }
+    })
+    return touched
+  }
 
-  const update = (path, oldEntity, newEntity) => {
-    const oldSymlink = oldEntity?.symlink
-    const newSymlink = newEntity?.symlink
-    if (oldSymlink) {
-      if (!syncFoldersBySymlink[oldSymlink]) throw new Error(`unexpected old symlink "${oldSymlink}" not being tracked`)
-      if (oldSymlink === newSymlink) return
-      const { count, unsync } = syncFoldersBySymlink[oldSymlink] || {}
-      if (count > 0) {
-        --syncFoldersBySymlink[oldSymlink].count
-      } else {
-        unsync?.()
-        delete syncFoldersBySymlink[oldSymlink]
-      }
-    }
-    if (newSymlink) {
-      if (!syncFoldersBySymlink[newSymlink]) {
-        let unsync = async () => {
-          unsync = null
+  const syncModule = (turtleBranch, moduleFolder) => {
+    return
+    const setModuleFiles = moduleFilesObject => {
+      const folderFilesObjectCopy = {}
+      Object.keys(folderFilesObject).forEach(filename => {
+        if (!filename.startsWith(moduleFolder)) {
+          folderFilesObjectCopy[filename] = folderFilesObject[filename]
         }
-        (async () => {
-          const publicKey = newSymlink.match(/\/([0-9a-z]{40,50})$/)?.[1]
-          console.log({ newSymlink, publicKey })
-          // const turtleBranch = await turtleDB.summonBoundTurtleBranch(publicKey)
-          // unsync &&= await syncFolder(turtleBranch, newSymlink)
-        })()
-        syncFoldersBySymlink[newSymlink] = { count: 0, unsync }
-      }
-      ++syncFoldersBySymlink[newSymlink].count
+      })
+      Object.keys(moduleFilesObject).forEach(filename => {
+        folderFilesObjectCopy[join(moduleFolder, filename)] = moduleFilesObject[filename]
+      })
+      replicateFiles(folderFilesObjectCopy, folderFilesObject, false)
     }
+    const turtleWatcher = async () => {
+      console.log('turtleWatcher triggered', turtleBranch.name, moduleFolder)
+      const moduleFilesObject = turtleBranch.lookup('document', 'value')
+      setModuleFiles(moduleFilesObject)
+    }
+    turtleBranch.recaller.watch(`fileSync"${turtleBranch.name}"`, turtleWatcher)
+    return () => {
+      turtleBranch.recaller.unwatch(turtleWatcher)
+    }
+  }
+
+  const syncModulesBySymlink = {}
+  const update = (changes, firstRun = false) => {
+    Object.keys(changes).forEach((filename) => {
+      let oldValue, newValue
+      if (firstRun) {
+        newValue = changes[filename]
+      } else {
+        newValue = changes[filename].newValue
+        oldValue = changes[filename].oldValue
+        if (!deepEqual(oldValue, workspaceFilesObject[filename])) throw new Error(`old file value mismatch "${filename}" (TODO: handle collision case)`) // TODO: handle collision case
+      }
+      const oldSymlink = oldValue?.symlink
+      const newSymlink = newValue?.symlink
+      if (oldSymlink) {
+        if (!syncModulesBySymlink[oldSymlink]) throw new Error(`unexpected old symlink "${oldSymlink}" not being tracked`)
+        if (oldSymlink === newSymlink) return
+        const { count, unsync } = syncModulesBySymlink[oldSymlink] || {}
+        if (count > 0) {
+          --syncModulesBySymlink[oldSymlink].count
+        } else {
+          unsync?.()
+          delete syncModulesBySymlink[oldSymlink]
+        }
+      }
+      if (newSymlink) {
+        if (!syncModulesBySymlink[newSymlink]) {
+          let unsync = async () => {
+            unsync = null
+          }
+          (async () => {
+            const publicKey = newSymlink.match(/\/([0-9a-z]{40,50})$/)?.[1]
+            console.log({ newSymlink, publicKey })
+            const turtleBranch = await turtleDB.summonBoundTurtleBranch(publicKey, filename)
+            unsync &&= await syncModule(turtleBranch, newSymlink) // &&= in case it got cancelled before the summon completed
+          })()
+          syncModulesBySymlink[newSymlink] = { count: 0, unsync }
+        }
+        ++syncModulesBySymlink[newSymlink].count
+      }
+    })
   }
 
   const folderFilesObject = proxyFolder(folder, turtleDB.recaller, update)
+  update(folderFilesObject, true)
 
-  workspace.recaller.watch(`fileSync "${name}" watch workspace`, () => {
+  if (Object.keys(workspaceFilesObject).length === 0) {
+    if (Object.keys(gitFilter(folderFilesObject)).length === 0) {
+      logInfo(() => console.log('empty workspace, no tracked files in folder'))
+      // TODO: offer tutorial/wizard?
+    } else {
+      logInfo(() => console.log('empty workspace, replicating files to workspace'))
+      replicateFiles(folderFilesObject, workspaceFilesObject, true)
+      await workspace.commit(workspaceFilesObject, 'initial commit of local tracked files')
+    }
+  }
+
+  workspace.recaller.watch(`fileSync "${name}" watch workspace`, async () => {
     const workspaceFilesObject = workspace.lookup('document', 'value')
-    const ackWorkspace = gitFilter(workspaceFilesObject)
-    const ackFolder = gitFilter(folderFilesObject)
-    Object.keys(ackWorkspace).forEach(key => {
-      ackFolder[key] = ackWorkspace[key]
-    })
-    Object.keys(ackFolder).forEach(key => {
-      if (!ackWorkspace[key]) delete ackFolder[key]
-    })
+    replicateFiles(workspaceFilesObject, folderFilesObject, true)
   })
-
-  firstRun = false
 
   /*
   const UPDATED_FILE = 'updated file'

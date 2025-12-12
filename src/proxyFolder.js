@@ -6,7 +6,7 @@ import { deepEqual } from '../public/js/utils/deepEqual.js'
 import { Recaller } from '../public/js/utils/Recaller.js'
 import { watch } from 'chokidar'
 
-export const isLinesOfTextExtension = path => path.match(/\.(html|css|js|svg|txt|gitignore)$/)
+export const isLinesOfTextExtension = path => path.match(/\.(html|css|js|svg|txt|gitignore|env|node_repl_history)$/)
 export const isJSONExtension = path => path.match(/\.(json)$/)
 
 export const encodeTextFile = object => {
@@ -34,14 +34,13 @@ export const proxyFolder = (folder, recaller = new Recaller(folder), update) => 
   const target = {}
 
   const writeFileObject = (path, newFileObject) => {
+    const oldFileObject = target[path]
+    if (deepEqual(oldFileObject, newFileObject)) return true
     const childPath = join(folder, path)
     if (newFileObject) {
       const folderPath = dirname(childPath)
       if (folderPath) mkdirSync(folderPath, { recursive: true })
     }
-    const oldFileObject = target[path]
-    if (deepEqual(oldFileObject, newFileObject)) return true
-    update?.(path, oldFileObject, newFileObject)
     if (oldFileObject) unlinkSync(childPath)
     if (!newFileObject) {
       // no such thing, remove it
@@ -50,7 +49,7 @@ export const proxyFolder = (folder, recaller = new Recaller(folder), update) => 
     } else {
       target[path] = newFileObject
       if (newFileObject.symlink) {
-        symlinkSync(childPath, newFileObject.symlink)
+        symlinkSync(newFileObject.symlink, childPath)
       } else if (newFileObject instanceof Uint8Array) {
         writeFileSync(childPath, Buffer.from(newFileObject))
       } else if (typeof newFileObject === 'object') {
@@ -85,7 +84,6 @@ export const proxyFolder = (folder, recaller = new Recaller(folder), update) => 
         value = new Uint8Array(readFileSync(childPath))
       }
       if (!deepEqual(value, target[path])) {
-        update?.(path, target[path], value)
         target[path] = value
         changed = 'set'
       }
@@ -113,7 +111,6 @@ export const proxyFolder = (folder, recaller = new Recaller(folder), update) => 
   const proxy = new Proxy(target, {
     get: (target, name) => {
       recaller.reportKeyAccess(target, name, 'get', `proxyFolder(${folder})`)
-      console.log('getting', name)
       if (target[name]) {
         return target[name]
       } else {
@@ -123,14 +120,14 @@ export const proxyFolder = (folder, recaller = new Recaller(folder), update) => 
       }
     },
     set: (target, name, value) => {
-      writeFileObject(name, value)
+      return writeFileObject(name, value)
     },
     deleteProperty: (target, name) => {
       recaller.reportKeyMutation(target, name, 'delete', `proxyFolder(${folder})`)
       for (let parentDirname = dirname(name); !['', '.', '/'].includes(parentDirname); parentDirname = dirname(parentDirname)) {
         recaller.reportKeyMutation(target, parentDirname, 'delete', `proxyFolder(${folder})`)
       }
-      writeFileObject(name)
+      return writeFileObject(name)
     }
   })
 
@@ -140,8 +137,16 @@ export const proxyFolder = (folder, recaller = new Recaller(folder), update) => 
     clearTimeout(timeout)
     modifiedFiles.add(filename)
     timeout = setTimeout(() => {
-      console.log(modifiedFiles)
-      modifiedFiles.forEach(readFileObject)
+      console.log({ modifiedFiles })
+      const changes = {}
+      modifiedFiles.forEach(filename => {
+        const oldValue = target[filename]
+        const newValue = readFileObject(filename)
+        if (!deepEqual(oldValue, newValue)) {
+          changes[filename] = { oldValue, newValue }
+        }
+      })
+      update?.(changes)
       modifiedFiles.clear()
     }, 500)
   }
@@ -153,7 +158,7 @@ export const proxyFolder = (folder, recaller = new Recaller(folder), update) => 
     .on('change', handleFileChange)
     .on('unlink', handleFileChange)
 
-  console.log(target)
+  // console.log(target)
   // debugger
 
   return proxy

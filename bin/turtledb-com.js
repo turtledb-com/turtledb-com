@@ -253,8 +253,8 @@ if (options.interactive) {
   global.Workspace = Workspace
   global.setLogLevel = setLogLevel
   global.AS_REFS = AS_REFS
-  console.log('global.folder = proxyFolder(\'.\')')
-  global.folder = proxyFolder('.', recaller)
+  // console.log('global.folder = proxyFolder(\'.\')')
+  // global.folder = proxyFolder('.', recaller)
   const replServer = start({ breakEvalOnSigint: true })
   replServer.setupHistory('.node_repl_history', err => {
     if (err) logError(() => console.error(err))
