@@ -1,11 +1,9 @@
-import { mkdirSync, readdirSync, readFileSync, rmSync, symlinkSync, unlinkSync, writeFileSync, readlinkSync, lstatSync, read, existsSync, rmdirSync } from 'fs'
+import { mkdirSync, readdirSync, readFileSync, symlinkSync, unlinkSync, writeFileSync, readlinkSync, lstatSync, rmdirSync } from 'fs'
 import { dirname, join, relative } from 'path'
-import { BINARY_FILE, JSON_FILE, pathToType, TEXT_FILE } from '../public/js/utils/fileTransformer.js'
 import { logError } from '../public/js/utils/logger.js'
 import { deepEqual } from '../public/js/utils/deepEqual.js'
 import { Recaller } from '../public/js/utils/Recaller.js'
-import { watch } from 'chokidar'
-import ParcelWatcher, { subscribe } from '@parcel/watcher'
+import { subscribe } from '@parcel/watcher'
 
 export const isLinesOfTextExtension = path => path.match(/\.(html|css|js|svg|txt|gitignore|env|node_repl_history)$/)
 export const isJSONExtension = path => path.match(/\.(json)$/)
@@ -28,7 +26,7 @@ const decodeBufferAsFileObject = (buffer, path) => {
   try {
     return JSON.parse(str)
   } catch (err) {
-    console.error(err)
+    logError(() => console.error(err))
     return str
   }
 }
@@ -72,7 +70,6 @@ export const proxyFolder = (folder, recaller = new Recaller(folder), updatesHand
       // no such thing, remove it
       delete target[path]
       const dirpath = dirname(path)
-      console.log({ dirpath, path, dirname: dirname(path) })
       cleanEmptyDir(dirname(path))
     } else {
       target[path] = newFileObject
@@ -173,7 +170,6 @@ export const proxyFolder = (folder, recaller = new Recaller(folder), updatesHand
     clearTimeout(timeout)
     modifiedFiles.add(filename)
     timeout = setTimeout(() => {
-      console.log({ modifiedFiles })
       const changes = {}
       modifiedFiles.forEach(filename => {
         const oldValue = target[filename]
