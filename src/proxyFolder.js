@@ -69,7 +69,6 @@ export const proxyFolder = (folder, recaller = new Recaller(folder), updatesHand
     if (!newFileObject) {
       // no such thing, remove it
       delete target[path]
-      const dirpath = dirname(path)
       cleanEmptyDir(dirname(path))
     } else {
       target[path] = newFileObject

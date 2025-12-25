@@ -55,6 +55,7 @@ export class AbstractUpdater extends TurtleTalker {
     if (incomingUint8ArrayAddresses) { // they're ready
       // handle incoming message (if any exist)
       logUpdate(this.name, this.publicKey, incomingUint8ArrayAddresses, true)
+      await Promise.all(incomingUint8ArrayAddresses.map(indexString => this.getUint8Array(+indexString)))
       for (const indexString in incomingUint8ArrayAddresses) {
         const i = +indexString
         const incomingAddress = incomingUint8ArrayAddresses[i]
