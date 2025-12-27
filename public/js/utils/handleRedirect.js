@@ -19,7 +19,8 @@ export const defaultPublicKey = 'ctclduqytfepmxfpxe8561b8h75l4u5n2t3sxlrmfc889xj
 export const handleRedirect = async (url, address, turtleDB, publicKey = defaultPublicKey, turtleDBFolder, redirect, reply) => {
   const type = url.split('.').pop()
   if (url === '/') {
-    return redirect(`/${publicKey}/index.html`)
+    console.log('let us index')
+    return redirect('/index.html')
   }
   try {
     let directories = url.split('/')
@@ -44,6 +45,14 @@ export const handleRedirect = async (url, address, turtleDB, publicKey = default
       return reply(type, body)
     } else {
       try {
+        const symlink = turtleBranch.lookupFile(directories[0])?.symlink
+        if (symlink) {
+          console.log(symlink)
+          const symlinkPublicKey = symlink.match(/.*\/(?<publicKey>[0-9A-Za-z]{41,51})$/)?.groups?.publicKey
+          if (symlinkPublicKey) {
+            return redirect(`/${symlinkPublicKey}/${directories.slice(1).join('/')}`)
+          }
+        }
         const configJson = turtleBranch.lookupFile('config.json')
         const packageJson = turtleBranch.lookupFile('package.json')
         if (configJson) {

@@ -94,7 +94,7 @@ export const proxyFolder = (folder, recaller = new Recaller(folder), updatesHand
       if (err.code !== 'ENOENT') throw err
     }
     let changed = ''
-    if (stats) {
+    if (stats && (stats.isFile() || stats.isSymbolicLink())) {
       let value
       if (stats.isSymbolicLink()) {
         const symlink = readlinkSync(childPath)
@@ -181,15 +181,6 @@ export const proxyFolder = (folder, recaller = new Recaller(folder), updatesHand
       modifiedFiles.clear()
     }, 500)
   }
-  /*
-  watch(folder, {
-    followSymlinks: false,
-    ignoreInitial: true
-  })
-    .on('add', handleFileChange)
-    .on('change', handleFileChange)
-    .on('unlink', handleFileChange)
-  */
 
   subscribe(folder, (err, events) => {
     if (err) throw err
